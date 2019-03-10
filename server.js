@@ -1,5 +1,6 @@
 const express = require('express'),
 	app = express(),
+	userCtl = require('./controllers/users.ctl.js'),
 	bodyParser = require('body-parser'),
 	// userCtl     = require('./controllers/users.ctl'),
 	// debateCtl   = require('./controllers/debates.ctl'),
@@ -18,8 +19,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(session({secret:'shjlowyi739d',resave: false, saveUninitialized:true}))
 
-
 /*** All routes ***/
+
+app.post('/profile/signIn', userCtl.signIn);
 
 app.listen(port, () => {
 	console.log(`listening on port ${port}`);

@@ -1,18 +1,35 @@
-var mongoose        =   require('mongoose'),
-    user          =   new mongoose.Schema({
-	ID:String,
-	profile:{
-		name:{
-			first:String,
-			last:String
+var mongoose = require('mongoose'),
+	user = new mongoose.Schema({
+		profile: {
+			email: String,
+			password: String,
+			name: {
+				first: {
+					type: String,
+					require
+				},
+				last: String
+			},
+			imgUrl: String
 		},
-		imgUrl:String,
-	},
-	appointments:[String],
-	following:[String], 
+		appointments: [ String ],
+		following: [ String ]
+	});
+
+user.path('profile.name.first').set((first) => {
+	const newFirst = first.charAt(0).toUpperCase() + first.slice(1);
+	console.log(`toLowerCase : ${newFirst}`);
+	// let sVal = String(val).toLowerCase();
+	return newFirst;
 });
 
-var User  = mongoose.model('User',user);
+user.path('profile.name.last').set((last) => {
+	const newLast = last.charAt(0).toUpperCase() + last.slice(1);
+	console.log(`toLowerCase : ${newLast}`);
+	// let sVal = String(val).toLowerCase();
+	return newLast;
+});
 
-module.exports = User; 
- 
+var User = mongoose.model('User', user);
+
+module.exports = User;
