@@ -10,15 +10,17 @@ const User = require('./models/user');
 passport.use(
 	new JwtStrategy(
 		{
-			jwtFromRequest: ExtractJwt.fromHeader('authoriziation'),
+			jwtFromRequest: ExtractJwt.fromHeader('authorization'),
 			secretOrKey: JWT_SECRET
 		},
 		async (payload, done) => {
 			try {
 				const user = User.findById(payload.sub);
+
 				if (!user) {
 					return done(null, false);
 				}
+
 				done(null, user);
 			} catch (error) {
 				done(error, false);
@@ -26,6 +28,25 @@ passport.use(
 		}
 	)
 );
+// passport.use(
+// 	new JwtStrategy(
+// 		{
+// 			jwtFromRequest: ExtractJwt.fromHeader('Authorization'),
+// 			secretOrKey: JWT_SECRET
+// 		},
+// 		async (payload, done) => {
+// 			try {
+// 				const user = User.findById(payload.sub);
+// 				if (!user) {
+// 					return done(null, false);
+// 				}
+// 				done(null, user);
+// 			} catch (error) {
+// 				done(error, false);
+// 			}
+// 		}
+// 	)
+// );
 
 /* LOCAL STRATEGY */
 passport.use(

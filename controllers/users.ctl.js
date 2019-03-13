@@ -1,7 +1,7 @@
 const JWT = require('jsonwebtoken');
 const Users = require('../models/user');
 const { JWT_SECRET } = require('../consts');
-signToken = (user) => {
+signInToken = (user) => {
 	return JWT.sign(
 		{
 			iss: 'CountMeIn',
@@ -31,14 +31,14 @@ module.exports = {
 			}
 		});
 		await newUser.save();
-		const token = signToken(newUser);
+		const token = signInToken(newUser);
 		res.status(200).json({ token });
 	},
 
 	signIn: async (req, res, next) => {
 		console.log('signIn Called!!');
-		const token = signToken(req.user);
-		res.status(200).json({ token });
+		const token = signInToken(req.user);
+		res.status(200).json({ token: token, user: req.user });
 	},
 
 	googleOAuth: (req, res, next) => {
@@ -47,7 +47,7 @@ module.exports = {
 	},
 
 	secret: async (req, res, next) => {
-		console.log('secret Called!!');
+		res.json({ message: 'allowed to get secret' });
 	}
 };
 

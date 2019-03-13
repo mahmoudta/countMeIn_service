@@ -4,13 +4,16 @@ const mongoose = require('mongoose'),
 			type: String,
 			lowercase: true,
 			required: true,
-			unique: true
+			unique: true,
+			trim: true
 		},
 		subCats: [
 			{
 				sub: {
 					type: String,
-					lowercase: true
+					lowercase: true,
+					trim: true,
+					required: true
 				},
 				time: {
 					/* 
@@ -19,7 +22,8 @@ const mongoose = require('mongoose'),
                     */
 					type: Number,
 					min: 10,
-					max: 120
+					max: 120,
+					required: true
 				}
 			}
 		]

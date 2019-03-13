@@ -22,6 +22,7 @@ app.use((req, res, next) => {
 
 /*** All routes ***/
 app.use('/users', require('./routes/users'));
+app.use('/category', require('./routes/categories'));
 
 /* start the server */
 const port = process.env.PORT || 8080;

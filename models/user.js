@@ -32,7 +32,8 @@ const mongoose = require('mongoose'),
 					default: ' '
 				}
 			},
-			imgUrl: String
+			imgUrl: String,
+			businessId: String
 		},
 		appointments: [ String ],
 		following: [ String ]
