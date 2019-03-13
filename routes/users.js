@@ -13,5 +13,7 @@ router.route('/signin').post(validateBody(schemas.authSchema), passportSignIn, u
 router.route('oauth/google').post(passportGoogle, userCtl.googleOAuth);
 
 router.route('/secret').get(passportJWT, userCtl.secret);
+router.route('/test').get(userCtl.test);
+
 
 module.exports = router;

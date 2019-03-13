@@ -197,9 +197,7 @@ class BinarySearchTree
     } 
     totree(arr){
 
-        arr.forEach(timerange => {
-            this.insert(timerange);
-          });
+        arr.forEach(timerange => {this.insert(timerange);});
 
     }
     getRootNode(){
@@ -265,62 +263,44 @@ time_range.prototype.end = function () {
 time_range.prototype.string = function () {
     return this._start.string()+" - "+this._end.string();
 };
-/***********************************************************************************/
-// var day = function () {
-//     var day = [];
-//     day[0]=new time_range(new time(8,0),new time(16,0));
-// };
-// //we only add if we removed
-// day.prototype.add = function (timerange) {
-//     if (typeof day !== 'undefined' && day.length > 0) {
-//         var i=0;
-//         while(typeof day[i] !== 'undefined') {
-//             if( (timerange.end.hour<day.start.hour) || ( (timerange.end.hour==day.start.hour) && (timerange.end.minute>=day.start.minute) ) ){
-//                 i=2*i + 1;
-//             }else if( (timerange.start.hour<day.end.hour) || ( (timerange.start.hour==day.end.hour) && (timerange.start.minute>=day.end.minute) ) ){
-//                 i=2*i + 2;
-//             }
-//         }
 
-//         day[i]= timerange;
-//     }else{
-//         day[0]= timerange;
-//     }
-// return true;
-// }; 
-// day.prototype.searchbylenth= function (timerange) {
-//     return true;
-// };
-// day.prototype.searchbyrange= function (timerange) {
-//     return true;
-// };
-// day.prototype.searchanddelete = function (timerange) {
-//     return true;
-// };
+exports.time_range;
 /***********************************************************************************/
-app.get("/algs/freealg", function (req, res) {
+// app.get("/algs/freealg", function (req, res) {
+    // module.exports ={
+
+    
     //in:: the porpose and the schadule of the client and the schadule of the bussnes
     //for test
-    var free1=[];
-    var day1 = new BinarySearchTree();
-    day1.insert( new time_range(new time(9,0) , new time(9,45) ) );
-    day1.insert( new time_range(new time(8,0) , new time(9,0) ) );
-    day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
-    console.log(day1.arrayofstrings());
-    free1=day1.arrayofopjects();
-    /////////////////////////////////////////////////
-    var free2=[];
-    var day2 = new BinarySearchTree();
-    day2.totree(free1);
-    day2.remove( new time_range(new time(9,0) , new time(9,45) ) );
-    free2=day2.arrayofopjects();
-    res.send(day2.arrayofstrings());
+
+
+
+
+        exports.freeTimeAlg = (business_id)=>{
+
+            console.log("free Time");
+            var free1=[];
+            var day1 = new BinarySearchTree();
+            day1.insert( new time_range(new time(9,0) , new time(9,45) ) );
+            day1.insert( new time_range(new time(8,0) , new time(9,0) ) );
+            day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
+            console.log(day1.arrayofstrings());
+            free1=day1.arrayofopjects();
+            /////////////////////////////////////////////////
+            var free2=[];
+            var day2 = new BinarySearchTree();
+            day2.totree(free1);
+            day2.remove( new time_range(new time(9,0) , new time(9,45) ) );
+            free2=day2.arrayofopjects();
+            return(day2.arrayofstrings());
+        }
+
+
+
     
     //res.json({ message: welcome to the `api!' });
-});
 
-
-let port = 8080;
-app.listen(port, function() {
-    console.log("Server started listening at localhost:" + port);
-});
+// let port = 8080;
+// app.listen(port, function() {
+//     console.log("Server started listening at localhost:" + port);
+// });
