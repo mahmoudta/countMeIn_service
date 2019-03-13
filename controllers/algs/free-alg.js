@@ -237,6 +237,7 @@ class BinarySearchTree
     }
 }
 /***********************************************************************************/
+//time_range opject
 var time = function (hour,minute) {
     this._hour = hour;
     this._minute = minute;
