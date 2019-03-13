@@ -1,15 +1,12 @@
 const JWT = require('jsonwebtoken');
 const Users = require('../models/user');
 const { JWT_SECRET } = require('../consts');
-<<<<<<< HEAD
-signInToken = (user) => {
-=======
+
 const {freeTimeAlg} = require('./algs/free-alg')
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 
 signToken = (user) => {
->>>>>>> b7f315be4527bec5fe49ac1c1d04520299b8d1ab
 	return JWT.sign(
 		{
 			iss: 'CountMeIn',
@@ -55,9 +52,8 @@ module.exports = {
 	},
 
 	secret: async (req, res, next) => {
-<<<<<<< HEAD
 		res.json({ message: 'allowed to get secret' });
-=======
+
 		console.log('secret Called!!');
 	},
 
@@ -65,7 +61,7 @@ module.exports = {
 		console.log('Test Here');
 		const test1 =  freeTimeAlg(11);
 		res.json({test1});
->>>>>>> b7f315be4527bec5fe49ac1c1d04520299b8d1ab
+
 	}
 };
 
