@@ -2,15 +2,16 @@ const JWT = require('jsonwebtoken');
 const Users = require('../models/user');
 const { JWT_SECRET } = require('../consts');
 
-const {freeTimeAlg} = require('./algs/free-alg')
+const { freeTimeAlg } = require('./algs/free-alg');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 
-signToken = (user) => {
+signInToken = (user) => {
 	return JWT.sign(
 		{
-			iss: 'CountMeIn',
-			sub: user._id
+			sub: user._id,
+			isAdmin: user.isAdmin,
+			profile: user.profile
 		},
 		JWT_SECRET
 	);
@@ -27,7 +28,9 @@ module.exports = {
 		const newUser = new Users({
 			method: 'local',
 			email: email,
-			'local.password': password,
+			local: {
+				password: password
+			},
 			profile: {
 				name: {
 					first: first_name,
@@ -57,11 +60,10 @@ module.exports = {
 		console.log('secret Called!!');
 	},
 
-	test : async (req,res,next)=>{
+	test: async (req, res, next) => {
 		console.log('Test Here');
-		const test1 =  freeTimeAlg(11);
-		res.json({test1});
-
+		const test1 = freeTimeAlg(11);
+		res.json({ test1 });
 	}
 };
 
