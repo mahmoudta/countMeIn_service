@@ -60,7 +60,7 @@ module.exports = {
 	test : async (req,res,next)=>{
 		console.log('Test Here');
 		const test1 =  freeTimeAlg(11);
-		res.json({test1});
+		res.status(200).json({test1});
 
 	}
 };

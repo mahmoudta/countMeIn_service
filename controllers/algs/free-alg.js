@@ -281,16 +281,20 @@ exports.time_range;
             console.log("free Time");
             var free1=[];
             var day1 = new BinarySearchTree();
-            day1.insert( new time_range(new time(9,0) , new time(9,45) ) );
-            day1.insert( new time_range(new time(8,0) , new time(9,0) ) );
+            //day1.insert( new time_range(new time(9,0) , new time(9,45) ) );
+            day1.insert( new time_range(new time(8,0) , new time(9,45) ) );
             day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
             console.log(day1.arrayofstrings());
             free1=day1.arrayofopjects();
             /////////////////////////////////////////////////
-            var free2=[];
+
+            var free2=free1;
             var day2 = new BinarySearchTree();
-            day2.totree(free1);
-            day2.remove( new time_range(new time(9,0) , new time(9,45) ) );
+            day2.totree(free2);
+            //want to book between 9:00 to 9:20
+            day2.remove( new time_range(new time(8,0) , new time(9,45) ) );
+            day2.insert( new time_range(new time(8,0) , new time(9,0) ) );
+            day2.insert( new time_range(new time(9,20) , new time(9,45) ) );
             free2=day2.arrayofopjects();
             return(day2.arrayofstrings());
         }
