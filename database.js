@@ -7,7 +7,8 @@ var Businesses = require('./models/business'),
 	Appointments = require('./models/appointment');
 options = {
 	autoReconnect: true,
-	useNewUrlParser: true
+	useNewUrlParser: true,
+	useCreateIndex: true
 };
 mongoose.Promise = global.Promise;
 mongoose.connect(consts.MLAB, options).then(
