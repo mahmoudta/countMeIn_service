@@ -258,7 +258,9 @@ class BinarySearchTree
 
         return can_book;
     }
-
+    slice_and_return_array(length,minutes_between_appointment){
+    
+    }
     book(timerange_to_book,length,minutes_between_appointment){
 
         //if(){}
@@ -298,7 +300,10 @@ time_range.prototype.tominutes = function () {
     temp=((this._end.hour()-this._start.hour())*60)+(this._end.minute()-this._start.minute());
     return temp;
 };
-
+function Day(date, free) {
+	this.Date = date,
+	this.Free = free
+};
 exports.time_range;
 /***********************************************************************************/
 
@@ -317,18 +322,18 @@ exports.time_range;
             day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
             day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
             console.log("day1 : "+day1.arrayofstrings());
-            days.push(day1.arrayofopjects());
+            days.push(new Day(new Date(2019, 2, 28),day1.arrayofopjects()));
             /////////////////////////////////////////////////
             var day2 = new BinarySearchTree();
             day2.insert( new time_range(new time(8,45) , new time(14,0) ) );
             day2.insert( new time_range(new time(14,30) , new time(18,0) ) );
             console.log("day2 : "+day2.arrayofstrings());
-            days.push(day2.arrayofopjects());
+            days.push(new Day(new Date(2019, 2, 29),day2.arrayofopjects()));
             /////////////////////////////////////////////////
             var day3 = new BinarySearchTree();
             day3.insert( new time_range(new time(8,0) , new time(18,0) ) );
             console.log("day3 : "+day3.arrayofstrings());
-            days.push(day3.arrayofopjects());
+            days.push(new Day(new Date(2019, 2, 30),day3.arrayofopjects()));
            /////////////////////////////////////////////////
             //i need busnees id and the porpose id
             //var days=[];      //from freetime database of the busnese (should be sorted if posible)
@@ -347,21 +352,26 @@ exports.time_range;
             do{
                 if (days === undefined || days.length == 0) {break;}
                 tmpday=days.shift();
-                day.totree(tmpday);
+                day.totree(tmpday.Free);
                 posibletobook.totree(day.timerangesthatfit(porpose_length,minutes_between_appointment));
+                ///call slicer at posibletobook
                 counter+=posibletobook.getlength();
                 if (counter>=appontments_number_to_return) {
                     correcter=counter-appontments_number_to_return
-                    tmpcorrector=posibletobook.arrayofstrings();
+                    //tmpcorrector=posibletobook.arrayofstrings();
+                    tmpcorrector=posibletobook.arrayofopjects();
                     for (; 0 < correcter; correcter--) { 
                         tmpcorrector.pop();
                     }
-                    daysfree.push(tmpcorrector)
+
+                    daysfree.push(new Day(tmpday.Date,tmpcorrector))
                     break;
                 }
-                daysfree.push(posibletobook.arrayofstrings())
+                //new Day(new Date(2019, 3, 27),posibletobook.arrayofstrings())
+                daysfree.push(new Day(tmpday.Date,posibletobook.arrayofopjects()))
             }while(counter<appontments_number_to_return);
             console.log("answer sent");
+
             return(daysfree);
         }
 
