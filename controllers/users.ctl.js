@@ -46,7 +46,7 @@ module.exports = {
 	signIn: async (req, res, next) => {
 		console.log('signIn Called!!');
 		const token = signInToken(req.user);
-		res.status(200).json({ token: token, user: req.user });
+		res.status(200).json({ token });
 	},
 
 	googleOAuth: (req, res, next) => {
@@ -55,16 +55,15 @@ module.exports = {
 	},
 
 	secret: async (req, res, next) => {
-		res.json({ message: 'allowed to get secret' });
-
 		console.log('secret Called!!');
+		// console.log(req.user);
+		// console.log(req.user.user);
 	},
 
 	test: async (req, res, next) => {
 		console.log('Test Here');
-		const test1 =  freeTimeAlg(11);
-		res.status(200).json({test1});
-
+		const test1 = freeTimeAlg(11);
+		res.status(200).json({ test1 });
 	}
 };
 
