@@ -1,0 +1,22 @@
+{
+  "addons": [
+    "storj"
+  ],
+  "buildpacks": [
+
+  ],
+  "env": {
+    "STORJ_EMAIL": {
+      "required": true
+    },
+    "STORJ_PASSWORD": {
+      "required": true
+    }
+  },
+  "formation": {
+  },
+  "name": "countMeIn_service",
+  "scripts": {
+  },
+  "stack": "heroku-18"
+}
