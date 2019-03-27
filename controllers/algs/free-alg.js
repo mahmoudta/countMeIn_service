@@ -276,7 +276,10 @@ time.prototype.minute = function () {
     return this._minute;
 };
 time.prototype.string = function () {
-    return this._hour+":"+this._minute
+    if(this._minute>9)
+    return this._hour+":"+this._minute;
+    else
+    return this._hour+":"+"0"+this._minute;
 };
 time.prototype.add_and_return = function (minutes) {
     //this._hour+=( ((minutes+this._minute)/60) | 0 );
@@ -340,18 +343,18 @@ exports.time_range;
             day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
             day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
             day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-            console.log("day1 : "+day1.arrayofstrings());
+            console.log("27/03/2019 : "+day1.arrayofstrings());
             days.push(new Day(new Date(2019, 2, 28),day1.arrayofopjects()));
             /////////////////////////////////////////////////
             var day2 = new BinarySearchTree();
             day2.insert( new time_range(new time(8,45) , new time(14,0) ) );
             day2.insert( new time_range(new time(14,30) , new time(18,0) ) );
-            console.log("day2 : "+day2.arrayofstrings());
+            console.log("28/03/2019 : "+day2.arrayofstrings());
             days.push(new Day(new Date(2019, 2, 29),day2.arrayofopjects()));
             /////////////////////////////////////////////////
             var day3 = new BinarySearchTree();
             day3.insert( new time_range(new time(8,0) , new time(18,0) ) );
-            console.log("day3 : "+day3.arrayofstrings());
+            console.log("29/03/2019 : "+day3.arrayofstrings());
             days.push(new Day(new Date(2019, 2, 30),day3.arrayofopjects()));
            /////////////////////////////////////////////////
             //i need busnees id and the porpose id
