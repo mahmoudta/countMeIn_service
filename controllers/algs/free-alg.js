@@ -258,9 +258,6 @@ class BinarySearchTree
 
         return can_book;
     }
-    slice_and_return_array(length,minutes_between_appointment){
-    
-    }
     book(timerange_to_book,length,minutes_between_appointment){
 
         //if(){}
@@ -281,6 +278,11 @@ time.prototype.minute = function () {
 time.prototype.string = function () {
     return this._hour+":"+this._minute
 };
+time.prototype.add_and_return = function (minutes) {
+    //this._hour+=( ((minutes+this._minute)/60) | 0 );
+    //this._minute+=((minutes+this._minute)%60);
+    return new time( this._hour+ ((minutes+this._minute)/60 | 0 ) ,(minutes+this._minute)%60);
+};
 
 var time_range = function (start,end) {
     this._start = start;
@@ -300,9 +302,26 @@ time_range.prototype.tominutes = function () {
     temp=((this._end.hour()-this._start.hour())*60)+(this._end.minute()-this._start.minute());
     return temp;
 };
+time_range.prototype.slice = function (length,minutes_between_appointment) {
+    var tmp=[];
+    var sum=length+minutes_between_appointment;
+    var i=0;
+    var minutes=this.tominutes();
+    for(i=0; sum*(i+1)<=minutes;i++){
+        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)) )  );
+    }
+    return tmp;
+};
 function Day(date, free) {
 	this.Date = date,
 	this.Free = free
+};
+Day.prototype.slice = function (length,minutes_between_appointment) {
+    var tmp=[];
+    this.Free.forEach(timerange => {
+        tmp=tmp.concat(timerange.slice(length,minutes_between_appointment));
+    });
+    this.Free=tmp;
 };
 exports.time_range;
 /***********************************************************************************/
@@ -363,12 +382,14 @@ exports.time_range;
                     for (; 0 < correcter; correcter--) { 
                         tmpcorrector.pop();
                     }
-
-                    daysfree.push(new Day(tmpday.Date,tmpcorrector))
+                    tmpday.Free=tmpcorrector;
+                    tmpday.slice(porpose_length,minutes_between_appointment);
+                    daysfree.push(tmpday);
                     break;
                 }
-                //new Day(new Date(2019, 3, 27),posibletobook.arrayofstrings())
-                daysfree.push(new Day(tmpday.Date,posibletobook.arrayofopjects()))
+                tmpday.Free=posibletobook.arrayofopjects();
+                tmpday.slice(porpose_length,minutes_between_appointment);
+                daysfree.push(tmpday)
             }while(counter<appontments_number_to_return);
             console.log("answer sent");
 
