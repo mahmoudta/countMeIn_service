@@ -258,7 +258,6 @@ class BinarySearchTree
 
         return can_book;
     }
-
     book(timerange_to_book,length,minutes_between_appointment){
 
         //if(){}
@@ -277,7 +276,15 @@ time.prototype.minute = function () {
     return this._minute;
 };
 time.prototype.string = function () {
-    return this._hour+":"+this._minute
+    if(this._minute>9)
+    return this._hour+":"+this._minute;
+    else
+    return this._hour+":"+"0"+this._minute;
+};
+time.prototype.add_and_return = function (minutes) {
+    //this._hour+=( ((minutes+this._minute)/60) | 0 );
+    //this._minute+=((minutes+this._minute)%60);
+    return new time( this._hour+ ((minutes+this._minute)/60 | 0 ) ,(minutes+this._minute)%60);
 };
 
 var time_range = function (start,end) {
@@ -298,7 +305,27 @@ time_range.prototype.tominutes = function () {
     temp=((this._end.hour()-this._start.hour())*60)+(this._end.minute()-this._start.minute());
     return temp;
 };
-
+time_range.prototype.slice = function (length,minutes_between_appointment) {
+    var tmp=[];
+    var sum=length+minutes_between_appointment;
+    var i=0;
+    var minutes=this.tominutes();
+    for(i=0; sum*(i+1)<=minutes;i++){
+        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)) )  );
+    }
+    return tmp;
+};
+function Day(date, free) {
+	this.Date = date,
+	this.Free = free
+};
+Day.prototype.slice = function (length,minutes_between_appointment) {
+    var tmp=[];
+    this.Free.forEach(timerange => {
+        tmp=tmp.concat(timerange.slice(length,minutes_between_appointment));
+    });
+    this.Free=tmp;
+};
 exports.time_range;
 /***********************************************************************************/
 
@@ -316,19 +343,19 @@ exports.time_range;
             day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
             day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
             day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-            console.log("day1 : "+day1.arrayofstrings());
-            days.push(day1.arrayofopjects());
+            console.log("27/03/2019 : "+day1.arrayofstrings());
+            days.push(new Day(new Date(2019, 2, 28),day1.arrayofopjects()));
             /////////////////////////////////////////////////
             var day2 = new BinarySearchTree();
             day2.insert( new time_range(new time(8,45) , new time(14,0) ) );
             day2.insert( new time_range(new time(14,30) , new time(18,0) ) );
-            console.log("day2 : "+day2.arrayofstrings());
-            days.push(day2.arrayofopjects());
+            console.log("28/03/2019 : "+day2.arrayofstrings());
+            days.push(new Day(new Date(2019, 2, 29),day2.arrayofopjects()));
             /////////////////////////////////////////////////
             var day3 = new BinarySearchTree();
             day3.insert( new time_range(new time(8,0) , new time(18,0) ) );
-            console.log("day3 : "+day3.arrayofstrings());
-            days.push(day3.arrayofopjects());
+            console.log("29/03/2019 : "+day3.arrayofstrings());
+            days.push(new Day(new Date(2019, 2, 30),day3.arrayofopjects()));
            /////////////////////////////////////////////////
             //i need busnees id and the porpose id
             //var days=[];      //from freetime database of the busnese (should be sorted if posible)
@@ -347,21 +374,28 @@ exports.time_range;
             do{
                 if (days === undefined || days.length == 0) {break;}
                 tmpday=days.shift();
-                day.totree(tmpday);
+                day.totree(tmpday.Free);
                 posibletobook.totree(day.timerangesthatfit(porpose_length,minutes_between_appointment));
+                ///call slicer at posibletobook
                 counter+=posibletobook.getlength();
                 if (counter>=appontments_number_to_return) {
                     correcter=counter-appontments_number_to_return
-                    tmpcorrector=posibletobook.arrayofstrings();
+                    //tmpcorrector=posibletobook.arrayofstrings();
+                    tmpcorrector=posibletobook.arrayofopjects();
                     for (; 0 < correcter; correcter--) { 
                         tmpcorrector.pop();
                     }
-                    daysfree.push(tmpcorrector)
+                    tmpday.Free=tmpcorrector;
+                    tmpday.slice(porpose_length,minutes_between_appointment);
+                    daysfree.push(tmpday);
                     break;
                 }
-                daysfree.push(posibletobook.arrayofstrings())
+                tmpday.Free=posibletobook.arrayofopjects();
+                tmpday.slice(porpose_length,minutes_between_appointment);
+                daysfree.push(tmpday)
             }while(counter<appontments_number_to_return);
             console.log("answer sent");
+
             return(daysfree);
         }
 
