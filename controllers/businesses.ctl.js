@@ -28,5 +28,14 @@ module.exports = {
 		});
 		await newBusiness.save();
 		res.status(200).json({ success: 'bussiness successfully created' });
+	},
+
+	editBusiness: async (req, res, next) => {
+		console.log('edit Business Called!');
+		//get id
+
+		// get all request params
+
+		//
 	}
 };
