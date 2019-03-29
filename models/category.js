@@ -29,6 +29,16 @@ const mongoose = require('mongoose'),
 		]
 	});
 
+// export default (isValidCategory = async function(category_id) {
+// 	try {
+// 		const category = await category.findById(category_id);
+// 		if (category) return true;
+// 		return false;
+// 	} catch (error) {
+// 		throw new Error(error);
+// 	}
+// });
+
 var Category = mongoose.model('Category', category);
 
 module.exports = Category;

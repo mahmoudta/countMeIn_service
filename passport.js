@@ -15,13 +15,13 @@ passport.use(
 		},
 		async (payload, done) => {
 			try {
-				const user = User.findById(payload.sub);
+				const user = await User.findOne({ _id: payload.sub });
 
 				if (!user) {
 					return done(null, false);
 				}
 
-				done(null, user);
+				return done(null, user);
 			} catch (error) {
 				done(error, false);
 			}
@@ -61,7 +61,6 @@ passport.use(
 				if (!user) {
 					return done(null, false);
 				}
-				console.log('user', user);
 				const isMatch = await user.isValidPassword(password);
 
 				if (!isMatch) {

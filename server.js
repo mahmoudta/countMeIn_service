@@ -24,6 +24,7 @@ app.use((req, res, next) => {
 app.use('/users', require('./routes/users'));
 app.use('/category', require('./routes/categories'));
 app.use('/appointments', require('./routes/appointments'));
+app.use('/business', require('./routes/businesses'));
 
 /* start the server */
 const port = process.env.PORT || 8080;
