@@ -6,7 +6,8 @@ var mongoose = require('mongoose'),
 		time: {
 			day: String,
 			date: Date,
-			start: Date /* Date Type Contains date and time */
+			hours: Number /* Date Type Contains date and time */,
+			minutes: Number
 		},
 		porpouses: [ String ]
 	});

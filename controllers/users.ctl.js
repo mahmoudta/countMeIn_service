@@ -1,5 +1,6 @@
 const JWT = require('jsonwebtoken');
 const Users = require('../models/user');
+const Businesses = require('../models/business');
 const { JWT_SECRET } = require('../consts');
 
 const { freeTimeAlg } = require('./algs/free-alg');
@@ -64,6 +65,11 @@ module.exports = {
 		console.log('Test Here');
 		const test1 = freeTimeAlg(11);
 		res.json({ test1 });
+	},
+
+	getAllBusinesses: async (req, res, next) => {
+		const businesses = await Businesses.find({}, 'profile');
+		res.json({ businesses });
 	}
 };
 

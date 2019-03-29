@@ -14,35 +14,38 @@ module.exports = {
 	// 	// console.log(business);
 	// 	res.json('success');
 	// },
+	// b3d lazm bdekot
 
 	setAppointment: async (req, res, next) => {
 		//req businessId costumerId Time Date  porpuse day
 		const businessId = req.params.businessId;
-		console.log(businessId);
+		console.log(req.params.businessId);
 		const newAppointment = new Appointments({
 			business_id: req.params.businessId,
 			client_id: req.params.costumerId,
 			time: {
 				day: req.params.day,
-				date: null, //req.date,
-				start: null //req.time /* Date Type Contains date and time */
+				date: req.params.date,
+				hours: req.params.hours, //UseLess /* Date Type Contains date and time */
+				minutes: req.params.minutes
 			},
-			porpouses: [ req.params.purpose ] //[ req.purpose ]
+			porpouses: [ req.params.purpose ]
 		});
 		await newAppointment.save();
-		//res.json({ QueryRes });
-		// const doc = await appointments.findOne();
-
 		res.json('success');
 	},
 	deleteAppointment: async (req, res, next) => {
-		const QueryRes = await Appointments.deleteOne({ ID: req.appointmentId });
+		const QueryRes = await Appointments.deleteOne({ _id: req.params.appointmentId });
 		res.json({ QueryRes });
 	},
 
 	getClientsAppointments: async (req, res, next) => {
 		//getmyappointment for clients
-		const QueryRes = await Appointments.find({ client_id: req.clientId });
+		const QueryRes = await Appointments.find({ client_id: req.params.clientId });
+		res.json({ QueryRes });
+	},
+	getBusinessAppointments: async (req, res, next) => {
+		const QueryRes = await Appointments.find({ business_id: req.params.businessId });
 		res.json({ QueryRes });
 	}
 };
