@@ -235,7 +235,8 @@ class BinarySearchTree
             return this.search(node.right, data); 
         }
             
-    }  
+    }
+    //check if the time range can be booked  
     ifcanbook(timerange,length,minutes_between_appointment){
        var timetobook;
        timetobook=length+minutes_between_appointment;
@@ -244,7 +245,11 @@ class BinarySearchTree
        else
        return false;
     }
-
+    //check if this timerange is within another timerange and book it
+    ifinthetimerange(timerange,timerange_to_book){
+        //if()
+     }
+     //return the time ranges the can bee booked
     timerangesthatfit(length,minutes_between_appointment){
         var can_book=[];
         var free=[];
@@ -258,9 +263,12 @@ class BinarySearchTree
 
         return can_book;
     }
-    book(timerange_to_book,length,minutes_between_appointment){
-
-        //if(){}
+    //book
+    book(timerange_to_book){
+        var free=[];
+        free=this.arrayofopjects();
+        free.forEach(timerange => {this.ifinthetimerange(timerange,timerange_to_book)});
+        
     }
 }
 /***********************************************************************************/
@@ -331,7 +339,7 @@ exports.time_range;
 
 
 
-        exports.freeTimeAlg = (business_id)=>{
+        exports.freeTimeAlg = (business_id,purpose_id)=>{
 
             console.log("free Time");
             var days=[];
