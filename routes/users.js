@@ -14,6 +14,6 @@ router.route('oauth/google').post(passportGoogle, userCtl.googleOAuth);
 
 router.route('/secret').get(passportJWT, userCtl.secret);
 router.route('/test').get(userCtl.test);
-
+router.route('/booktest').get(userCtl.booktest);
 router.route('/getbusinesses').get(userCtl.getAllBusinesses);
 module.exports = router;

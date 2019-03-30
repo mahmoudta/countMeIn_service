@@ -247,8 +247,13 @@ class BinarySearchTree
     }
     //check if this timerange is within another timerange and book it
     ifinthetimerange(timerange,timerange_to_book){
-        //if()
-     }
+        if( (timerange.start().hour()<timerange_to_book.start().hour()) || ( (timerange.start().hour()==timerange_to_book.start().hour()) && (timerange.start().minute()<=timerange_to_book.start().minute()) ) ){
+            if( (timerange.end().hour()>timerange_to_book.end().hour()) || ( (timerange.end().hour()==timerange_to_book.end().hour()) && (timerange.end().minute()>=timerange_to_book.end().minute()) ) ){
+            return true;
+            }
+        }
+        return false;
+    }
      //return the time ranges the can bee booked
     timerangesthatfit(length,minutes_between_appointment){
         var can_book=[];
@@ -266,8 +271,39 @@ class BinarySearchTree
     //book
     book(timerange_to_book){
         var free=[];
+        var lefttimerange;
+        var righttimerange;
         free=this.arrayofopjects();
-        free.forEach(timerange => {this.ifinthetimerange(timerange,timerange_to_book)});
+        free.forEach(timerange => {
+
+            if(this.ifinthetimerange(timerange,timerange_to_book)){
+                this.remove(timerange);
+                lefttimerange=new time_range(timerange.start(),timerange_to_book.start());
+                righttimerange=new time_range(timerange_to_book.end(),timerange.end());
+
+                if(righttimerange.tominutes()>0){
+                    if(lefttimerange.tominutes()>0){
+                        //a
+                        this.insert(lefttimerange);
+                        this.insert(righttimerange);
+                    }else{
+                        //b
+                        this.insert(righttimerange);
+                    }
+
+                }else{
+                    if(lefttimerange.tominutes()>0){
+                        //c
+                        this.insert(lefttimerange);
+                    }else{
+                        //d
+                    }
+
+                }
+
+            }
+        
+        });
         
     }
 }
@@ -408,18 +444,29 @@ exports.time_range;
         }
 
         exports.booked = (business_id,timerange)=>{
-            /*
+
+            console.log("free Time");
+            /////////////////////////////////////////////////
+            var days=[];
+            var tmpfree=[];
+            var day1 = new BinarySearchTree();
             day1.insert( new time_range(new time(8,0) , new time(9,45) ) );
             day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
             day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
             day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
             day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-
+            console.log("27/03/2019 : "+day1.arrayofstrings());
+            days.push(new Day(new Date(2019, 2, 28),day1.arrayofopjects()));
+            /////////////////////////////////////////////////
+            //take from database days in spicific date
             //want to book between 9:00 to 9:20
-            day2.remove( new time_range(new time(8,0) , new time(9,45) ) );
-            day2.insert( new time_range(new time(8,0) , new time(9,0) ) );
-            day2.insert( new time_range(new time(9,20) , new time(9,45) ) );
-            */
+            var tobook= new time_range(new time(9,0) , new time(9,20) );
+            var day= new BinarySearchTree();
+            tmpfree=days.shift();
+            day.totree(tmpfree.Free);
+            day.book(tobook);
+            console.log(day.arrayofstrings());
+            return("done");
         }
 
 
