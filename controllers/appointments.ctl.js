@@ -1,6 +1,8 @@
 const JWT = require('jsonwebtoken');
 const Appointments = require('../models/appointment');
 const Businesses = require('../models/business');
+const Categories = require('../models/category');
+
 const { JWT_SECRET } = require('../consts');
 const { freeTimeAlg } = require('./algs/free-alg');
 
@@ -47,5 +49,13 @@ module.exports = {
 	getBusinessAppointments: async (req, res, next) => {
 		const QueryRes = await Appointments.find({ business_id: req.params.businessId });
 		res.json({ QueryRes });
+	},
+	getSubCategories: async (req, res, next) => {
+		const category = await Businesses.findById(req.params.businessId, 'purposes');
+		console.log(req.params.businessId);
+
+		//const subCategories = await Categories.findOne(category._id);
+
+		res.status(200).json({ category });
 	}
 };
