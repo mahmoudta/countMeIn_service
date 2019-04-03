@@ -14,20 +14,30 @@ var mongoose = require('mongoose'),
 				type: String,
 				required: true
 			},
+			img: String,
+			purposes: [
+				{
+					purpose_id: String,
+					time: {
+						type: Number,
+						max: 120
+					}
+				}
+			],
 			rating: Number,
 			working_hours: [
 				{
 					/* array which length = 7 (week)*/
 					day: {
-						enum: [ 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ]
+						type: String
+						// enum: [ 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ]
 					},
+					opened: Boolean,
 					from: {
-						type: Date,
-						timezone: 'Asia/Israel'
+						type: Date
 					},
 					until: {
-						type: Date,
-						timezone: 'Asia/Israel'
+						type: Date
 					}
 				}
 			],
@@ -36,7 +46,8 @@ var mongoose = require('mongoose'),
 				city: String,
 				building: Number,
 				postal_code: Number
-			}
+			},
+			break_time: Number
 		} /*end of profile*/,
 		style_id: String /* id for style document*/,
 		followers: [
@@ -52,7 +63,7 @@ business.methods.createTime = async function(time) {
 		let splitter = time.split(':');
 		let date = new Date();
 		date.setHours(Number(splitter[0]), Number(splitter[1]));
-		console.log(date);
+		console.log(`date: ${date}`);
 		return await date;
 	} catch (error) {
 		throw new Error(error);

@@ -8,4 +8,6 @@ const passportJWT = passport.authenticate('jwt', { session: false });
 
 router.route('/').post(passportJWT, businessCtl.createBusiness);
 router.route('/:id').put(passportJWT, businessCtl.editBusiness);
+router.route('/:id').get(passportJWT, businessCtl.getBusinessForView);
+router.route('/owner/:owner_id').get(passportJWT, businessCtl.getBusinessByOwner);
 module.exports = router;
