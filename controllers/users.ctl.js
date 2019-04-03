@@ -4,6 +4,7 @@ const Businesses = require('../models/business');
 const { JWT_SECRET } = require('../consts');
 
 const { freeTimeAlg } = require('./algs/free-alg');
+const { booked } = require('./algs/free-alg');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 
@@ -63,7 +64,12 @@ module.exports = {
 
 	test: async (req, res, next) => {
 		console.log('Test Here');
-		const test1 = freeTimeAlg(11);
+		const test1 = freeTimeAlg(11,1);
+		res.status(200).json({ test1 });
+	},
+	booktest: async (req, res, next) => {
+		console.log('book Test Here');
+		const test1 = booked(11,1);
 		res.status(200).json({ test1 });
 	},
 
