@@ -1,5 +1,6 @@
 const express = require("express");
 let app = new express();
+var freeTime = require('../models/freeTime');
 var inherits = require('util').inherits; 
 /***********************************************************************************/
 // Node class 
@@ -443,7 +444,17 @@ exports.time_range;
             return(daysfree);
         }
 
-        exports.booked = (business_id,timerange)=>{
+        exports.booked = (businessid,timerange)=>{
+            
+            freeTime.find({
+                business_id: businessid
+            }).sort('-created')
+            .limit(5)
+            .exec(function(err, freeTime) {
+                if (err) throw err;
+                 
+                console.log(freeTime);
+            });
 
             console.log("booked");
             /////////////////////////////////////////////////
@@ -468,7 +479,7 @@ exports.time_range;
             console.log(day.arrayofstrings());
             return("done");
         }
-        var book = function (business_id,timerange) {
+        var book = function (business_id,timerange,Date) {
             console.log("function booked");
             /////////////////////////////////////////////////
             var days=[];
