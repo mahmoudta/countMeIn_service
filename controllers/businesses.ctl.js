@@ -3,7 +3,7 @@ const Businesses = require('../models/business');
 const Categories = require('../models/category');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
-createTime = async function(time) {
+createTime = async (time) => {
 	try {
 		let splitter = time.split(':');
 		let date = new Date();
@@ -14,11 +14,12 @@ createTime = async function(time) {
 		throw new Error(error);
 	}
 };
+
 module.exports = {
 	createBusiness: async (req, res, next) => {
 		console.log('create Business called!!');
 		// get all params
-		const { name, category, img, working, break_time, purposes } = req.body;
+		const { name, category, img, working, break_time, services } = req.body;
 		// checking if user already have a business
 		const business = await Businesses.findOne({ owner_id: req.user._id });
 		if (business) {
@@ -27,13 +28,15 @@ module.exports = {
 
 		// if  category is not a real category
 		const isCat = await Categories.findById(category, 'name');
+		// if not => return error
 		if (!isCat) return res.status(404).json({ error: 'inValid Category' });
+
+		/* convert request working hours to real date object  */
 		var items = [];
 		const fillTime = async () => {
 			for (const element of working) {
 				const from = await createTime(element.from);
 				const until = await createTime(element.until);
-				console.log(from.getHours(), until.getHours());
 				await items.push({
 					day: element.day,
 					opened: element.opened,
@@ -44,19 +47,26 @@ module.exports = {
 			return await items;
 		};
 
-		console.log(await fillTime());
+		/* splitting the */
+
 		const newBusiness = new Businesses({
 			owner_id: req.user._id,
 			profile: {
 				name: name,
 				category_id: category,
-				purposes: purposes,
+				purposes: services,
 				working_hours: await fillTime(),
 				break_time: break_time
 			}
 		});
 		await newBusiness.save();
 		res.status(200).json({ success: 'bussiness successfully created' });
+	},
+
+	getAllBusinesses: async (req, res, next) => {
+		const businesses = await Businesses.find({});
+		if (!businesses) return res.status(404).json({ error: 'not found' });
+		res.status(200).json({ businesses });
 	},
 
 	getBusinessForView: async (req, res, next) => {
@@ -67,7 +77,7 @@ module.exports = {
 	},
 
 	getBusinessByOwner: async (req, res, next) => {
-		const owner_id = req.params.client_id;
+		const owner_id = req.params.owner_id;
 		const business = await Businesses.findOne({ owner_id: owner_id });
 		if (!business) return res.status(404).json({ error: 'Business invalid' });
 

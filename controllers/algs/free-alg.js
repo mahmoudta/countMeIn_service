@@ -1,5 +1,6 @@
 const express = require("express");
 let app = new express();
+var freeTime = require('../models/freeTime');
 var inherits = require('util').inherits; 
 /***********************************************************************************/
 // Node class 
@@ -387,19 +388,19 @@ exports.time_range;
             day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
             day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
             day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-            console.log("27/03/2019 : "+day1.arrayofstrings());
-            days.push(new Day(new Date(2019, 2, 28),day1.arrayofopjects()));
+            console.log("3/4/2019 : "+day1.arrayofstrings());
+            days.push(new Day(new Date(2019, 3, 4),day1.arrayofopjects()));
             /////////////////////////////////////////////////
             var day2 = new BinarySearchTree();
             day2.insert( new time_range(new time(8,45) , new time(14,0) ) );
             day2.insert( new time_range(new time(14,30) , new time(18,0) ) );
-            console.log("28/03/2019 : "+day2.arrayofstrings());
-            days.push(new Day(new Date(2019, 2, 29),day2.arrayofopjects()));
+            console.log("4/4/2019 : "+day2.arrayofstrings());
+            days.push(new Day(new Date(2019, 3, 5),day2.arrayofopjects()));
             /////////////////////////////////////////////////
             var day3 = new BinarySearchTree();
             day3.insert( new time_range(new time(8,0) , new time(18,0) ) );
-            console.log("29/03/2019 : "+day3.arrayofstrings());
-            days.push(new Day(new Date(2019, 2, 30),day3.arrayofopjects()));
+            console.log("5/4/2019 : "+day3.arrayofstrings());
+            days.push(new Day(new Date(2019, 3, 6),day3.arrayofopjects()));
            /////////////////////////////////////////////////
             //i need busnees id and the porpose id
             //var days=[];      //from freetime database of the busnese (should be sorted if posible)
@@ -443,9 +444,19 @@ exports.time_range;
             return(daysfree);
         }
 
-        exports.booked = (business_id,timerange)=>{
+        exports.booked = (businessid,timerange)=>{
+            
+            freeTime.find({
+                business_id: businessid
+            }).sort('-created')
+            .limit(5)
+            .exec(function(err, freeTime) {
+                if (err) throw err;
+                 
+                console.log(freeTime);
+            });
 
-            console.log("free Time");
+            console.log("booked");
             /////////////////////////////////////////////////
             var days=[];
             var tmpfree=[];
@@ -455,8 +466,8 @@ exports.time_range;
             day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
             day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
             day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-            console.log("27/03/2019 : "+day1.arrayofstrings());
-            days.push(new Day(new Date(2019, 2, 28),day1.arrayofopjects()));
+            console.log("3/4/2019 : "+day1.arrayofstrings());
+            days.push(new Day(new Date(2019, 3, 4),day1.arrayofopjects()));
             /////////////////////////////////////////////////
             //take from database days in spicific date
             //want to book between 9:00 to 9:20
@@ -468,6 +479,30 @@ exports.time_range;
             console.log(day.arrayofstrings());
             return("done");
         }
+        var book = function (business_id,timerange,Date) {
+            console.log("function booked");
+            /////////////////////////////////////////////////
+            var days=[];
+            var tmpfree=[];
+            var day1 = new BinarySearchTree();
+            day1.insert( new time_range(new time(8,0) , new time(9,45) ) );
+            day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
+            day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
+            day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
+            day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
+            console.log("3/4/2019 : "+day1.arrayofstrings());
+            days.push(new Day(new Date(2019, 3, 4),day1.arrayofopjects()));
+            /////////////////////////////////////////////////
+            //take from database days in spicific date
+            //want to book between 9:00 to 9:20
+            var tobook= new time_range(new time(9,0) , new time(9,20) );
+            var day= new BinarySearchTree();
+            tmpfree=days.shift();
+            day.totree(tmpfree.Free);
+            day.book(tobook);
+            console.log(day.arrayofstrings());
+            return("done");
+        };
 
 
     

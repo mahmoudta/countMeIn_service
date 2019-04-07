@@ -15,3 +15,14 @@ const mongoose = require('mongoose'),
 			}
 		]
 	});
+	freeTime.methods.createDate = async function(business_id,date) {
+		try {
+			console.log(date);
+			return await date;
+		} catch (error) {
+			throw new Error(error);
+		}
+	};
+
+var freeTime = mongoose.model('freeTime', freeTime);
+module.exports = freeTime;
