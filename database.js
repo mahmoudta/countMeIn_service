@@ -4,6 +4,7 @@ var consts = require('./consts'),
 //define the MODEL
 var Businesses = require('./models/business'),
 	Users = require('./models/user'),
+	FreeTime = require('./models/freeTime');
 	Appointments = require('./models/appointment');
 options = {
 	autoReconnect: true,

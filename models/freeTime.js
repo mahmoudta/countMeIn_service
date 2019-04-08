@@ -1,5 +1,5 @@
-const { time_range } = require('../controllers/algs/free-alg');
-const mongoose = require('mongoose'),
+const moment = require('moment')
+var mongoose = require('mongoose'),
 	freeTime = new mongoose.Schema({
 		business_id: {
 			type: String,
@@ -11,18 +11,11 @@ const mongoose = require('mongoose'),
 				day: {
 					type: Date
 				},
-				freeTime: [ time_range ]
+				freeTime: Array
 			}
 		]
 	});
-	freeTime.methods.createDate = async function(business_id,date) {
-		try {
-			console.log(date);
-			return await date;
-		} catch (error) {
-			throw new Error(error);
-		}
-	};
 
-var freeTime = mongoose.model('freeTime', freeTime);
-module.exports = freeTime;
+
+var FreeTime = mongoose.model('FreeTime',freeTime, 'freetime');
+module.exports = FreeTime;
