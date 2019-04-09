@@ -278,6 +278,7 @@ class BinarySearchTree
     }
     //book
     book(timerange_to_book){
+        var checker=0;
         var free=[];
         var lefttimerange;
         var righttimerange;
@@ -294,17 +295,21 @@ class BinarySearchTree
                         //a
                         this.insert(lefttimerange);
                         this.insert(righttimerange);
+                        checker=1;
                     }else{
                         //b
                         this.insert(righttimerange);
+                        checker=1;
                     }
 
                 }else{
                     if(lefttimerange.tominutes()>0){
                         //c
                         this.insert(lefttimerange);
+                        checker=1;
                     }else{
                         //d
+                        checker=1;
                     }
 
                 }
@@ -312,8 +317,13 @@ class BinarySearchTree
             }
         
         });
-        
+
+        if(checker == 1)
+        return true
+        else
+        return false
     }
+
 }
 /***********************************************************************************/
 //time_range opject
@@ -411,7 +421,7 @@ async function creatbusinessifempty(businessid){
     const free=await FreeTime.findOne({business_id: businessid})
     //console.log(free);
                 if(isEmpty(free)){
-                    console.log("business empty");
+                    //console.log("business empty");
                     FreeTime.create({ business_id: businessid }, function (err, free) {
                         if (err) return handleError(err);
                         // saved!
@@ -586,32 +596,7 @@ return(daysfree);
         //     console.log(date);
         //     return("done");
         // };
-        const book =  (business_id,timerange,Date)=> {
-            console.log("function booked");
-            /////////////////////////////////////////////////
-            var days=[];
-            var tmpfree=[];
-            var day1 = new BinarySearchTree();
-            day1.insert( new time_range(new time(8,0) , new time(9,45) ) );
-            day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
-            day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
-            day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
-            day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-            console.log("3/4/2019 : "+day1.arrayofstrings());
-            days.push(new Day(new Date(2019, 3, 4),day1.arrayofopjects()));
-            /////////////////////////////////////////////////
-            //take from database days in spicific date
-            //want to book between 9:00 to 9:20
-            var tobook= new time_range(new time(9,0) , new time(9,20) );
-            var day= new BinarySearchTree();
-            tmpfree=days.shift();
-            day.totree(tmpfree.Free);
-            day.book(tobook);
-            console.log(day.arrayofstrings());
-            return("done");
-        };
 
-       
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
@@ -619,8 +604,8 @@ return(daysfree);
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
-                    console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
-                    return({answer : "fuck you"})
+                    // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
+                    return({error :'invalid business'});
                 }else{
                     var porpose_length = business.profile.purposes.find(o => o.purpose_id === purposeid).time;
                     var minutes_between_appointment = business.profile.break_time;
@@ -635,7 +620,7 @@ return(daysfree);
                       toreturn =await returnfreetime(await creatifempty(businessid,workinghours,days),days,porpose_length,minutes_between_appointment,appontments_number_to_return)
                       break;
                     case 1:
-                      console.log("my bad...choice 1 is not finished try choice 0, works fine");
+                      console.log("my bad...choice 1 is not finished yet try choice 0, works fine");
                       break;
                     default:
                       console.log("wrong choice...read the instructions");
@@ -649,7 +634,8 @@ return(daysfree);
             },
             //to use after you book
             booked: async (businessid,chosendate,chosentimerange)=>{ 
-            console.log("booked");
+            //console.log("booked");
+            var resulte;
             var days=[];
             var tmpfree=[];
             var timeranges=[];
@@ -662,7 +648,7 @@ return(daysfree);
                     return({answer : "fuck you"})
             }
             else{
-                console.log(daysinmongo);
+                //console.log(daysinmongo);
                 freetobook=daysinmongo.freeTime
                  timeranges=[];
                 freetobook.forEach(function(onetimerange) {
@@ -674,23 +660,27 @@ return(daysfree);
             var day= new BinarySearchTree();
             tmpfree=days.shift();
             day.totree(tmpfree.Free);
-            day.book(tobook);
-            var newfreetime=day.arrayofstrings();
-            
-            await FreeTime.findById(id, function(err, freeTime) {
-                if (err) throw err;
-                foundIndex = freeTime.dates.findIndex(o => o._id == dateid);
-                freeTime.dates[foundIndex].freeTime = newfreetime;
-                freeTime.save(function(err) {
-                    if (err) throw err;     
-                    //FreeTime updated successfully
+            resulte=day.book(tobook);
+            if(resulte){
+                var newfreetime=day.arrayofopjects();
+                
+                await FreeTime.findById(id, function(err, freeTime) {
+                    if (err) throw err;
+                    var foundIndex = freeTime.dates.findIndex(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
+                    freeTime.dates[foundIndex].freeTime = newfreetime;
+                    freeTime.save(function(err) {
+                        if (err) throw err;     
+                        //FreeTime updated successfully
+                    });
                 });
-            });
 
-            ///////////////////////////////////////////////
+                ///////////////////////////////////////////////
 
-            //console.log(newfreetime);
-            return({answer : "done"});
+                //console.log(newfreetime);
+                return({answer : "done"});
+            }else{
+                return({answer : "failed"});
+            }
                 
 
             }
