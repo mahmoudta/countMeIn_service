@@ -76,7 +76,7 @@ module.exports = {
 					  }
 		var date=await new Date(2019, 3, 14);// 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
 		//console.log(date);
-		const test1 = booked('5ca5210fa3e1e23000ac29dd',date,timerange);
+		const test1 = await booked('5ca5210fa3e1e23000ac29dd',date,timerange);
 		res.status(200).json({ test1 });
 	},
 	databasetest: async (req, res, next) => {
