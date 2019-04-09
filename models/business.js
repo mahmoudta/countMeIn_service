@@ -47,7 +47,10 @@ var mongoose = require('mongoose'),
 				building: Number,
 				postal_code: Number
 			},
-			break_time: Number
+			break_time:{
+				type: Number,
+				default:10
+			}
 		} /*end of profile*/,
 		style_id: String /* id for style document*/,
 		followers: [

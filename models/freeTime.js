@@ -1,5 +1,5 @@
-const { time_range } = require('../controllers/algs/free-alg');
-const mongoose = require('mongoose'),
+const moment = require('moment')
+var mongoose = require('mongoose'),
 	freeTime = new mongoose.Schema({
 		business_id: {
 			type: String,
@@ -11,7 +11,11 @@ const mongoose = require('mongoose'),
 				day: {
 					type: Date
 				},
-				freeTime: [ time_range ]
+				freeTime: Array
 			}
 		]
 	});
+
+
+var FreeTime = mongoose.model('FreeTime',freeTime, 'freetime');
+module.exports = FreeTime;

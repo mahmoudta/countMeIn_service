@@ -1,10 +1,11 @@
 const JWT = require('jsonwebtoken');
 const Users = require('../models/user');
 const Businesses = require('../models/business');
+const moment = require('moment');
 const { JWT_SECRET } = require('../consts');
-
-const { freeTimeAlg } = require('./algs/free-alg');
 const { booked } = require('./algs/free-alg');
+const { freeTimeAlg } = require('./algs/free-alg');
+const { freeAlg} = require('./algs/free-alg');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 
@@ -69,7 +70,18 @@ module.exports = {
 	},
 	booktest: async (req, res, next) => {
 		console.log('book Test Here');
-		const test1 = booked(11,1);
+		var timerange={
+						"_start":{"_hour":11, "_minute":40},
+						"_end":{"_hour":12,"_minute":20}
+					  }
+		var date=await new Date(2019, 3, 14);// 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
+		//console.log(date);
+		const test1 = booked('5ca5210fa3e1e23000ac29dd',date,timerange);
+		res.status(200).json({ test1 });
+	},
+	databasetest: async (req, res, next) => {
+		console.log('database Test Here');
+		const test1 = await freeAlg('5ca5210fa3e1e23000ac29dd','5c96b1bb6513d53e9e88df11',7,0);
 		res.status(200).json({ test1 });
 	},
 
