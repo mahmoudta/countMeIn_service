@@ -47,16 +47,19 @@ var mongoose = require('mongoose'),
 				building: Number,
 				postal_code: Number
 			},
-			break_time:{
+			break_time: {
 				type: Number,
-				default:10
+				default: 10
 			}
 		} /*end of profile*/,
 		style_id: String /* id for style document*/,
 		followers: [
 			{
 				client_id: String,
-				experiance: Number
+				experiance: {
+					type: Number,
+					default: 0
+				}
 			}
 		] /* array of Clients_ids */
 	});
