@@ -604,8 +604,8 @@ return(daysfree);
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
-                    console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
-                    return({answer : "fuck you"})
+                    // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
+                    return({error :'invalid business'});
                 }else{
                     var porpose_length = business.profile.purposes.find(o => o.purpose_id === purposeid).time;
                     var minutes_between_appointment = business.profile.break_time;
