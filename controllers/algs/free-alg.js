@@ -389,18 +389,24 @@ Day.prototype.slice = function (length,minutes_between_appointment) {
     this.Free=tmp;
 };
 exports.time_range;
+
+function diffDays(date1, date2) {
+    var timeDiff = Math.abs(date2.getTime() - date1.getTime());
+    var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    return diffDays
+};
 //creat business and dates if not found and return the freeTime _id if the busness
-async function creatifempty(businessid,workinghours,days){ 
+async function creatifempty(businessid,workinghours,date1,date2,choice){ 
     await creatbusinessifempty(businessid);
     var freeobj;
     var free=[];
-    for (var i = 0; i < days; i++) {
+    var daysnum=diffDays(date1,date2);
+    for (var i = 0; i <= daysnum; i++) {
         freeobj = workinghours.filter(function(element) {
             if(element.opened)
-            return element.day === moment().add(i, 'days').format('dddd').toLowerCase()
+            return element.day === moment(date1).add(i, 'days').format('dddd').toLowerCase();
             else
             return false;
-    
          });
         if(isEmpty(freeobj)){
             continue;
@@ -411,7 +417,7 @@ async function creatifempty(businessid,workinghours,days){
             until=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from , until ) ); 
         });
-        freeid=await creatDateifempty(businessid,moment().add(i, 'days').format("YYYY/MM/DD"),free);
+        freeid=await creatDateifempty(businessid,moment(date1).add(i, 'days').format("YYYY/MM/DD"),free);
     }
 
 return freeid;
@@ -449,12 +455,18 @@ async function creatbusinessifempty(businessid){
     }
     return id;
  }
- async function returnfreetime(id,days,porpose_length,minutes_between_appointment,appontments_number_to_return){ 
+ async function returnfreetime(id,porpose_length,minutes_between_appointment,appontments_number_to_return,date1,date2,choice){ 
     var days=[];
     var daysfree=[];
     var timeranges=[];
+    var daysnum=diffDays(date1,date2);
+  
+     
     const freetime = await FreeTime.findById(id)
-    mongodays=freetime.dates;
+    mongodays=freetime.dates.filter(function(element) {
+        return ( (0<=diffDays(element.day,date2)) && (diffDays(element.day,date2)<=daysnum) )
+
+     });;
     mongodays.forEach(function(oneday) {
         freetobook=oneday.freeTime
         thedate=oneday.day
@@ -600,7 +612,7 @@ return(daysfree);
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,purposeid,days,choice,date)=>{
+            freeAlg: async (businessid,purposeid,date1,date2,choice)=>{
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
@@ -617,13 +629,13 @@ return(daysfree);
                 switch(choice) {
                     case 0:
                       //console.log(await creatifempty(businessid,workinghours,days))
-                      toreturn =await returnfreetime(await creatifempty(businessid,workinghours,days),days,porpose_length,minutes_between_appointment,appontments_number_to_return)
+                      toreturn =await returnfreetime(await creatifempty(businessid,workinghours,date1,date2,choice),porpose_length,minutes_between_appointment,appontments_number_to_return,date1,date2,choice)
                       break;
                     case 1:
                       console.log("my bad...choice 1 is not finished yet try choice 0, works fine");
                       break;
                     default:
-                      console.log("wrong choice...read the instructions");
+                        return({error :'invalid choice'});
                   }
                 
 

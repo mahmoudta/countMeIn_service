@@ -7,8 +7,8 @@ const freeAlg = require('./algs/free-alg');
 
 module.exports = {
 	getFreeTime: async(req,res,next)=>{
-        const {business_id,service_id } = req.body;
-        const dates = await freeAlg(business_id,service_id);
+        const {business,services,date_from,date_until} = req.body;
+        const dates = await freeAlg(business,services,date_from,date_until,0);
         if(dates.error) return res.status(404).json({"error": dates.error});
 
         res.status(200).json({dates});
