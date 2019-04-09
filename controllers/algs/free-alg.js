@@ -390,21 +390,21 @@ Day.prototype.slice = function (length,minutes_between_appointment) {
 };
 exports.time_range;
 
-function diffDays(date1, date2) {
-    var timeDiff = Math.abs(date2.getTime() - date1.getTime());
+function diffDays(date_from, date_until) {
+    var timeDiff = Math.abs(date_until.getTime() - date_from.getTime());
     var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
     return diffDays
 };
 //creat business and dates if not found and return the freeTime _id if the busness
-async function creatifempty(businessid,workinghours,date1,date2,choice){ 
+async function creatifempty(businessid,workinghours,date_from,date_until,choice){ 
     await creatbusinessifempty(businessid);
     var freeobj;
     var free=[];
-    var daysnum=diffDays(date1,date2);
+    var daysnum=diffDays(date_from,date_until);
     for (var i = 0; i <= daysnum; i++) {
         freeobj = workinghours.filter(function(element) {
             if(element.opened)
-            return element.day === moment(date1).add(i, 'days').format('dddd').toLowerCase();
+            return element.day === moment(date_from).add(i, 'days').format('dddd').toLowerCase();
             else
             return false;
          });
@@ -417,7 +417,7 @@ async function creatifempty(businessid,workinghours,date1,date2,choice){
             until=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from , until ) ); 
         });
-        freeid=await creatDateifempty(businessid,moment(date1).add(i, 'days').format("YYYY/MM/DD"),free);
+        freeid=await creatDateifempty(businessid,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
     }
 
 return freeid;
@@ -455,16 +455,16 @@ async function creatbusinessifempty(businessid){
     }
     return id;
  }
- async function returnfreetime(id,porpose_length,minutes_between_appointment,appontments_number_to_return,date1,date2,choice){ 
+ async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice){ 
     var days=[];
     var daysfree=[];
     var timeranges=[];
-    var daysnum=diffDays(date1,date2);
+    var daysnum=diffDays(date_from,date_until);
   
      
     const freetime = await FreeTime.findById(id)
     mongodays=freetime.dates.filter(function(element) {
-        return ( (0<=diffDays(element.day,date2)) && (diffDays(element.day,date2)<=daysnum) )
+        return ( (0<=diffDays(element.day,date_until)) && (diffDays(element.day,date_until)<=daysnum) )
 
      });;
     mongodays.forEach(function(oneday) {
@@ -486,7 +486,7 @@ async function creatbusinessifempty(businessid){
                 if (days === undefined || days.length == 0) {break;}
                 tmpday=days.shift();
                 day.totree(tmpday.Free);
-                posibletobook.totree(day.timerangesthatfit(porpose_length,minutes_between_appointment));
+                posibletobook.totree(day.timerangesthatfit(services_length,minutes_between_appointment));
                 ///call slicer at posibletobook
                 counter+=posibletobook.getlength();
                 if (counter>=appontments_number_to_return) {
@@ -497,12 +497,12 @@ async function creatbusinessifempty(businessid){
                         tmpcorrector.pop();
                     }
                     tmpday.Free=tmpcorrector;
-                    tmpday.slice(porpose_length,minutes_between_appointment);
+                    tmpday.slice(services_length,minutes_between_appointment);
                     daysfree.push(tmpday);
                     break;
                 }
                 tmpday.Free=posibletobook.arrayofopjects();
-                tmpday.slice(porpose_length,minutes_between_appointment);
+                tmpday.slice(services_length,minutes_between_appointment);
                 daysfree.push(tmpday)
             }while(counter<appontments_number_to_return);
 
@@ -541,8 +541,8 @@ return(daysfree);
         //    /////////////////////////////////////////////////
         //     //i need busnees id and the porpose id
         //     //var days=[];      //from freetime database of the busnese (should be sorted if posible)
-        //     var porpose_length=60;  //porpose lenth acording to the main bussnese database
-        //     console.log("porpose leanght="+porpose_length);
+        //     var services_length=60;  //porpose lenth acording to the main bussnese database
+        //     console.log("porpose leanght="+services_length);
         //     var minutes_between_appointment=5;//minutes between appointment acording to the main bussnese database
         //     console.log("minutes between appointmen="+minutes_between_appointment);
         //     var appontments_number_to_return=6;//number of appointment to return
@@ -557,7 +557,7 @@ return(daysfree);
         //         if (days === undefined || days.length == 0) {break;}
         //         tmpday=days.shift();
         //         day.totree(tmpday.Free);
-        //         posibletobook.totree(day.timerangesthatfit(porpose_length,minutes_between_appointment));
+        //         posibletobook.totree(day.timerangesthatfit(services_length,minutes_between_appointment));
         //         ///call slicer at posibletobook
         //         counter+=posibletobook.getlength();
         //         if (counter>=appontments_number_to_return) {
@@ -568,12 +568,12 @@ return(daysfree);
         //                 tmpcorrector.pop();
         //             }
         //             tmpday.Free=tmpcorrector;
-        //             tmpday.slice(porpose_length,minutes_between_appointment);
+        //             tmpday.slice(services_length,minutes_between_appointment);
         //             daysfree.push(tmpday);
         //             break;
         //         }
         //         tmpday.Free=posibletobook.arrayofopjects();
-        //         tmpday.slice(porpose_length,minutes_between_appointment);
+        //         tmpday.slice(services_length,minutes_between_appointment);
         //         daysfree.push(tmpday)
         //     }while(counter<appontments_number_to_return);
         //     console.log("answer sent");
@@ -612,14 +612,17 @@ return(daysfree);
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,purposeid,date1,date2,choice)=>{
+            freeAlg: async (businessid,services,date_from,date_until,choice)=>{
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
                     // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
                     return({error :'invalid business'});
                 }else{
-                    var porpose_length = business.profile.purposes.find(o => o.purpose_id === purposeid).time;
+                    var services_length=0;
+                    services.forEach(function(onepurpose) {
+                        services_length+=business.profile.purposes.find(o => o.purpose_id === onepurpose).time;
+                    });
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;
                     var appontments_number_to_return=6 //number of appointment to return
@@ -629,7 +632,7 @@ return(daysfree);
                 switch(choice) {
                     case 0:
                       //console.log(await creatifempty(businessid,workinghours,days))
-                      toreturn =await returnfreetime(await creatifempty(businessid,workinghours,date1,date2,choice),porpose_length,minutes_between_appointment,appontments_number_to_return,date1,date2,choice)
+                      toreturn =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until,choice),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice)
                       break;
                     case 1:
                       console.log("my bad...choice 1 is not finished yet try choice 0, works fine");
