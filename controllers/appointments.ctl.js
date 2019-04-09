@@ -51,11 +51,11 @@ module.exports = {
 		res.json({ QueryRes });
 	},
 	getSubCategories: async (req, res, next) => {
-		const category = await Businesses.findById(req.params.businessId, 'purposes');
+		const QueryRes = await Businesses.findById(req.params.businessId, 'profile.purposes', function(err, usr) {});
 		console.log(req.params.businessId);
 
 		//const subCategories = await Categories.findOne(category._id);
 
-		res.status(200).json({ category });
+		res.status(200).json({ QueryRes });
 	}
 };
