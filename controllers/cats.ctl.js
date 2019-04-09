@@ -43,7 +43,7 @@ module.exports = {
 					res.status(403).json({ error: 'Permission Denied' });
 					return;
 				}
-				res.status(200).json({ success: 'Sub-category has been added' });
+				res.status(200).json({ success: 'new service has been added' });
 			}
 		);
 	},
