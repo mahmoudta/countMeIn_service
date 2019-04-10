@@ -1,6 +1,7 @@
 const JWT = require('jsonwebtoken');
 const Businesses = require('../models/business');
 const Categories = require('../models/category');
+const Users = require('../models/user');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 createTime = async (time) => {
@@ -122,5 +123,35 @@ module.exports = {
 		if (!updated_business) return res.status(404).json({ error: 'an error occurred' });
 
 		res.status(404).json({ success: updated_business });
+	},
+	getAllFollowers: async (req, res, next) => {
+		const business = await Businesses.findOne({ owner_id: req.user._id }, 'followers.client_id');
+		if (!business) return res.status(404).json({ error: 'business not found' });
+		const ids = await business.followers.map((follower) => {
+			return follower.client_id;
+		});
+
+		const followers = await Users.find({ _id: { $in: ids } }, 'profile.name');
+
+		if (!followers) return res.status(404).json({ error: 'an error occurred' });
+
+		res.status(200).json({ followers });
+	},
+	getServicesByBusiness: async (req, res, next) => {
+		const { id } = req.params;
+		const business = await Businesses.findById(id);
+		if (!business) return res.status(404).json({ error: 'business not found' });
+		const ids = await business.profile.purposes.map((purpose) => {
+			return purpose.purpose_id;
+		});
+		console.log(ids);
+		const category = await Categories.findById(business.profile.category_id);
+
+		const services = await category.subCats.filter((elem) => {
+			return ids.includes(elem._id.toString());
+		});
+
+		if (!services) return res.status(404).json({ error: 'an error occurred' });
+		res.status(200).json({ services });
 	}
 };
