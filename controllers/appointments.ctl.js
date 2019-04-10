@@ -3,6 +3,7 @@ const Appointments = require('../models/appointment');
 const Businesses = require('../models/business');
 const { JWT_SECRET } = require('../consts');
 const { freeTimeAlg } = require('./algs/free-alg');
+const { booked } = require('./algs/free-alg');
 
 module.exports = {
 	// freeTimeByPurpose: async (req, res, next) => {
@@ -45,7 +46,30 @@ module.exports = {
 		res.json({ QueryRes });
 	},
 	getBusinessAppointments: async (req, res, next) => {
-		const QueryRes = await Appointments.find({ business_id: req.params.businessId });
-		res.json({ QueryRes });
+		const appointments = await Appointments.find({ business_id: req.params.businessId }).sort({ 'time.date': 1 });
+		res.json({ appointments });
+	},
+	setBusinessApoointment: async (req, res, next) => {
+		const { client, business, services, start, end, date } = req.body;
+
+		var newDate = new Date(date);
+		const hours = end._hour - start._hour;
+		const minutes = end._minute - start._minute;
+		newDate.setHours(start._hour, start._minute);
+		const newAppointment = new Appointments({
+			business_id: business,
+			client_id: client,
+			time: {
+				date: newDate,
+				hours: hours,
+				minutes: minutes
+			},
+			porpouses: services
+		});
+		const appointment = await newAppointment.save();
+		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+
+		booked(business, date, { _start: start, _end: end });
+		res.status(200).json({ appointment });
 	}
 };

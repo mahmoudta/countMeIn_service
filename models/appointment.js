@@ -1,6 +1,5 @@
 var mongoose = require('mongoose'),
 	appointment = new mongoose.Schema({
-		ID: String,
 		business_id: String,
 		client_id: String,
 		time: {
