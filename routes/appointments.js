@@ -8,5 +8,6 @@ router
 router.route('/deleteAppointment/:appointmentId').get(appointmentCtl.deleteAppointment);
 router.route('/getClientsAppointments/:clientId').get(appointmentCtl.getClientsAppointments);
 router.route('/getBusinessAppointments/:businessId').get(appointmentCtl.getBusinessAppointments);
+router.route('/business/setAppointmnet').post(appointmentCtl.setBusinessApoointment);
 
 module.exports = router;
