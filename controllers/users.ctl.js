@@ -71,17 +71,16 @@ module.exports = {
 		  }
 		var date=await new Date(2019, 3, 28);// 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
 		const test1 = await ifcanbook('5ca5210fa3e1e23000ac29dd',date,timerange);
-		
+
 		res.status(200).json({ result: test1 });
 	},
 	booktest: async (req, res, next) => {
 		console.log('book Test Here');
 		var timerange={
-						"_start":{"_hour":11, "_minute":40},
-						"_end":{"_hour":12,"_minute":20}
+						"_start":{"_hour":12, "_minute":00},
+						"_end":{"_hour":13,"_minute":00}
 					  }
-		var date=await new Date(2019, 3, 14);// 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		//console.log(date);
+		var date=await new Date(2019, 3, 28);// 2019/04/28 => "2019-04-27T21:00:00.000Z" ,months start from 0 so (april = month[3] )
 		const test1 = await booked('5ca5210fa3e1e23000ac29dd',date,timerange);
 		res.status(200).json({ test1 });
 	},
