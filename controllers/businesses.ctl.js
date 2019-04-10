@@ -96,18 +96,19 @@ module.exports = {
 	followBusiness: async (req, res, next) => {
 		console.log('follow business');
 		const { business_id } = req.body;
-		console.log(`business_id:${business_id}`);
-		console.log(req.user._id);
 
 		// check if business
 		const business = await Businesses.findById(business_id);
 		if (!business) return res.status(404).json({ error: 'invalid business' });
 
 		// check if user already following this business
-		const exist = business.followers.find(async (user) => {
-			return (await user.client_id) === req.user._id;
+		const exist = await business.followers.filter((user) => {
+			const client_id = user.client_id.toString();
+			const current_id = req.user._id.toString();
+			return client_id == current_id;
 		});
-		if (exist) return res.status(403).json({ error: 'already follower' });
+		console.log(exist);
+		if (exist.length > 0) return res.status(403).json({ error: 'already follower' });
 
 		//push the customer id to followers
 		const update = {
