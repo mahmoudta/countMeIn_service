@@ -1,14 +1,11 @@
 const express = require('express'),
-	session = require('express-session'),
-	morgan = require('morgan'),
 	app = express(),
-	bodyParser = require('body-parser');
-
-/* Middlewares */
-app.use(morgan('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
+	bodyParser = require('body-parser'),
+	// userCtl     = require('./controllers/users.ctl'),
+	// debateCtl   = require('./controllers/debates.ctl'),
+	port = process.env.PORT || 8080;
+// session     = require('express-session');
+app.set('port', port);
 app.use('/', express.static('./public')); //for API
 app.use((req, res, next) => {
 	res.header('Access-Control-Allow-Origin', '*');
@@ -17,19 +14,12 @@ app.use((req, res, next) => {
 	res.set('Content-Type', 'application/json');
 	next();
 });
-
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(session({secret:'shjlowyi739d',resave: false, saveUninitialized:true}))
 
 /*** All routes ***/
-app.use('/users', require('./routes/users'));
-app.use('/category', require('./routes/categories'));
-app.use('/appointments', require('./routes/appointments'));
-app.use('/business', require('./routes/businesses'));
-app.use('/algorithms', require('./routes/algorithms'));
 
-/* start the server */
-const port = process.env.PORT || 8080;
-app.set('port', port);
 app.listen(port, () => {
 	console.log(`listening on port ${port}`);
 });
