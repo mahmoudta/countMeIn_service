@@ -701,7 +701,7 @@ return(daysfree);
                 //console.log(newfreetime);
                 return({answer : "done"});
             }else{
-                return({error :'invalid Time or Date'});
+                return({error :'invalid Time'});
             }
                 
 
