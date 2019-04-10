@@ -662,6 +662,9 @@ return(daysfree);
             var freetobook;
             var timeranges=[];
             const freetime = await FreeTime.findOne({business_id: businessid})
+            if(isEmpty(freetime)){
+                return({error :'invalid business'});
+            }
             var daysinmongo =freetime.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
             var dateid=daysinmongo._id;
             var id=freetime._id;
