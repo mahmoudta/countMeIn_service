@@ -618,8 +618,6 @@ return(daysfree);
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
             freeAlg: async (businessid,services,date_from,date_until,choice)=>{
-                if(moment(date_until)=== moment(date_from))
-                sonsole.log("the two dates is alike")
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
