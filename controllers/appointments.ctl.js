@@ -5,36 +5,37 @@ const Categories = require('../models/category');
 
 const { JWT_SECRET } = require('../consts');
 const { freeTimeAlg } = require('./algs/free-alg');
+const { booked } = require('./algs/free-alg');
 
 module.exports = {
-	// freeTimeByPurpose: async (req, res, next) => {
-	// 	console.log(req.params.b_id); //business id
-	// 	console.log(req.params.c_id); //catagory id
-	// 	console.log(req.params.p_id); // purpose id
-
-	// 	// var business = await Businesses.find({});
-	// 	// console.log(business);
-	// 	res.json('success');
-	// },
-	// b3d lazm bdekot
-
 	setAppointment: async (req, res, next) => {
-		//req businessId costumerId Time Date  porpuse day
-		const businessId = req.params.businessId;
-		console.log(req.params.businessId);
+		const { businessId, costumerId, purpose, date, shour, sminute, ehour, eminute } = req.body;
+		//console.log(sstart);
+
+		var newDate = new Date(date);
+		const hhours = ehour - shour;
+		const mminutes = eminute - sminute;
+		newDate.setHours(parseInt(shour, 10), parseInt(sminute, 10));
 		const newAppointment = new Appointments({
-			business_id: req.params.businessId,
-			client_id: req.params.costumerId,
+			business_id: businessId,
+			client_id: costumerId,
 			time: {
-				day: req.params.day,
-				date: req.params.date,
-				hours: req.params.hours, //UseLess /* Date Type Contains date and time */
-				minutes: req.params.minutes
+				date: newDate,
+				hours: Number(shour), //UseLess /* Date Type Contains date and time */
+				minutes: Number(sminute)
 			},
-			porpouses: [ req.params.purpose ]
+			porpouses: [ purpose ]
 		});
-		await newAppointment.save();
-		res.json('success');
+		console.log(newDate.getHours());
+		console.log(newAppointment);
+		const appointment = await newAppointment.save();
+		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+		//res.json('success');
+		booked(businessId, date, {
+			_start: { _hour: Number(shour), _minute: Number(sminute) },
+			_end: { _hour: Number(ehour), _minute: Number(eminute) }
+		});
+		res.status(200).json('suceess');
 	},
 	deleteAppointment: async (req, res, next) => {
 		const QueryRes = await Appointments.deleteOne({ _id: req.params.appointmentId });
@@ -47,9 +48,10 @@ module.exports = {
 		res.json({ QueryRes });
 	},
 	getBusinessAppointments: async (req, res, next) => {
-		const QueryRes = await Appointments.find({ business_id: req.params.businessId });
-		res.json({ QueryRes });
+		const appointments = await Appointments.find({ business_id: req.params.businessId }).sort({ 'time.date': 1 });
+		res.json({ appointments });
 	},
+
 	getSubCategories: async (req, res, next) => {
 		const QueryRes = await Businesses.findById(req.params.businessId, 'profile.purposes', function(err, usr) {});
 		console.log(req.params.businessId);
@@ -57,5 +59,28 @@ module.exports = {
 		//const subCategories = await Categories.findOne(category._id);
 
 		res.status(200).json({ QueryRes });
+	},
+	setBusinessApoointment: async (req, res, next) => {
+		const { client, business, services, start, end, date } = req.body;
+
+		var newDate = new Date(date);
+		const hours = end._hour - start._hour;
+		const minutes = end._minute - start._minute;
+		newDate.setHours(start._hour, start._minute);
+		const newAppointment = new Appointments({
+			business_id: business,
+			client_id: client,
+			time: {
+				date: newDate,
+				hours: hours,
+				minutes: minutes
+			},
+			porpouses: services
+		});
+		const appointment = await newAppointment.save();
+		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+
+		booked(business, date, { _start: start, _end: end });
+		res.status(200).json({ appointment });
 	}
 };

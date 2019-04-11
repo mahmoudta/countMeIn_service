@@ -391,7 +391,7 @@ Day.prototype.slice = function (length,minutes_between_appointment) {
 exports.time_range;
 
 function diffDays(date_from, date_until) {
-    var timeDiff = Math.abs(date_until.getTime() - date_from.getTime());
+    var timeDiff = date_until.getTime() - date_from.getTime();
     var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
     return diffDays
 };
@@ -461,12 +461,12 @@ async function creatbusinessifempty(businessid){
     var timeranges=[];
     var daysnum=diffDays(date_from,date_until);
   
-     
     const freetime = await FreeTime.findById(id)
     mongodays=freetime.dates.filter(function(element) {
         return ( (0<=diffDays(element.day,date_until)) && (diffDays(element.day,date_until)<=daysnum) )
 
      });;
+     
     mongodays.forEach(function(oneday) {
         freetobook=oneday.freeTime
         thedate=oneday.day
