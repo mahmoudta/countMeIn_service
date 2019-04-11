@@ -4,7 +4,7 @@ const Businesses = require('../models/business');
 const moment = require('moment');
 const { JWT_SECRET } = require('../consts');
 const { booked } = require('./algs/free-alg');
-const { freeTimeAlg } = require('./algs/free-alg');
+const { ifcanbook } = require('./algs/free-alg');
 const { freeAlg} = require('./algs/free-alg');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
@@ -64,25 +64,30 @@ module.exports = {
 	},
 
 	test: async (req, res, next) => {
-		console.log('Test Here');
-		const test1 = freeTimeAlg(11,1);
-		res.status(200).json({ test1 });
+		console.log('Test ifcanbook Here');
+		var timerange={
+			"_start":{"_hour":11, "_minute":00},
+			"_end":{"_hour":18,"_minute":00}
+		  }
+		var date=await new Date(2019, 3, 28);// 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
+		const test1 = await ifcanbook('5ca5210fa3e1e23000ac29dd',date,timerange);
+
+		res.status(200).json({ result: test1 });
 	},
 	booktest: async (req, res, next) => {
 		console.log('book Test Here');
 		var timerange={
-						"_start":{"_hour":11, "_minute":40},
-						"_end":{"_hour":12,"_minute":20}
+						"_start":{"_hour":12, "_minute":00},
+						"_end":{"_hour":13,"_minute":00}
 					  }
-		var date=await new Date(2019, 3, 14);// 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		//console.log(date);
+		var date=await new Date(2019, 3, 28);// 2019/04/28 => "2019-04-27T21:00:00.000Z" ,months start from 0 so (april = month[3] )
 		const test1 = await booked('5ca5210fa3e1e23000ac29dd',date,timerange);
 		res.status(200).json({ test1 });
 	},
 	databasetest: async (req, res, next) => {
 		console.log('database Test Here');
 		var date1=await new Date(2019, 3, 14);
-		var date2=await new Date(2019, 3, 20);
+		var date2=await new Date(2019, 3, 28);
 		const test1 = await freeAlg('5ca5210fa3e1e23000ac29dd',['5ca530337fd30731bbc006dc'],date1,date2,0);
 		res.status(200).json({ test1 });
 	},

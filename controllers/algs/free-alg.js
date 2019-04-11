@@ -278,18 +278,17 @@ class BinarySearchTree
     }
     //book
     book(timerange_to_book){
-        var checker=0;
+        var checker=0
         var free=[];
         var lefttimerange;
         var righttimerange;
         free=this.arrayofopjects();
         free.forEach(timerange => {
-
             if(this.ifinthetimerange(timerange,timerange_to_book)){
                 this.remove(timerange);
                 lefttimerange=new time_range(timerange.start(),timerange_to_book.start());
                 righttimerange=new time_range(timerange_to_book.end(),timerange.end());
-
+                
                 if(righttimerange.tominutes()>0){
                     if(lefttimerange.tominutes()>0){
                         //a
@@ -317,11 +316,12 @@ class BinarySearchTree
             }
         
         });
-
-        if(checker == 1)
-        return true
+        if(checker==1)
+        return true;
         else
-        return false
+        return false;
+        
+        
     }
 
 }
@@ -399,6 +399,7 @@ function diffDays(date_from, date_until) {
 async function creatifempty(businessid,workinghours,date_from,date_until,choice){ 
     await creatbusinessifempty(businessid);
     var freeobj;
+    var freeid;
     var free=[];
     var daysnum=diffDays(date_from,date_until);
     for (var i = 0; i <= daysnum; i++) {
@@ -419,8 +420,10 @@ async function creatifempty(businessid,workinghours,date_from,date_until,choice)
         });
         freeid=await creatDateifempty(businessid,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
     }
-
+if(isEmpty(freeid))
+return false;
 return freeid;
+
 }
 async function creatbusinessifempty(businessid){ 
     //creatbusinessifempty
@@ -456,6 +459,8 @@ async function creatbusinessifempty(businessid){
     return id;
  }
  async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice){ 
+     if(id===false)
+     return false
     var days=[];
     var daysfree=[];
     var timeranges=[];
@@ -644,7 +649,8 @@ return(daysfree);
 
                 // add a day
                 
-                //console.log(toreturn)
+                if(toreturn===false)
+                return ({});
                 return toreturn;
             },
             //to use after you book
@@ -653,14 +659,18 @@ return(daysfree);
             var resulte;
             var days=[];
             var tmpfree=[];
+            var freetobook;
             var timeranges=[];
             const freetime = await FreeTime.findOne({business_id: businessid})
+            if(isEmpty(freetime)){
+                return({error :'invalid business'});
+            }
             var daysinmongo =freetime.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
             var dateid=daysinmongo._id;
             var id=freetime._id;
             if(isEmpty(daysinmongo)){
-                console.log("date not found");
-                    return({answer : "fuck you"})
+                //console.log("date not found");
+                return({error :'invalid Date'});
             }
             else{
                 //console.log(daysinmongo);
@@ -694,11 +704,43 @@ return(daysfree);
                 //console.log(newfreetime);
                 return({answer : "done"});
             }else{
-                return({answer : "failed"});
+                return({error :'invalid Time'});
             }
                 
 
+            },
+            ifcanbook: async (businessid,chosendate,chosentimerange)=>{ 
+                var freeid;
+                var result;
+                var days=[];
+                var timeranges=[];
+                const business = await Business.findById(businessid)
+                if(isEmpty(business)){
+                    // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
+                    return({error :'invalid business'});
+                }else{
+                    var workinghours =business.profile.working_hours;
+                    freeid =await creatifempty(businessid,workinghours,chosendate,chosendate,0);
+                    if(freeid===false)
+                    return false;
+                    const freetime = await FreeTime.findOne({business_id: businessid})
+                    var daysinmongo =freetime.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
+                    freetobook=daysinmongo.freeTime
+                     timeranges=[];
+                     freetobook.forEach(function(onetimerange) {
+                       timeranges.push( new time_range(new time(onetimerange._start._hour,onetimerange._start._minute) , new time(onetimerange._end._hour,onetimerange._end._minute) ) );
+                     });
+                    var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
+                    var day= new BinarySearchTree();
+                    day.totree(timeranges);
+                    result=await day.book(tobook);
+        
+                    return result;
+
+                }
+                
             }
+    
 
 
 
