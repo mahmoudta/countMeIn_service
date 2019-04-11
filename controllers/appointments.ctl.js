@@ -13,16 +13,16 @@ module.exports = {
 		//console.log(sstart);
 
 		var newDate = new Date(date);
-		const hhours = ehour - shour;
-		const mminutes = eminute - sminute;
-		newDate.setHours(parseInt(shour, 10), parseInt(sminute, 10));
+		const hhours = Number(ehour) - Number(shour);
+		const mminutes = Number(eminute) - Number(sminute);
+		newDate.setHours(Number(shour), Number(sminute));
 		const newAppointment = new Appointments({
 			business_id: businessId,
 			client_id: costumerId,
 			time: {
 				date: newDate,
-				hours: Number(shour), //UseLess /* Date Type Contains date and time */
-				minutes: Number(sminute)
+				hours: hhours, //UseLess /* Date Type Contains date and time */
+				minutes: mminutes
 			},
 			porpouses: [ purpose ]
 		});
