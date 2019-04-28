@@ -626,7 +626,7 @@ return(daysfree);
                 }else{
                     var services_length=0;
                     services.forEach(function(onepurpose) {
-                        services_length+=business.profile.purposes.find(o => o.purpose_id === onepurpose).time;
+                        services_length+=business.profile.services.find(o => o.service_id === onepurpose).time;
                     });
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;
