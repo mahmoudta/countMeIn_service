@@ -64,18 +64,18 @@ module.exports = {
 		const { client, business, services, start, end, date } = req.body;
 
 		var newDate = new Date(date);
-		const hours = end._hour - start._hour;
-		const minutes = end._minute - start._minute;
-		newDate.setHours(start._hour, start._minute);
+		// const hours = end._hour - start._hour;
+		// const minutes = end._minute - start._minute;
+		// newDate.setHours(start._hour, start._minute);
 		const newAppointment = new Appointments({
 			business_id: business,
 			client_id: client,
 			time: {
 				date: newDate,
-				hours: hours,
-				minutes: minutes
+				start: start,
+				end: end
 			},
-			porpouses: services
+			services: services
 		});
 		const appointment = await newAppointment.save();
 		if (!appointment) return res.status(403).json({ error: 'an error occoured' });

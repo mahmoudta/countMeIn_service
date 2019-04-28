@@ -125,25 +125,26 @@ module.exports = {
 
 		res.status(404).json({ success: updated_business });
 	},
-	getAllFollowers: async (req, res, next) => {
-		const business = await Businesses.findOne({ owner_id: req.user._id }, 'followers.client_id');
+	getAllCustomers: async (req, res, next) => {
+		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
 		if (!business) return res.status(404).json({ error: 'business not found' });
-		const ids = await business.followers.map((follower) => {
-			return follower.client_id;
+		const ids = await business.customers.map((customer) => {
+			return customer.customer_id;
 		});
 
-		const followers = await Users.find({ _id: { $in: ids } }, 'profile.name');
+		const customers = await Users.find({ _id: { $in: ids } }, 'profile.name');
 
-		if (!followers) return res.status(404).json({ error: 'an error occurred' });
+		if (!customers) return res.status(404).json({ error: 'an error occurred' });
+		console.log(customers);
 
-		res.status(200).json({ followers });
+		res.status(200).json({ customers });
 	},
 	getServicesByBusiness: async (req, res, next) => {
 		const { id } = req.params;
 		const business = await Businesses.findById(id);
 		if (!business) return res.status(404).json({ error: 'business not found' });
-		const ids = await business.profile.purposes.map((purpose) => {
-			return purpose.purpose_id;
+		const ids = await business.profile.services.map((service) => {
+			return service.service_id;
 		});
 		console.log(ids);
 		const category = await Categories.findById(business.profile.category_id);

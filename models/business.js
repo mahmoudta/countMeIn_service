@@ -16,10 +16,10 @@ var mongoose = require('mongoose'),
 				//Array
 			},
 			img: String,
-			purposes: [
+			services: [
 				{
 					//services
-					purpose_id: String,
+					service_id: String,
 					time: {
 						type: Number,
 						max: 120
@@ -58,15 +58,12 @@ var mongoose = require('mongoose'),
 		//
 		customers: [
 			{
-				client_id: String,
-				followers: [
-					{
-						experiance: {
-							type: Number,
-							default: 0
-						}
-					}
-				]
+				customer_id: String,
+				isFollower: Boolean,
+				experiance: {
+					type: Number,
+					default: 0
+				}
 			}
 		] /* array of Clients_ids */
 	});
