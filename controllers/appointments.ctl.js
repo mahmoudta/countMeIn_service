@@ -2,6 +2,7 @@ const JWT = require('jsonwebtoken');
 const Appointments = require('../models/appointment');
 const Businesses = require('../models/business');
 const Categories = require('../models/category');
+const Users = require('../models/user');
 
 const { JWT_SECRET } = require('../consts');
 const { freeTimeAlg } = require('./algs/free-alg');
@@ -82,5 +83,27 @@ module.exports = {
 
 		booked(business, date, { _start: start, _end: end });
 		res.status(200).json({ appointment });
+	},
+
+	getBusinessAppointmentsByDate: async (req, res, next) => {
+		const { date, business_id } = req.params;
+		var appointments = await Appointments.find({ business_id: business_id });
+		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
+		var data = [];
+		appointments.map(async (appointment) => {
+			/* need to get the user info  */
+			const user = await Users.findById(appointment.client_id, 'profile.name');
+			const services = await Categories.find({ subCats: { $in: appointment.services } });
+			data.push[
+				{
+					appointment,
+					user,
+					services
+				}
+			];
+			/* need tot get the services names */
+		});
+
+		return res.json({ data });
 	}
 };

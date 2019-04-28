@@ -9,5 +9,6 @@ router.route('/getClientsAppointments/:clientId').get(appointmentCtl.getClientsA
 router.route('/getBusinessAppointments/:businessId').get(appointmentCtl.getBusinessAppointments);
 router.route('/getSubCategories/:businessId').get(appointmentCtl.getSubCategories);
 router.route('/business/setAppointmnet').post(appointmentCtl.setBusinessApoointment);
+router.route('/getBusinessAppointmentByDate/:business_id/:date').get(appointmentCtl.getBusinessAppointmentsByDate);
 
 module.exports = router;
