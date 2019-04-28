@@ -11,12 +11,14 @@ var mongoose = require('mongoose'),
 				required: true
 			},
 			category_id: {
-				type: String,
+				type: Array,
 				required: true
+				//Array
 			},
 			img: String,
 			purposes: [
 				{
+					//services
 					purpose_id: String,
 					time: {
 						type: Number,
@@ -53,13 +55,18 @@ var mongoose = require('mongoose'),
 			}
 		} /*end of profile*/,
 		style_id: String /* id for style document*/,
-		followers: [
+		//
+		customers: [
 			{
 				client_id: String,
-				experiance: {
-					type: Number,
-					default: 0
-				}
+				followers: [
+					{
+						experiance: {
+							type: Number,
+							default: 0
+						}
+					}
+				]
 			}
 		] /* array of Clients_ids */
 	});

@@ -3,12 +3,28 @@ var mongoose = require('mongoose'),
 		business_id: String,
 		client_id: String,
 		time: {
-			day: String,
 			date: Date,
-			hours: Number /* Date Type Contains date and time */,
-			minutes: Number
+			start: {
+				hours: 0,
+				minutes: 0
+			},
+			end: {
+				hours: 0,
+				minuutes: 0
+			}
 		},
-		porpouses: [ String ]
+		services: [ String ],
+		status: {
+			type: String,
+			enum: [ 'done', 'pendingClient', 'pendingBusiness', 'passed', 'ready' ],
+			default: 'ready'
+		}
+		/*
+		feedback:{
+			clinet:
+			business:
+		}
+		*/
 	});
 
 var Appointment = mongoose.model('Appointment', appointment);

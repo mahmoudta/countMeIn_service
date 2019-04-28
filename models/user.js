@@ -34,7 +34,10 @@ const mongoose = require('mongoose'),
 			},
 			imgUrl: String,
 			businessId: String
+			//phone:phone number
 		},
+		//Notifaction:[]
+		//globalExpreince:Number
 		appointments: [ String ],
 		following: [ String ]
 	});
