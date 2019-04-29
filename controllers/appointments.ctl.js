@@ -8,6 +8,18 @@ const { JWT_SECRET } = require('../consts');
 const { freeTimeAlg } = require('./algs/free-alg');
 const { booked } = require('./algs/free-alg');
 
+const getAppointmentData = async (appointments) => {
+	var data = [];
+	for (const appointment of appointments) {
+		const user = await Users.findById(appointment.client_id, 'profile.name');
+		const Nservices = await Categories.find({ 'subCats._id': { $in: appointment.services } });
+		await data.push({
+			appointment,
+			user
+		});
+	}
+	return await data;
+};
 module.exports = {
 	setAppointment: async (req, res, next) => {
 		const { businessId, costumerId, purpose, date, shour, sminute, ehour, eminute } = req.body;
@@ -65,9 +77,8 @@ module.exports = {
 		const { client, business, services, start, end, date } = req.body;
 
 		var newDate = new Date(date);
-		// const hours = end._hour - start._hour;
-		// const minutes = end._minute - start._minute;
-		// newDate.setHours(start._hour, start._minute);
+		console.log(start);
+		console.log(end);
 		const newAppointment = new Appointments({
 			business_id: business,
 			client_id: client,
@@ -87,23 +98,13 @@ module.exports = {
 
 	getBusinessAppointmentsByDate: async (req, res, next) => {
 		const { date, business_id } = req.params;
-		var appointments = await Appointments.find({ business_id: business_id });
+		var parts = date.split('-');
+		const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
+		console.log(Ndate);
+		const appointments = await Appointments.find({ business_id: business_id, 'time.date': Ndate });
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
-		var data = [];
-		appointments.map(async (appointment) => {
-			/* need to get the user info  */
-			const user = await Users.findById(appointment.client_id, 'profile.name');
-			const services = await Categories.find({ subCats: { $in: appointment.services } });
-			data.push[
-				{
-					appointment,
-					user,
-					services
-				}
-			];
-			/* need tot get the services names */
-		});
 
+		const data = await getAppointmentData(appointments);
 		return res.json({ data });
 	}
 };

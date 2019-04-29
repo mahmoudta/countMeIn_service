@@ -135,7 +135,6 @@ module.exports = {
 		const customers = await Users.find({ _id: { $in: ids } }, 'profile.name');
 
 		if (!customers) return res.status(404).json({ error: 'an error occurred' });
-		console.log(customers);
 
 		res.status(200).json({ customers });
 	},
