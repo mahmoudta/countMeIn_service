@@ -2,7 +2,7 @@ const express = require("express");
 let app = new express();
 var FreeTime = require('../../models/freeTime');
 var Business = require('../../models/business');
-
+const util = require('util');
 var inherits = require('util').inherits; 
 
 const isEmpty = require('lodash/isEmpty');
@@ -348,10 +348,29 @@ time.prototype.add_and_return = function (minutes) {
     //this._minute+=((minutes+this._minute)%60);
     return new time( this._hour+ ((minutes+this._minute)/60 | 0 ) ,(minutes+this._minute)%60);
 };
+time.prototype.ifbiggerthan = function (time) {
+    
+    // if this is greater than timerange
+     if( (time.hour()<this.hour()) || ( (time.hour()==this.hour()) && (time.minute()<this.minute()) ) ) {
+        return true;
+    }else{
+        return false;
+    }
 
-var time_range = function (start,end) {
+};
+time.prototype.ifsmallerthan = function (time) {
+        // if this is less than timerange
+        if( (time.hour()>this.hour()) || ( (time.hour()==this.hour()) && (time.minute()>this.minute()) ) ) {
+            return true;
+        }else{
+            return false;
+        }
+};
+
+var time_range = function (start,end,value=0) {
     this._start = start;
     this._end = end;
+    this._value=value;
 };
 time_range.prototype.start = function () {
     return this._start;
@@ -377,6 +396,7 @@ time_range.prototype.slice = function (length,minutes_between_appointment) {
     }
     return tmp;
 };
+
 function Day(date, free) {
 	this.Date = date,
 	this.Free = free
@@ -514,6 +534,43 @@ async function creatbusinessifempty(businessid){
 return(daysfree);
 
 }
+async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue){ 
+    var i=0;
+    var j=0;
+    var tempend;
+    var tempstart;
+    var result=[];
+    result=timerangelist1;
+    while( (timerangelist1.length>i) && (timerangelist2.length>j) ){
+        if( (timerangelist1[i]._start.ifsmallerthan(timerangelist2[j]._end))&& (timerangelist1[i]._end.ifbiggerthan(timerangelist2[j]._start))) {
+            if(timerangelist1[i]._start.ifbiggerthan(timerangelist2[j]._start)){
+                tempstart=timerangelist1[i]._start;
+            }
+            else{
+                tempstart=timerangelist2[j]._start;
+            }
+
+            if(timerangelist1[i]._end.ifsmallerthan(timerangelist2[j]._end)){
+                tempend=timerangelist1[i]._end;
+            }else{
+                tempend=timerangelist2[j]._end;
+            }
+            result=result.filter(function(element) {
+                if( (element._start._hour==tempstart._hour) && (element._start._minute==tempstart._minute) && (element._end._hour==tempend._hour) && (element._end._minute==tempend._minute) )
+                return false;
+                else
+                return true;
+             });
+            result.push(new time_range(tempstart,tempend,timerangelist1[i]._value+mergevalue));
+        }
+        if(timerangelist1[i]._end.ifsmallerthan(timerangelist2[j]._end)){
+            i++;
+        }else{
+            j++;
+        }
+    }
+return result;
+} 
 /***********************************************************************************/
 
 
@@ -646,9 +703,6 @@ return(daysfree);
                         return({error :'invalid choice'});
                   }
                 
-
-                // add a day
-                
                 if(toreturn===false)
                 return ({});
                 return toreturn;
@@ -738,6 +792,36 @@ return(daysfree);
                     return result;
 
                 }
+                
+            },
+            smart: async (things,to,add,later)=>{ 
+
+                // atest
+                var tmpfree=[];
+                tmpfree.push( new time_range(new time(8,0) , new time(9,45) ) );
+                tmpfree.push( new time_range(new time(11,0) , new time(12,0) ) );
+                tmpfree.push( new time_range(new time(12,40) , new time(14,0) ) );
+                tmpfree.push( new time_range(new time(14,30) , new time(15,0) ) );
+                tmpfree.push( new time_range(new time(15,0) , new time(18,0) ) );
+                console.log("\nfreetime :");
+                tmpfree.forEach(function(timerange) {
+                    console.log(timerange.string());
+                });
+                var free=[];
+                free.push( new time_range(new time(9,15) , new time(12,45) ) );
+                free.push( new time_range(new time(16,0) , new time(17,30) ) );
+                console.log("\nprevious appoitments ,value=1");
+                free.forEach(function(timerange) {
+                    console.log(timerange.string());
+                });
+                var morning=[];
+                morning.push( new time_range(new time(8,12) , new time(12,0) ) );
+                console.log("\nprefered time is morning(8:00-12:00),value=2 :\n");
+                var tmmp=[];
+                tmmp=await mergetimerangelists(tmpfree,free,1);
+                tmmp.forEach(function(timerange) {
+                    console.log(timerange.string()+" value="+timerange._value);
+                });
                 
             }
     
