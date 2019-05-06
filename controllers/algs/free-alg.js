@@ -2,7 +2,7 @@ const express = require("express");
 let app = new express();
 var FreeTime = require('../../models/freeTime');
 var Business = require('../../models/business');
-const util = require('util');
+
 var inherits = require('util').inherits; 
 
 const isEmpty = require('lodash/isEmpty');
@@ -97,7 +97,6 @@ class BinarySearchTree
         // root of a modified tree. 
         this.root = this.removeNode(this.root, data); 
         this.length--;
-        return true;
     } 
   
     // Method to remove node with a  
@@ -349,29 +348,10 @@ time.prototype.add_and_return = function (minutes) {
     //this._minute+=((minutes+this._minute)%60);
     return new time( this._hour+ ((minutes+this._minute)/60 | 0 ) ,(minutes+this._minute)%60);
 };
-time.prototype.ifbiggerthan = function (time) {
-    
-    // if this is greater than timerange
-     if( (time.hour()<this.hour()) || ( (time.hour()==this.hour()) && (time.minute()<this.minute()) ) ) {
-        return true;
-    }else{
-        return false;
-    }
 
-};
-time.prototype.ifsmallerthan = function (time) {
-        // if this is less than timerange
-        if( (time.hour()>this.hour()) || ( (time.hour()==this.hour()) && (time.minute()>this.minute()) ) ) {
-            return true;
-        }else{
-            return false;
-        }
-};
-
-var time_range = function (start,end,value=0) {
+var time_range = function (start,end) {
     this._start = start;
     this._end = end;
-    this._value=value;
 };
 time_range.prototype.start = function () {
     return this._start;
@@ -397,7 +377,6 @@ time_range.prototype.slice = function (length,minutes_between_appointment) {
     }
     return tmp;
 };
-
 function Day(date, free) {
 	this.Date = date,
 	this.Free = free
@@ -535,68 +514,6 @@ async function creatbusinessifempty(businessid){
 return(daysfree);
 
 }
-async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue){ 
-    // var i=0;
-    // var j=0;
-    var tempend;
-    var tempstart;
-    var result=[];
-    result=timerangelist1;
-    timerangelist2.forEach(function(fromtimerange2) {
-        timerangelist1.forEach(function(fromtimerange1) {
-                if( (fromtimerange1._start.ifsmallerthan(fromtimerange2._end))&& (fromtimerange1._end.ifbiggerthan(fromtimerange2._start))) {
-                    if(fromtimerange1._start.ifbiggerthan(fromtimerange2._start)){
-                        tempstart=fromtimerange1._start;
-                    }
-                    else{
-                        tempstart=fromtimerange2._start;
-                    }
-        
-                    if(fromtimerange1._end.ifsmallerthan(fromtimerange2._end)){
-                        tempend=fromtimerange1._end;
-                    }else{
-                        tempend=fromtimerange2._end;
-                    }
-                    result=result.filter(function(element) {
-                        if( (element._start._hour==tempstart._hour) && (element._start._minute==tempstart._minute) && (element._end._hour==tempend._hour) && (element._end._minute==tempend._minute) )
-                        return false;
-                        else
-                        return true;
-                     });
-                    result.push(new time_range(tempstart,tempend,fromtimerange1._value+mergevalue));
-                }
-        });
-      });
-    // while( (timerangelist1.length>i) && (timerangelist2.length>j) ){
-    //     if( (timerangelist1[i]._start.ifsmallerthan(timerangelist2[j]._end))&& (timerangelist1[i]._end.ifbiggerthan(timerangelist2[j]._start))) {
-    //         if(timerangelist1[i]._start.ifbiggerthan(timerangelist2[j]._start)){
-    //             tempstart=timerangelist1[i]._start;
-    //         }
-    //         else{
-    //             tempstart=timerangelist2[j]._start;
-    //         }
-
-    //         if(timerangelist1[i]._end.ifsmallerthan(timerangelist2[j]._end)){
-    //             tempend=timerangelist1[i]._end;
-    //         }else{
-    //             tempend=timerangelist2[j]._end;
-    //         }
-    //         result=result.filter(function(element) {
-    //             if( (element._start._hour==tempstart._hour) && (element._start._minute==tempstart._minute) && (element._end._hour==tempend._hour) && (element._end._minute==tempend._minute) )
-    //             return false;
-    //             else
-    //             return true;
-    //          });
-    //         result.push(new time_range(tempstart,tempend,timerangelist1[i]._value+mergevalue));
-    //     }
-    //     if(timerangelist1[i]._end.ifsmallerthan(timerangelist2[j]._end)){
-    //         i++;
-    //     }else{
-    //         j++;
-    //     }
-    // }
-return result;
-} 
 /***********************************************************************************/
 
 
@@ -729,6 +646,9 @@ return result;
                         return({error :'invalid choice'});
                   }
                 
+
+                // add a day
+                
                 if(toreturn===false)
                 return ({});
                 return toreturn;
@@ -819,6 +739,7 @@ return result;
 
                 }
                 
+
             },
             deleted: async (businessid,chosendate,chosentimerange)=>{ 
                 const freetime = await FreeTime.findOne({business_id: businessid})

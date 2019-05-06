@@ -1,12 +1,13 @@
 const JWT = require('jsonwebtoken');
 const Users = require('../models/user');
 const Businesses = require('../models/business');
+const Categories = require('../models/category');
 const moment = require('moment');
 const { JWT_SECRET } = require('../consts');
 const { booked } = require('./algs/free-alg');
 const { smart } = require('./algs/free-alg');
 const { ifcanbook } = require('./algs/free-alg');
-const { freeAlg} = require('./algs/free-alg');
+const { freeAlg } = require('./algs/free-alg');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 
@@ -66,12 +67,12 @@ module.exports = {
 
 	test: async (req, res, next) => {
 		console.log('Test ifcanbook Here');
-		var timerange={
-			"_start":{"_hour":11, "_minute":00},
-			"_end":{"_hour":18,"_minute":00}
-		  }
-		var date=await new Date(2019, 3, 28);// 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		const test1 = await ifcanbook('5ca5210fa3e1e23000ac29dd',date,timerange);
+		var timerange = {
+			_start: { _hour: 11, _minute: 00 },
+			_end: { _hour: 18, _minute: 00 }
+		};
+		var date = await new Date(2019, 3, 28); // 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
+		const test1 = await ifcanbook('5ca5210fa3e1e23000ac29dd', date, timerange);
 
 		res.status(200).json({ result: test1 });
 	},
@@ -88,10 +89,39 @@ module.exports = {
 	},
 	databasetest: async (req, res, next) => {
 		console.log('database Test Here');
-		var date1=await new Date(2019, 4, 10);
-		var date2=await new Date(2019, 4, 21);
-		const test1 = await freeAlg('5ca5210fa3e1e23000ac29dd',['5ca530337fd30731bbc006dc'],date1,date2,0);
+		var date1 = await new Date(2019, 4, 10);
+		var date2 = await new Date(2019, 4, 21);
+		const test1 = await freeAlg('5ca5210fa3e1e23000ac29dd', [ '5ca530337fd30731bbc006dc' ], date1, date2, 0);
 		res.status(200).json({ test1 });
+	},
+	getUpcommingAppointments: async (req, res, next) => {
+		let ResArray = new Array();
+		const QueryRes = await Appointments.find({ client_id: req.params.clientId });
+		var promise = QueryRes.map(async (appointment, i) => {
+			const BusinessProfile = await Businesses.findById(appointment.business_id);
+			// let ServiceNames = appointment.services.map(async (serviceTemp) => {
+			// 	//console.log(serviceTemp);
+			// 	const SingleName = await Categories.find({ 'subCats._id': serviceTemp });
+			// 	console.log(SingleName);
+
+			// 	return SingleName;
+			// });
+			//const ServiceNames = await Promise.all(innerPromise);
+			const BusinessName = BusinessProfile.profile.name;
+			let shour = appointment.time.start._hour;
+			let sminute = appointment.time.start._minute;
+			let thisdate = appointment.time.date;
+			let services = appointment.services;
+			let time = shour.toString() + ':' + sminute.toString();
+			ResArray = [ appointment.business_id, appointment._id, i + 1, BusinessName, time, thisdate, services ];
+			console.log(time);
+			//	ResArray.push(BusinessProfile.profile.name);
+			//	console.log(ResArray);
+			//console.log({ BusinessProfile });
+			return ResArray;
+		});
+		const FinalArray = await Promise.all(promise);
+		res.json(FinalArray);
 	},
 
 	getAllBusinesses: async (req, res, next) => {

@@ -22,23 +22,41 @@ const getAppointmentData = async (appointments) => {
 };
 module.exports = {
 	setAppointment: async (req, res, next) => {
-		const { businessId, costumerId, purpose, date, shour, sminute, ehour, eminute } = req.body;
+		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute } = req.body;
 		//console.log(sstart);
 
 		var newDate = new Date(date);
 		const hhours = Number(ehour) - Number(shour);
 		const mminutes = Number(eminute) - Number(sminute);
 		newDate.setHours(Number(shour), Number(sminute));
-		const newAppointment = new Appointments({
-			business_id: businessId,
-			client_id: costumerId,
-			time: {
-				date: newDate,
-				hours: hhours, //UseLess /* Date Type Contains date and time */
-				minutes: mminutes
-			},
-			porpouses: [ purpose ]
-		});
+		const newAppointment = new Appointments(
+			{
+				business_id: businessId,
+				client_id: costumerId,
+				time: {
+					date: newDate,
+					start: {
+						_hour: shour,
+						_minute: sminute
+					},
+					end: {
+						_hour: ehour,
+						_minute: eminute
+					}
+				},
+				services: [ service ]
+			}
+
+			// 	business_id: businessId,
+			// 	client_id: costumerId,
+			// 	time: {
+			// 		date: newDate,
+			// 		hours: hhours, //UseLess /* Date Type Contains date and time */
+			// 		minutes: mminutes
+			// 	},
+			// 	porpouses: [ service ]
+			// }
+		);
 		console.log(newDate.getHours());
 		console.log(newAppointment);
 		const appointment = await newAppointment.save();
@@ -60,6 +78,7 @@ module.exports = {
 		const QueryRes = await Appointments.find({ client_id: req.params.clientId });
 		res.json({ QueryRes });
 	},
+
 	getBusinessAppointments: async (req, res, next) => {
 		const appointments = await Appointments.find({ business_id: req.params.businessId }).sort({ 'time.date': 1 });
 		res.json({ appointments });

@@ -16,4 +16,5 @@ router.route('/test').get(userCtl.test);
 router.route('/booktest').get(userCtl.booktest);
 router.route('/databasetest').get(userCtl.databasetest);
 router.route('/getbusinesses').get(userCtl.getAllBusinesses);
+router.route('/getUpcommingAppointments/:clientId').get(userCtl.getUpcommingAppointments);
 module.exports = router;
