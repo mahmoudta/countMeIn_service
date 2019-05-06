@@ -52,6 +52,7 @@ class BinarySearchTree
             this.insertNode(this.root, newNode); 
             this.length++;
         }
+        return true;
     } 
 
     // Method to insert a node in a tree 
