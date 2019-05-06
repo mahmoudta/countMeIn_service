@@ -835,7 +835,7 @@ return result;
                     var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
                     var day= new BinarySearchTree();
                     day.totree(timeranges);
-                    result=await day.remove(tobook);
+                    result=await day.insert(tobook);
                      if(result){
                         await FreeTime.findById(id, function(err, freeTime) {
                             if (err) throw err;
