@@ -822,6 +822,7 @@ return result;
                 
             },
             deleted: async (businessid,chosendate,chosentimerange)=>{ 
+                console.log("daye:"+chosendate+"time"+chosentimerange);
                 const freetime = await FreeTime.findOne({business_id: businessid})
                 if(isEmpty(freetime)){
                     return({error :'invalid business'});
