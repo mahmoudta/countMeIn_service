@@ -739,6 +739,74 @@ return(daysfree);
 
                 }
                 
+
+            },
+            deleted: async (businessid,chosendate,chosentimerange)=>{ 
+                const freetime = await FreeTime.findOne({business_id: businessid})
+                if(isEmpty(freetime)){
+                    return({error :'invalid business'});
+                }
+                    var id=freetime._id;
+                    var daysinmongo =freetime.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
+                    var freetobook=daysinmongo.freeTime
+                     timeranges=[];
+                     freetobook.forEach(function(onetimerange) {
+                       timeranges.push( new time_range(new time(onetimerange._start._hour,onetimerange._start._minute) , new time(onetimerange._end._hour,onetimerange._end._minute) ) );
+                     });
+                    var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
+                    var day= new BinarySearchTree();
+                    day.totree(timeranges);
+                    result=await day.insert(tobook);
+                     if(result){
+                        await FreeTime.findById(id, function(err, freeTime) {
+                            if (err) throw err;
+                            var foundIndex = freeTime.dates.findIndex(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
+                            freeTime.dates[foundIndex].freeTime.push(tobook);
+                            freeTime.save(function(err) {
+                                if (err) throw err;     
+                                //FreeTime updated successfully
+                            });
+                        });
+                     }
+                    return result;
+                
+            },
+            smart: async (things,to,add,later)=>{ 
+
+                // atest
+                var tmpfree=[];
+                tmpfree.push( new time_range(new time(8,0) , new time(9,45) ) );
+                tmpfree.push( new time_range(new time(11,0) , new time(12,0) ) );
+                tmpfree.push( new time_range(new time(12,40) , new time(14,0) ) );
+                tmpfree.push( new time_range(new time(14,30) , new time(15,0) ) );
+                tmpfree.push( new time_range(new time(15,0) , new time(18,0) ) );
+                console.log("\nfreetime :");
+                tmpfree.forEach(function(timerange) {
+                    console.log(timerange.string());
+                });
+                var free=[];
+                free.push( new time_range(new time(9,15) , new time(12,45) ) );
+                free.push( new time_range(new time(16,0) , new time(17,30) ) );
+                console.log("\nprevious appoitments ,value=1");
+                free.forEach(function(timerange) {
+                    console.log(timerange.string());
+                });
+                var morning=[];
+                morning.push( new time_range(new time(8,0) , new time(12,0) ) );
+                console.log("\nprefered time is morning(8:00-12:00),value=2 :\n");
+                var tmmp=[];
+                tmmp=await mergetimerangelists(tmpfree,free,1);
+                console.log("\nafter added previous appoitments :");
+            
+                tmmp.forEach(function(timerange) {
+                    console.log(timerange.string()+" value="+timerange._value);
+                });
+                tmmp=await mergetimerangelists(tmmp,morning,2);
+                console.log("\nafter added that the prefered time is morning:");
+                tmmp.forEach(function(timerange) {
+                    console.log(timerange.string()+" value="+timerange._value);
+                });
+                
             }
     
 
