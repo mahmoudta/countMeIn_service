@@ -69,7 +69,13 @@ module.exports = {
 		res.status(200).json('suceess');
 	},
 	deleteAppointment: async (req, res, next) => {
-		const QueryRes = await Appointments.deleteOne({ _id: req.params.appointmentId });
+		const { appointmentId } = req.body;
+		const QueryRes = await Appointments.deleteOne({ _id: appointmentId }, (err) => {
+			if (err) {
+				res.send(err);
+			}
+		});
+
 		res.json({ QueryRes });
 	},
 
