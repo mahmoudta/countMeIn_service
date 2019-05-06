@@ -5,6 +5,7 @@ const Categories = require('../models/category');
 const moment = require('moment');
 const { JWT_SECRET } = require('../consts');
 const { booked } = require('./algs/free-alg');
+const { smart } = require('./algs/free-alg');
 const { ifcanbook } = require('./algs/free-alg');
 const { freeAlg } = require('./algs/free-alg');
 
@@ -76,13 +77,14 @@ module.exports = {
 		res.status(200).json({ result: test1 });
 	},
 	booktest: async (req, res, next) => {
-		console.log('book Test Here');
-		var timerange = {
-			_start: { _hour: 12, _minute: 00 },
-			_end: { _hour: 13, _minute: 00 }
-		};
-		var date = await new Date(2019, 3, 28); // 2019/04/28 => "2019-04-27T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		const test1 = await booked('5ca5210fa3e1e23000ac29dd', date, timerange);
+		// console.log('book Test Here');
+		// var timerange={
+		// 				"_start":{"_hour":12, "_minute":00},
+		// 				"_end":{"_hour":13,"_minute":00}
+		// 			  }
+		// var date=await new Date(2019, 3, 28);// 2019/04/28 => "2019-04-27T21:00:00.000Z" ,months start from 0 so (april = month[3] )
+		// const test1 = await booked('5ca5210fa3e1e23000ac29dd',date,timerange);
+		const test1 = await smart();
 		res.status(200).json({ test1 });
 	},
 	databasetest: async (req, res, next) => {
