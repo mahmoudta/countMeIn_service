@@ -766,7 +766,12 @@ return result;
             var day= new BinarySearchTree();
             tmpfree=days.shift();
             day.totree(tmpfree.Free);
+            try{
             resulte=day.book(tobook);
+            }catch(error){
+                console.log("invalid Time'\")
+                return({error :'invalid Time'});
+            }
             if(resulte){
                 var newfreetime=day.arrayofopjects();
                 
