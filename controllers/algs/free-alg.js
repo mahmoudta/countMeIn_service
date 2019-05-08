@@ -421,7 +421,6 @@ function diffDays(date_from, date_until) {
 async function creatifempty(businessid,workinghours,date_from,date_until,choice){ 
     const newbusiness=await creatbusinessifempty(businessid);
     var freeobj;
-    var freeid;
     var free=[];
     var daysnum=diffDays(date_from,date_until);
     for (var i = 0; i <= daysnum; i++) {
@@ -440,11 +439,14 @@ async function creatifempty(businessid,workinghours,date_from,date_until,choice)
             until=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from , until ) ); 
         });
-        freeid=await creatDateifempty(newbusiness.business_id,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
+        const freeid=await creatDateifempty(newbusiness.business_id,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
+        if((i == daysnum)&& (!isEmpty(free)) )
+        return freeid;
+
     }
-if(isEmpty(freeid))
+
 return false;
-return freeid;
+
 
 }
 async function creatbusinessifempty(businessid){ 
