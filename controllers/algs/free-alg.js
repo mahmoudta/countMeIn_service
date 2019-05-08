@@ -769,7 +769,7 @@ return result;
             try{
             resulte=day.book(tobook);
             }catch(error){
-                console.log("invalid Time'\")
+                console.log("invalid Time")
                 return({error :'invalid Time'});
             }
             if(resulte){
