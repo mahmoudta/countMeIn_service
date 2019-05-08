@@ -762,7 +762,7 @@ return result;
                 });
             }
             days.push(new Day(chosendate,timeranges));
-            console.log("before"+chosentimerange)
+            console.log(`before: ${chosentimerange}`)
             var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
             console.log("after"+tobook)
             var day= new BinarySearchTree();
