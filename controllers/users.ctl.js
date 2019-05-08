@@ -89,9 +89,9 @@ module.exports = {
 	},
 	databasetest: async (req, res, next) => {
 		console.log('database Test Here');
-		var date1 = await new Date(2019, 4, 10);
-		var date2 = await new Date(2019, 4, 21);
-		const test1 = await freeAlg('5ca5210fa3e1e23000ac29dd', [ '5ca530337fd30731bbc006dc' ], date1, date2, 0);
+		var date1 = await new Date(2019, 4, 2);
+		var date2 = await new Date(2019, 5, 30);
+		const test1 = await freeAlg('5ca5210fa3e1e23000ac29dd', [ '5ca530337fd30731bbc006dc' ], date1, date2,7, 0);
 		res.status(200).json({ test1 });
 	},
 	getUpcommingAppointments: async (req, res, next) => {
