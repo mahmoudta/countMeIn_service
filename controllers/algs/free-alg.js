@@ -702,7 +702,7 @@ return result;
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,services,date_from,date_until,appontments_number_to_return=7,choice=0)=>{
+            freeAlg: async (businessid,services,date_from,date_until,choice=0,appontments_number_to_return=7)=>{
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
