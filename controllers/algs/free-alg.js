@@ -419,7 +419,7 @@ function diffDays(date_from, date_until) {
 };
 //creat business and dates if not found and return the freeTime _id if the busness
 async function creatifempty(businessid,workinghours,date_from,date_until,choice){ 
-    await creatbusinessifempty(businessid);
+    var result=await creatbusinessifempty(businessid);
     var freeobj;
     var freeid;
     var free=[];
@@ -440,7 +440,9 @@ async function creatifempty(businessid,workinghours,date_from,date_until,choice)
             until=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from , until ) ); 
         });
+        if(result===true){
         freeid=await creatDateifempty(businessid,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
+        }
     }
 if(isEmpty(freeid))
 return false;
@@ -455,13 +457,16 @@ async function creatbusinessifempty(businessid){
                     //console.log("business empty");
                     FreeTime.create({ business_id: businessid }, function (err, free) {
                         if (err) return handleError(err);
+                        return true;
                         // saved!
                       });
                     
                 }else{
+                    return true;
                     //business found
                     
                 }
+                return false
  } 
  async function creatDateifempty(businessid,oneDate,free){ 
     //creatDateifempty
