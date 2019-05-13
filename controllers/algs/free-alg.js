@@ -419,10 +419,10 @@ function diffDays(date_from, date_until) {
 };
 //creat business and dates if not found and return the freeTime _id if the busness
 async function creatifempty(businessid,workinghours,date_from,date_until,choice){ 
-    await creatbusinessifempty(businessid);
+    const newbusiness=await creatbusinessifempty(businessid);
     var freeobj;
-    var freeid;
     var free=[];
+    var freeid;
     var daysnum=diffDays(date_from,date_until);
     for (var i = 0; i <= daysnum; i++) {
         freeobj = workinghours.filter(function(element) {
@@ -440,28 +440,29 @@ async function creatifempty(businessid,workinghours,date_from,date_until,choice)
             until=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from , until ) ); 
         });
-        freeid=await creatDateifempty(businessid,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
+        freeid=await creatDateifempty(newbusiness.business_id,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
+        
+
     }
-if(isEmpty(freeid))
-return false;
+if(!isEmpty(free))
 return freeid;
+return false;
+
 
 }
 async function creatbusinessifempty(businessid){ 
     //creatbusinessifempty
-    const free=await FreeTime.findOne({business_id: businessid})
+    const free=await FreeTime.findOne({business_id: businessid});
     //console.log(free);
-                if(isEmpty(free)){
+        if(!isEmpty(free)) return free;
                     //console.log("business empty");
-                    FreeTime.create({ business_id: businessid }, function (err, free) {
-                        if (err) return handleError(err);
-                        // saved!
-                      });
-                    
-                }else{
-                    //business found
-                    
-                }
+        const newfree = await FreeTime.create({ business_id: businessid });
+
+        if(isEmpty(newfree)) return null;
+
+        return newfree;
+                
+                
  } 
  async function creatDateifempty(businessid,oneDate,free){ 
     //creatDateifempty
@@ -701,7 +702,7 @@ return result;
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,services,date_from,date_until,choice)=>{
+            freeAlg: async (businessid,services,date_from,date_until,choice=0,appontments_number_to_return=7)=>{
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
@@ -714,7 +715,7 @@ return result;
                     });
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;
-                    var appontments_number_to_return=6 //number of appointment to return
+                    //var appontments_number_to_return=6 //number of appointment to return
                 }
                 
 
@@ -762,11 +763,18 @@ return result;
                 });
             }
             days.push(new Day(chosendate,timeranges));
+            console.log(`before: ${chosentimerange}`)
             var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
+            console.log("after"+tobook)
             var day= new BinarySearchTree();
             tmpfree=days.shift();
             day.totree(tmpfree.Free);
+            try{
             resulte=day.book(tobook);
+            }catch(error){
+                console.log("invalid Time")
+                return({error :'invalid Time'});
+            }
             if(resulte){
                 var newfreetime=day.arrayofopjects();
                 
