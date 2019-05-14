@@ -8,18 +8,6 @@ const { JWT_SECRET } = require('../consts');
 const { freeTimeAlg } = require('./algs/free-alg');
 const { booked } = require('./algs/free-alg');
 
-const getAppointmentData = async (appointments) => {
-	var data = [];
-	for (const appointment of appointments) {
-		const user = await Users.findById(appointment.client_id, 'profile.name');
-		const Nservices = await Categories.find({ 'subCats._id': { $in: appointment.services } });
-		await data.push({
-			appointment,
-			user
-		});
-	}
-	return await data;
-};
 module.exports = {
 	setAppointment: async (req, res, next) => {
 		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute } = req.body;
@@ -116,14 +104,60 @@ module.exports = {
 	},
 
 	getBusinessAppointmentsByDate: async (req, res, next) => {
+		/* 
+			* need to handle the Business (req)  and Client 
+			* Busniess:{
+				busniess_id: 
+				busniess_name:
+				working:start,end
+				hours : number of working hours
+			}
+
+			* appointment : {
+				client_id,
+				client_name,
+				appointment_services,
+				start,
+				end,
+
+			}
+		
+		*/
+
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
 		const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
-		console.log(Ndate);
 		const appointments = await Appointments.find({ business_id: business_id, 'time.date': Ndate });
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
 		const data = await getAppointmentData(appointments);
 		return res.json({ data });
 	}
+
+	// getBusinessAppointmentsByDate: async (req, res, next) => {
+	// 	const { date, business_id } = req.params;
+	// 	var parts = date.split('-');
+	// 	const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
+	// 	console.log(Ndate);
+	// 	const appointments = await Appointments.find({ business_id: business_id, 'time.date': Ndate });
+	// 	if (!appointments) return res.status(403).json({ error: 'an error occoured' });
+
+	// 	const data = await getAppointmentData(appointments);
+	// 	return res.json({ data });
+	// }
+};
+
+const getAppointmentData = async (appointments) => {
+	var data = [];
+	for (const appointment of appointments) {
+		const user = await Users.findById(appointment.client_id, 'profile.name');
+		// const business = await Businesses.findById(appointment.business_id);
+
+		// const Nservices = await Categories.find({ 'subCats._id': { $in: appointment.services } });
+		await data.push({
+			appointment,
+			user
+		});
+	}
+	return await data;
 };
