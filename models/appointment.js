@@ -5,12 +5,12 @@ var mongoose = require('mongoose'),
 		time: {
 			date: Date,
 			start: {
-				_hour: 0,
-				_minute: 0
+				_hour: Number,
+				_minute: Number
 			},
 			end: {
-				_hour: 0,
-				_minute: 0
+				_hour: Number,
+				_minute: Number
 			}
 		},
 		services: [ String ],
