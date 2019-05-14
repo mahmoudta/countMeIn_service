@@ -11,6 +11,7 @@ router.route('/getAllCustomers').get(passportJWT, businessCtl.getAllCustomers);
 router.route('/:id').get(passportJWT, businessCtl.getBusinessForView);
 router.route('/owner/:owner_id').get(passportJWT, businessCtl.getBusinessByOwner);
 router.route('/follow').put(passportJWT, businessCtl.followBusiness);
+router.route('/unfollow').put(passportJWT, businessCtl.unfollowBusiness);
 router.route('/edit/:id').put(passportJWT, businessCtl.editBusiness);
 router.route('/services/:id').get(passportJWT, businessCtl.getServicesByBusiness);
 

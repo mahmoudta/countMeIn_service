@@ -421,8 +421,8 @@ function diffDays(date_from, date_until) {
 async function creatifempty(businessid,workinghours,date_from,date_until,choice){ 
     const newbusiness=await creatbusinessifempty(businessid);
     var freeobj;
-    var freeid;
     var free=[];
+    var freeid;
     var daysnum=diffDays(date_from,date_until);
     for (var i = 0; i <= daysnum; i++) {
         freeobj = workinghours.filter(function(element) {
@@ -441,10 +441,13 @@ async function creatifempty(businessid,workinghours,date_from,date_until,choice)
             free.push( new time_range(from , until ) ); 
         });
         freeid=await creatDateifempty(newbusiness.business_id,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
+        
+
     }
-if(isEmpty(freeid))
-return false;
+if(!isEmpty(free))
 return freeid;
+return false;
+
 
 }
 async function creatbusinessifempty(businessid){ 
@@ -699,7 +702,7 @@ return result;
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,services,date_from,date_until,choice)=>{
+            freeAlg: async (businessid,services,date_from,date_until,choice=0,appontments_number_to_return=7)=>{
                 var toreturn;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
@@ -712,7 +715,7 @@ return result;
                     });
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;
-                    var appontments_number_to_return=6 //number of appointment to return
+                    //var appontments_number_to_return=6 //number of appointment to return
                 }
                 
 
