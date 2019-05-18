@@ -80,6 +80,9 @@ module.exports = {
 
 		res.status(200).json({ QueryRes });
 	},
+	deleteBusinessAppointment: async (req, res, next) => {
+		const { appointment_id } = req.params;
+	},
 	setBusinessApoointment: async (req, res, next) => {
 		const { client, business, services, start, end, date } = req.body;
 
@@ -104,26 +107,6 @@ module.exports = {
 	},
 
 	getBusinessAppointmentsByDate: async (req, res, next) => {
-		/* 
-			* need to handle the Business (req)  and Client 
-			* Busniess:{
-				busniess_id: 
-				busniess_name:
-				working:start,end
-				hours : number of working hours
-			}
-
-			* appointment : {
-				client_id,
-				client_name,
-				appointment_services,
-				start,
-				end,
-
-			}
-		
-		*/
-
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
 		const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
