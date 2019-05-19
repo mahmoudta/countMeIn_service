@@ -5,9 +5,8 @@ const Categories = require('../models/category');
 const Users = require('../models/user');
 
 const { JWT_SECRET } = require('../consts');
-const { freeTimeAlg } = require('./algs/free-alg');
-const { booked } = require('./algs/free-alg');
-const { deleted } = require('./algs/free-alg');
+// const { freeTimeAlg } = require('./algs/free-alg');
+const { booked, deleted } = require('./algs/free-alg');
 
 module.exports = {
 	setAppointment: async (req, res, next) => {
@@ -195,10 +194,11 @@ const getAppointmentData = async (appointments) => {
 		const user = await Users.findById(appointment.client_id, 'profile.name');
 		// const business = await Businesses.findById(appointment.business_id);
 
-		// const Nservices = await Categories.find({ 'subCats._id': { $in: appointment.services } });
+		const Nservices = await Categories.find({ 'services._id': { $in: appointment.services } });
 		await data.push({
 			appointment,
-			user
+			user,
+			services: await getServices(Nservices, appointment.services)
 		});
 	}
 	return await data;
