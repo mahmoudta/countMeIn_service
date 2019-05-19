@@ -11,12 +11,13 @@ const { freeAlg } = require("./algs/free-alg");
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 
-signInToken = user => {
+signInToken = (user, owner = false) => {
   return JWT.sign(
     {
       sub: user._id,
       isAdmin: user.isAdmin,
-      profile: user.profile
+      profile: user.profile,
+      isBusinessOwner: owner
     },
     JWT_SECRET
   );
@@ -50,7 +51,9 @@ module.exports = {
 
   signIn: async (req, res, next) => {
     console.log("signIn Called!!");
-    const token = signInToken(req.user);
+    const business = await Businesses.findOne({ owner_id: req.user._id });
+    const isowner = business ? true : false;
+    const token = signInToken(req.user, isowner);
     res.status(200).json({ token });
   },
 
