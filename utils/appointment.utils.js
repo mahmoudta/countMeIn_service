@@ -7,7 +7,7 @@ module.exports = {
 			category.services.find(async (service) => {
 				const index = services_ids.indexOf(service._id);
 				if (index != -1) {
-					await services.push({ _id: service._id, name: service.name });
+					await services.push({ _id: service._id, name: service.title });
 				}
 			});
 		});
