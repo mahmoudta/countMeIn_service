@@ -110,9 +110,9 @@ module.exports = {
       );
       let ServiceNames = appointment.services.map(async serviceTemp => {
         console.log(serviceTemp);
-        const SingleName = await Categories.findById(serviceTemp);
+        const SingleName = await Categories.findById({ serviceTemp });
         console.log("catname");
-        console.log(SingleName.name);
+        console.log(SingleName);
 
         return SingleName;
       });
