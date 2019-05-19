@@ -12,8 +12,8 @@ module.exports = {
 
 	isUserFollower: async (followers, user_id) => {
 		// const followers = await getFollowers(customers);
-		const user = await followers.find(async (follower) => {
-			(await follower.customer_id.toString()) === user_id.toString();
+		const user = await followers.find((follower) => {
+			follower.customer_id.toString() === user_id.toString();
 		});
 		if (!isEmpty(user)) return true;
 
