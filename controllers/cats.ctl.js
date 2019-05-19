@@ -26,13 +26,13 @@ module.exports = {
 		res.status(200).json({ success: 'sucsessfully added' });
 	},
 
-	addSubCategory: async (req, res, next) => {
-		const { parent_category, name, time } = req.body;
+	addService: async (req, res, next) => {
+		const { parent_category, name, time, cost } = req.body;
 		Categories.findOneAndUpdate(
 			{ _id: parent_category },
 			{
 				$push: {
-					subCats: { sub: name, time: Number(time) }
+					services: { title: name.toLowerCase(), time: Number(time), cost: Number(cost) }
 				}
 			},
 			(err, doc) => {
