@@ -108,13 +108,14 @@ module.exports = {
       const BusinessProfile = await Businesses.findById(
         appointment.business_id
       );
-      // let ServiceNames = appointment.services.map(async (serviceTemp) => {
-      // 	//console.log(serviceTemp);
-      // 	const SingleName = await Categories.find({ 'subCats._id': serviceTemp });
-      // 	console.log(SingleName);
+      let ServiceNames = appointment.services.map(async serviceTemp => {
+        console.log(serviceTemp);
+        const SingleName = await Categories.findById(serviceTemp);
+        console.log("catname");
+        console.log(SingleName.name);
 
-      // 	return SingleName;
-      // });
+        return SingleName;
+      });
       //const ServiceNames = await Promise.all(innerPromise);
       const BusinessName = BusinessProfile.profile.name;
       let shour = appointment.time.start._hour;
