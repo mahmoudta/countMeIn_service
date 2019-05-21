@@ -26,7 +26,7 @@ module.exports = {
 		res.status(200).json({ success: 'sucsessfully added' });
 	},
 
-	addSubCategory: async (req, res, next) => {
+	addService: async (req, res, next) => {
 		const { parent_category, name, time } = req.body;
 		Categories.findOneAndUpdate(
 			{ _id: parent_category },
