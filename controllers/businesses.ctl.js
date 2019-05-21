@@ -83,17 +83,19 @@ module.exports = {
 		console.log('business for view');
 		const id = req.params.id;
 		const Reqbusiness = await Businesses.findById(id);
-		if (!Reqbusiness) return res.status(404).json({ error: 'Business invalid' });
+
+		if (!Reqbusiness) return res.status(404).json({ error: 'Business Not Found' });
 
 		const followers = await getFollowers(Reqbusiness.customers);
+		const isFollower = await isUserFollower(followers, req.user._id);
 
-		// const isFollower = await isUserFollower(followers, req.user._id);
+		// const isUserFollower = await isUserFollower(followers, req.user._id);
 		const business = {
 			_id: id,
 			owner_id: Reqbusiness.owner_id,
 			profile: Reqbusiness.profile,
 			followers: followers.length,
-			isFollower: await isUserFollower(followers, req.user._id)
+			isFollower: isFollower
 		};
 
 		res.status(200).json({ business });
@@ -121,20 +123,20 @@ module.exports = {
 
 		// check if business
 		const business = await Businesses.findById(business_id);
-		if (!business) return res.status(404).json({ error: 'invalid business' });
+		if (!business) return res.status(404).json({ error: 'Business Not Found' });
 
 		// check if user already following this business
 
 		const customer = await getCustomer(business.customers, req.user._id);
-
+		let updated_business;
 		if (!isEmpty(customer)) {
-			if (customer.isFollower) return res.status(201).json({ message: 'user already follower' });
+			if (customer.isFollower) return res.status(201).json({ error: 'user already follower' });
 			const update = {
 				$set: {
 					'customers.$.isFollower': true
 				}
 			};
-			const updated_business = await Businesses.findOneAndUpdate(
+			updated_business = await Businesses.findOneAndUpdate(
 				{ _id: business_id, 'customers.customer_id': req.user._id },
 				update
 			);
@@ -147,21 +149,12 @@ module.exports = {
 					}
 				}
 			};
-
 			/* push user id to business */
-			const updated_business = await Businesses.findByIdAndUpdate(business_id, update);
+			updated_business = await Businesses.findByIdAndUpdate(business_id, update);
 		}
 
-		// const exist = await business.customers.filter((user) => {
-		// 	const client_id = user.customer_id.toString();
-		// 	const current_id = req.user._id.toString();
-		// 	return client_id == current_id;
-		// });
-		// 	console.log(exist);
-		// if (exist.length > 0) return res.status(403).json({ error: 'already follower' });
-
-		//push the customer id to followers
-
+		//push the business id to users array
+		if (!updated_business) return res.status(202).json({ error: 'Some Error Occured' });
 		const userUpdate = {
 			$push: {
 				following: business_id
@@ -173,14 +166,14 @@ module.exports = {
 
 		// if (!updated_business) return res.status(404).json({ error: 'an error occurred' });
 
-		res.status(404).json({ success: 'Successfully addedd' });
+		res.status(200).json({ isFollower: true });
 	},
 
 	unfollowBusiness: async (req, res, next) => {
 		const { business_id } = req.body;
 		// check if business
 		const business = await Businesses.findById(business_id);
-		if (!business) return res.status(404).json({ error: 'invalid business' });
+		if (!business) return res.status(404).json({ error: 'business Not Found' });
 
 		//unfollow
 		const update = {
@@ -200,12 +193,12 @@ module.exports = {
 			update
 		);
 
+		if (!updated_business) return res.status(403).json({ error: 'an error occurred' });
+
 		/* push business id to business */
-		const updated_user = await Users.findByIdAndUpdate(req.user._id, userUpdate);
+		const updated_user = await Users.findOneAndUpdate({ _id: req.user._id }, userUpdate);
 
-		if (!updated_business) return res.status(404).json({ error: 'an error occurred' });
-
-		res.status(404).json({ success: 'Successfully unfollow' });
+		res.status(200).json({ isFollower: false });
 	},
 	getAllCustomers: async (req, res, next) => {
 		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
