@@ -64,7 +64,7 @@ module.exports = {
 
 		if (!category) return res.status(404).json({ error: 'An Error Occurred' });
 
-		res.status(200).json({ success: ` ${category.name} has been deleted` });
+		res.status(200).json({ category });
 	},
 
 	deleteService: async (req, res, next) => {

@@ -10,6 +10,10 @@ var mongoose = require('mongoose'),
 				type: String,
 				required: true
 			},
+			phone: {
+				type: String,
+				required: true
+			},
 			description: String,
 			category_id: {
 				type: Array,

@@ -2,7 +2,6 @@ const isEmpty = require('lodash/isEmpty');
 
 module.exports = {
 	getFollowers: async (customers) => {
-		console.log('fetFollowers');
 		const followers = await customers.filter((customer) => {
 			return customer.isFollower;
 		});
