@@ -24,7 +24,8 @@ var mongoose = require('mongoose'),
 					time: {
 						type: Number,
 						max: 120
-					}
+					},
+					cost: Number
 				}
 			],
 			rating: Number,
