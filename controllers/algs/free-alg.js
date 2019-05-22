@@ -929,6 +929,9 @@ async function returnfreeondate(appointments,oneDate){
                 var date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
                 var date_until=moment(date_from).add(days_to_return, 'days').toDate();
                 tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,3,customerid);
+                if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
+                return ({});
+                return   tempfreetime;
                 //console.log(util.inspect(tempfreetime, {depth: null}));
                 // var tmpfree=[];
                 // tmpfree.push( new time_range(new time(8,0) , new time(9,45) ) );
