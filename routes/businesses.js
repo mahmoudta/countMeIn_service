@@ -24,5 +24,6 @@ router
 router
   .route("/getBusinessesByCatagory/:catagoryId")
   .get(passportJWT, businessCtl.getBusinessesByCatagory);
+router.route("/test/add").get(businessCtl.setfull);
 
 module.exports = router;

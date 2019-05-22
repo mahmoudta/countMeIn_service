@@ -12,7 +12,8 @@ var mongoose = require('mongoose'),
 			},
 			phone: {
 				type: String,
-				required: true
+				required: true,
+				index: { unique: true }
 			},
 			description: String,
 			category_id: {
@@ -46,6 +47,10 @@ var mongoose = require('mongoose'),
 					},
 					until: {
 						type: Date
+					},
+					break: {
+						from: Date,
+						until: Date
 					}
 				}
 			],
