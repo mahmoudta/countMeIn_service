@@ -93,7 +93,7 @@ module.exports = {
       ["5ce17163c578a09da7157523"],
       date1,
       date2,
-      3,
+      1,
       "5c9241cdc62fd40d957e7df3"
     );
     res.status(200).json({ test1 });
