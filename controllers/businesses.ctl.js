@@ -22,17 +22,31 @@ module.exports = {
 	createBusiness: async (req, res, next) => {
 		console.log('create Business called!!');
 		// get all params
-		const { name, category, img, working, break_time, services } = req.body;
+		const {
+			street,
+			city,
+			building,
+			postal_code,
+			breakTime,
+			categories,
+			description,
+			name,
+			img,
+			phone,
+			working,
+			services
+		} = req.body;
 		// checking if user already have a business
 		const business = await Businesses.findOne({ owner_id: req.user._id });
 		if (business) {
-			return res.status(403).json({ error: 'you already have a business page' });
+			return res.status(403).json({ error: 'you already have a business' });
 		}
 
+		//TODO
 		// if  category is not a real category
-		const isCat = await Categories.findById(category, 'name');
-		// if not => return error
-		if (!isCat) return res.status(404).json({ error: 'inValid Category' });
+		// const isCat = await Categories.findById(category, 'name');
+		// // if not => return error
+		// if (!isCat) return res.status(404).json({ error: 'inValid Category' });
 
 		/* convert request working hours to real date object  */
 		var items = [];
@@ -44,22 +58,46 @@ module.exports = {
 					day: element.day,
 					opened: element.opened,
 					from: from,
-					until: until
+					until: until,
+					break: {
+						isBreak: element.break.isBreak,
+						from: await createTime(element.break.from),
+						until: await createTime(element.break.from)
+					}
 				});
 			}
 			return await items;
 		};
 
-		/* splitting the */
-
+		/* splitting the categories and the services */
+		const NewCategories = await categories.map(async (category) => {
+			return await category.value;
+		});
+		const NewServices = await services.map((service) => {
+			return {
+				service_id: service.value,
+				time: Number(service.time),
+				cost: Number(service.cost)
+			};
+		});
+		console.log(NewCategories);
 		const newBusiness = new Businesses({
 			owner_id: req.user._id,
 			profile: {
 				name: name,
-				category_id: category,
-				purposes: services,
+				img: !isEmpty(img) ? img : '',
+				location: {
+					street: !isEmpty(street) ? street : '',
+					city: !isEmpty(city) ? city : '',
+					building: !isEmpty(building) ? Number(building) : 0,
+					postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
+				},
+				services: NewServices,
+				phone: phone,
+				description: !isEmpty(description) ? description : '',
+				category_id: NewCategories,
 				working_hours: await fillTime(),
-				break_time: break_time
+				break_time: !isEmpty(breakTime) ? breakTime : 10
 			}
 		});
 		await newBusiness.save();

@@ -49,6 +49,7 @@ var mongoose = require('mongoose'),
 						type: Date
 					},
 					break: {
+						isBreak: Boolean,
 						from: Date,
 						until: Date
 					}
