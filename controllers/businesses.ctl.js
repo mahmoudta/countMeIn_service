@@ -229,5 +229,26 @@ module.exports = {
 
 		if (!services) return res.status(404).json({ error: 'an error occurred' });
 		res.status(200).json({ services });
+	},
+	setfull: async (req, res, next) => {
+		const days = [ 'sunday', 'monday', 'tuesday', 'wedensday', 'thursday', 'friday', 'saturday' ];
+		let Schedule = [];
+		for (let i in days) {
+			await Schedule.push({
+				day: days[i],
+				opened: false,
+				from: new Date(),
+				until: new Date(),
+				break: {
+					from: new Date(),
+					until: new Date()
+				}
+			});
+		}
+		console.log(Schedule);
+		const update = { 'profile.working_hours': await Schedule };
+		const business = await Businesses.findOneAndUpdate({ _id: '5ca5210fa3e1e23000ac29dd' }, { update });
+		if (!business) res.json({ error: 'Error' });
+		res.json({ success: 'Success' });
 	}
 };

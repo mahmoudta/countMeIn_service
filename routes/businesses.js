@@ -14,5 +14,5 @@ router.route('/follow').put(passportJWT, businessCtl.followBusiness);
 router.route('/unfollow').put(passportJWT, businessCtl.unfollowBusiness);
 router.route('/edit/:id').put(passportJWT, businessCtl.editBusiness);
 router.route('/services/:id').get(passportJWT, businessCtl.getServicesByBusiness);
-
+router.route('/test/add').get(businessCtl.setfull);
 module.exports = router;
