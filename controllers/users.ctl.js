@@ -111,15 +111,16 @@ module.exports = {
       const BusinessProfile = await Businesses.findById(
         appointment.business_id
       );
-      let ServiceNames = appointment.services.map(async serviceTemp => {
-        console.log(serviceTemp);
-        const SingleName = await Categories.findById({ serviceTemp });
-        console.log("catname");
-        console.log(SingleName);
+      // let ServiceNames = appointment.services.map(async serviceTemp => {
+      //   console.log(serviceTemp);
+      //   const SingleName = await Categories.findById({ serviceTemp });
+      //   console.log("catname");
+      //   console.log(SingleName);
 
-        return SingleName;
-      });
-      //const ServiceNames = await Promise.all(innerPromise);
+      //   return SingleName;
+      // });
+      // ServiceNames = await Promise.all(innerPromise);
+      // console.log("ServiceName", ServiceNames);
       const BusinessName = BusinessProfile.profile.name;
       let shour = appointment.time.start._hour;
       let sminute = appointment.time.start._minute;
