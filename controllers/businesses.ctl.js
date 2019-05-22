@@ -4,6 +4,7 @@ const Categories = require('../models/category');
 const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
 const isEmpty = require('lodash/isEmpty');
+const { signInToken } = require('./users.ctl');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 createTime = async (time) => {
@@ -101,7 +102,9 @@ module.exports = {
 			}
 		});
 		const business = await newBusiness.save();
-		res.status(200).json({ business });
+		if (!business) return res.status(403).json({ error: 'some error accourd during create' });
+		const token = signInToken(req.user, business._id);
+		res.status(200).json({ business, token });
 	},
 
 	getAllBusinesses: async (req, res, next) => {
