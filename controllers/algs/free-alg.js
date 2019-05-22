@@ -2,6 +2,7 @@ const express = require("express");
 let app = new express();
 var FreeTime = require('../../models/freeTime');
 var Business = require('../../models/business');
+var Appointment = require('../../models/appointment');
 const util = require('util');
 var inherits = require('util').inherits; 
 
@@ -410,6 +411,11 @@ Day.prototype.slice = function (length,minutes_between_appointment) {
     });
     this.Free=tmp;
 };
+Day.prototype.mergewithcustomerandsave = function (customerappointment) {
+    var tmpappointment=mergewithcostumer(this.Free,customerappointment,this.Date)
+    this.Free=tmpappointment;
+
+};
 exports.time_range;
 
 function diffDays(date_from, date_until) {
@@ -418,7 +424,7 @@ function diffDays(date_from, date_until) {
     return diffDays
 };
 //creat business and dates if not found and return the freeTime _id if the busness
-async function creatifempty(businessid,workinghours,date_from,date_until,choice){ 
+async function creatifempty(businessid,workinghours,date_from,date_until){ 
     const newbusiness=await creatbusinessifempty(businessid);
     var freeobj;
     var free=[];
@@ -436,14 +442,27 @@ async function creatifempty(businessid,workinghours,date_from,date_until,choice)
          }
         free=[];
         freeobj.forEach(function(element) {
+            if(!(element.break.isBreak)){
             from=new time(element.from.getHours(),element.from.getMinutes());
             until=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from , until ) ); 
+            }else{
+            from1=new time(element.from.getHours(),element.from.getMinutes());
+            until1=new time(element.break.from.getHours(),element.break.from.getMinutes());
+            free.push( new time_range(from1 , until1 ) ); 
+
+            from2=new time(element.break.until.getHours(),element.break.until.getMinutes());
+            until2=new time(element.until.getHours(),element.until.getMinutes());
+            free.push( new time_range(from2 , until2 ) ); 
+
+            }
+
         });
         freeid=await creatDateifempty(newbusiness.business_id,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
         
 
     }
+    console.log(freeid);
 if(!isEmpty(free))
 return freeid;
 return false;
@@ -481,14 +500,17 @@ async function creatbusinessifempty(businessid){
     }
     return id;
  }
- async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice){ 
+ //choice=0 only find free time of busness slice and return/choice=1 find free time of busness merge with free time of client then slice and return/choice=2 only find free time of busness and return
+ async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice=0,customerid=0){ 
      if(id===false)
      return false
     var days=[];
     var daysfree=[];
     var timeranges=[];
     var daysnum=diffDays(date_from,date_until);
-  
+    var customerappointment;
+    if(choice==1||choice==3)
+    customerappointment=await returnallappointments(customerid);
     const freetime = await FreeTime.findById(id)
     mongodays=freetime.dates.filter(function(element) {
         return ( (0<=diffDays(element.day,date_until)) && (diffDays(element.day,date_until)<=daysnum) )
@@ -510,6 +532,7 @@ async function creatbusinessifempty(businessid){
             var tmpcorrector;
             var posibletobook = new BinarySearchTree();
             var day = new BinarySearchTree();
+
             do{
                 if (days === undefined || days.length == 0) {break;}
                 tmpday=days.shift();
@@ -525,11 +548,17 @@ async function creatbusinessifempty(businessid){
                         tmpcorrector.pop();
                     }
                     tmpday.Free=tmpcorrector;
+                    if(choice==1||choice==3)
+                    tmpday.mergewithcustomerandsave(customerappointment);
+                    if(choice==0||choice==1)
                     tmpday.slice(services_length,minutes_between_appointment);
                     daysfree.push(tmpday);
                     break;
                 }
                 tmpday.Free=posibletobook.arrayofopjects();
+                if(choice==1||choice==3)
+                tmpday.mergewithcustomerandsave(customerappointment);
+                if(choice==0||choice==1)
                 tmpday.slice(services_length,minutes_between_appointment);
                 daysfree.push(tmpday)
             }while(counter<appontments_number_to_return);
@@ -537,13 +566,15 @@ async function creatbusinessifempty(businessid){
 return(daysfree);
 
 }
-async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue){ 
+async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choice=0){ 
     // var i=0;
     // var j=0;
     var tempend;
     var tempstart;
     var result=[];
+    if(choice==0)
     result=timerangelist1;
+
     timerangelist2.forEach(function(fromtimerange2) {
         timerangelist1.forEach(function(fromtimerange1) {
                 if( (fromtimerange1._start.ifsmallerthan(fromtimerange2._end))&& (fromtimerange1._end.ifbiggerthan(fromtimerange2._start))) {
@@ -569,36 +600,40 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue){
                 }
         });
       });
-    // while( (timerangelist1.length>i) && (timerangelist2.length>j) ){
-    //     if( (timerangelist1[i]._start.ifsmallerthan(timerangelist2[j]._end))&& (timerangelist1[i]._end.ifbiggerthan(timerangelist2[j]._start))) {
-    //         if(timerangelist1[i]._start.ifbiggerthan(timerangelist2[j]._start)){
-    //             tempstart=timerangelist1[i]._start;
-    //         }
-    //         else{
-    //             tempstart=timerangelist2[j]._start;
-    //         }
-
-    //         if(timerangelist1[i]._end.ifsmallerthan(timerangelist2[j]._end)){
-    //             tempend=timerangelist1[i]._end;
-    //         }else{
-    //             tempend=timerangelist2[j]._end;
-    //         }
-    //         result=result.filter(function(element) {
-    //             if( (element._start._hour==tempstart._hour) && (element._start._minute==tempstart._minute) && (element._end._hour==tempend._hour) && (element._end._minute==tempend._minute) )
-    //             return false;
-    //             else
-    //             return true;
-    //          });
-    //         result.push(new time_range(tempstart,tempend,timerangelist1[i]._value+mergevalue));
-    //     }
-    //     if(timerangelist1[i]._end.ifsmallerthan(timerangelist2[j]._end)){
-    //         i++;
-    //     }else{
-    //         j++;
-    //     }
-    // }
 return result;
 } 
+async function returnallappointments(customerid){ 
+    const appointments = await Appointment.findOne({client_id: customerid})
+    return appointments;
+
+ }
+ async function mergewithcostumer(Free,appointments,oneDate){ 
+
+    return mergetimerangelists(Free,returnfreeondate(appointments,oneDate),0,1);
+
+
+ }
+async function returnfreeondate(appointments,oneDate){ 
+    var free=[];
+    const appointmentsondate = appointments.filter(function(element) {
+        if(moment(element.time.date).format("YYYY/MM/DD")=== moment(oneDate).format("YYYY/MM/DD"))
+        return true;
+        else
+        return false;
+     });
+     var day= new BinarySearchTree();
+    day.totree([ new time_range(new time(0,0) , new time(24,0) ) ]);
+     appointmentsondate.forEach(function(oneappointment) {
+         var tmptime=new time_range( new time(oneappointment.start._hour,oneappointment.start._minute) , new time(oneappointment.end._hour,oneappointment.end._minute) )
+         var result= day.book(tmptime) ;
+        if(result==false)
+        console.log("error on finding date on customer");
+
+    });
+    return day.arrayofstrings();
+
+ }
+
 /***********************************************************************************/
 
 
@@ -702,36 +737,30 @@ return result;
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,services,date_from,date_until,choice=0,appontments_number_to_return=7)=>{
-                var toreturn;
+            freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7)=>{
+                var toreturn=[];
+                var tempfreetime=[];
+                var temp;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
                     // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
                     return({error :'invalid business'});
                 }else{
                     var services_length=0;
+                    var services_cost=0;
+                    var tmpservice;
                     services.forEach(function(onepurpose) {
-                        services_length+=business.profile.services.find(o => o.service_id === onepurpose).time;
+                        tmpservice=business.profile.services.find(o => o.service_id === onepurpose)
+                        services_length+=tmpservice.time;
+                        services_cost+=tmpservice.cost;
                     });
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;
-                    //var appontments_number_to_return=6 //number of appointment to return
                 }
-                
 
-                switch(choice) {
-                    case 0:
-                      //console.log(await creatifempty(businessid,workinghours,days))
-                      toreturn =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until,choice),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice)
-                      break;
-                    case 1:
-                      console.log("my bad...choice 1 is not finished yet try choice 0, works fine");
-                      break;
-                    default:
-                        return({error :'invalid choice'});
-                  }
+                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid);
                 
-                if(toreturn===false)
+                if( (toreturn===false) || (isEmpty(toreturn)) )
                 return ({});
                 return toreturn;
             },
@@ -755,7 +784,7 @@ return result;
                 return({error :'invalid Date'});
             }
             else{
-                //console.log(daysinmongo);
+                //console.l]]]]og(daysinmongo);
                 freetobook=daysinmongo.freeTime
                  timeranges=[];
                 freetobook.forEach(function(onetimerange) {
@@ -763,9 +792,9 @@ return result;
                 });
             }
             days.push(new Day(chosendate,timeranges));
-            console.log(`before: ${chosentimerange}`)
+            //console.log(`before: ${chosentimerange}`)
             var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
-            console.log("after"+tobook)
+            //console.log("after"+tobook)
             var day= new BinarySearchTree();
             tmpfree=days.shift();
             day.totree(tmpfree.Free);
@@ -789,7 +818,7 @@ return result;
                 });
 
                 ///////////////////////////////////////////////
-
+                
                 //console.log(newfreetime);
                 return({answer : "done"});
             }else{
@@ -809,7 +838,7 @@ return result;
                     return({error :'invalid business'});
                 }else{
                     var workinghours =business.profile.working_hours;
-                    freeid =await creatifempty(businessid,workinghours,chosendate,chosendate,0);
+                    freeid =await creatifempty(businessid,workinghours,chosendate,chosendate);
                     if(freeid===false)
                     return false;
                     const freetime = await FreeTime.findOne({business_id: businessid})
@@ -860,41 +889,63 @@ return result;
                     return result;
                 
             },
-            smart: async (things,to,add,later)=>{ 
-
-                // atest
-                var tmpfree=[];
-                tmpfree.push( new time_range(new time(8,0) , new time(9,45) ) );
-                tmpfree.push( new time_range(new time(11,0) , new time(12,0) ) );
-                tmpfree.push( new time_range(new time(12,40) , new time(14,0) ) );
-                tmpfree.push( new time_range(new time(14,30) , new time(15,0) ) );
-                tmpfree.push( new time_range(new time(15,0) , new time(18,0) ) );
-                console.log("\nfreetime :");
-                tmpfree.forEach(function(timerange) {
-                    console.log(timerange.string());
-                });
-                var free=[];
-                free.push( new time_range(new time(9,15) , new time(12,45) ) );
-                free.push( new time_range(new time(16,0) , new time(17,30) ) );
-                console.log("\nprevious appoitments ,value=1");
-                free.forEach(function(timerange) {
-                    console.log(timerange.string());
-                });
-                var morning=[];
-                morning.push( new time_range(new time(8,0) , new time(12,0) ) );
-                console.log("\nprefered time is morning(8:00-12:00),value=2 :\n");
-                var tmmp=[];
-                tmmp=await mergetimerangelists(tmpfree,free,1);
-                console.log("\nafter added previous appoitments :");
+            smart: async (businessid,services,customerid,days_to_return=7)=>{ 
+                var toreturn=[];
+                var tempfreetime=[];
+                var temp;
+                const business = await Business.findById(businessid)
+                if(isEmpty(business)){
+                    // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
+                    return({error :'invalid business'});
+                }else{
+                    var services_length=0;
+                    var services_cost=0;
+                    var tmpservice;
+                    services.forEach(function(onepurpose) {
+                        tmpservice=business.profile.services.find(o => o.service_id === onepurpose)
+                        services_length+=tmpservice.time;
+                        services_cost+=tmpservice.cost;
+                    });
+                    var minutes_between_appointment = business.profile.break_time;
+                    var workinghours =business.profile.working_hours;
+                }
+                var date_from=moment().format('l');
+                date_from=moment(date_from).toDate();
+                var date_until=moment(date_from).add(days_to_return, 'days').toDate();
+                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,3,customerid);
+                console.log(util.inspect(obj, {depth: null}));
+                // var tmpfree=[];
+                // tmpfree.push( new time_range(new time(8,0) , new time(9,45) ) );
+                // tmpfree.push( new time_range(new time(11,0) , new time(12,0) ) );
+                // tmpfree.push( new time_range(new time(12,40) , new time(14,0) ) );
+                // tmpfree.push( new time_range(new time(14,30) , new time(15,0) ) );
+                // tmpfree.push( new time_range(new time(15,0) , new time(18,0) ) );
+                // console.log("\nfreetime :");
+                // tmpfree.forEach(function(timerange) {
+                //     console.log(timerange.string());
+                // });
+                // var free=[];
+                // free.push( new time_range(new time(9,15) , new time(12,45) ) );
+                // free.push( new time_range(new time(16,0) , new time(17,30) ) );
+                // console.log("\nprevious appoitments ,value=1");
+                // free.forEach(function(timerange) {
+                //     console.log(timerange.string());
+                // });
+                // var morning=[];
+                // morning.push( new time_range(new time(8,0) , new time(12,0) ) );
+                // console.log("\nprefered time is morning(8:00-12:00),value=2 :\n");
+                // var tmmp=[];
+                // tmmp=await mergetimerangelists(tmpfree,free,1);
+                // console.log("\nafter added previous appoitments :");
             
-                tmmp.forEach(function(timerange) {
-                    console.log(timerange.string()+" value="+timerange._value);
-                });
-                tmmp=await mergetimerangelists(tmmp,morning,2);
-                console.log("\nafter added that the prefered time is morning:");
-                tmmp.forEach(function(timerange) {
-                    console.log(timerange.string()+" value="+timerange._value);
-                });
+                // tmmp.forEach(function(timerange) {
+                //     console.log(timerange.string()+" value="+timerange._value);
+                // });
+                // tmmp=await mergetimerangelists(tmmp,morning,2);
+                // console.log("\nafter added that the prefered time is morning:");
+                // tmmp.forEach(function(timerange) {
+                //     console.log(timerange.string()+" value="+timerange._value);
+                // });
                 
             }
     

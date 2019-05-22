@@ -268,6 +268,21 @@ module.exports = {
 		if (!services) return res.status(404).json({ error: 'an error occurred' });
 		res.status(200).json({ services });
 	},
+	getBusinessesByCatagory: async (req, res, next) => {
+		const { catagoryId } = req.params;
+		//var catagoryId = JSON.parse(req.params);
+
+		console.log(catagoryId);
+
+		const ResultQuery = await Businesses.find(
+			{
+				'profile.category_id': catagoryId
+			},
+			'_id'
+		);
+
+		res.status(200).json({ ResultQuery });
+	},
 	setfull: async (req, res, next) => {
 		const days = [ 'sunday', 'monday', 'tuesday', 'wedensday', 'thursday', 'friday', 'saturday' ];
 		let Schedule = [];
