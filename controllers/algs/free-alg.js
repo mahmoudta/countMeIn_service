@@ -402,19 +402,19 @@ time_range.prototype.slice = function (length,minutes_between_appointment) {
 
 function Day(date, free) {
 	this.Date = date,
-	this.Free = free
+    this.Free=free
 };
 Day.prototype.slice = function (length,minutes_between_appointment) {
     var tmp=[];
+    
     this.Free.forEach(timerange => {
         tmp=tmp.concat(timerange.slice(length,minutes_between_appointment));
     });
     this.Free=tmp;
 };
-Day.prototype.mergewithcustomerandsave = function (customerappointment) {
-    var tmpappointment=mergewithcostumer(this.Free,customerappointment,this.Date)
-    this.Free=tmpappointment;
-
+ Day.prototype.mergewithcustomerandsave = async function  (customerappointment) {
+    this.Free= await mergewithcostumer(this.Free,customerappointment,this.Date)
+     
 };
 exports.time_range;
 
@@ -431,12 +431,16 @@ async function creatifempty(businessid,workinghours,date_from,date_until){
     var freeid;
     var daysnum=diffDays(date_from,date_until);
     for (var i = 0; i <= daysnum; i++) {
+        
         freeobj = workinghours.filter(function(element) {
-            if(element.opened)
+            if(element.opened){
+                
             return element.day === moment(date_from).add(i, 'days').format('dddd').toLowerCase();
+            }
             else
             return false;
          });
+         
         if(isEmpty(freeobj)){
             continue;
          }
@@ -459,10 +463,8 @@ async function creatifempty(businessid,workinghours,date_from,date_until){
 
         });
         freeid=await creatDateifempty(newbusiness.business_id,moment(date_from).add(i, 'days').format("YYYY/MM/DD"),free);
-        
 
     }
-    console.log(freeid);
 if(!isEmpty(free))
 return freeid;
 return false;
@@ -505,6 +507,7 @@ async function creatbusinessifempty(businessid){
      if(id===false)
      return false
     var days=[];
+    var tmp;
     var daysfree=[];
     var timeranges=[];
     var daysnum=diffDays(date_from,date_until);
@@ -548,8 +551,9 @@ async function creatbusinessifempty(businessid){
                         tmpcorrector.pop();
                     }
                     tmpday.Free=tmpcorrector;
+                    
                     if(choice==1||choice==3)
-                    tmpday.mergewithcustomerandsave(customerappointment);
+                    await tmpday.mergewithcustomerandsave(customerappointment);
                     if(choice==0||choice==1)
                     tmpday.slice(services_length,minutes_between_appointment);
                     daysfree.push(tmpday);
@@ -557,7 +561,7 @@ async function creatbusinessifempty(businessid){
                 }
                 tmpday.Free=posibletobook.arrayofopjects();
                 if(choice==1||choice==3)
-                tmpday.mergewithcustomerandsave(customerappointment);
+                 await tmpday.mergewithcustomerandsave(customerappointment);
                 if(choice==0||choice==1)
                 tmpday.slice(services_length,minutes_between_appointment);
                 daysfree.push(tmpday)
@@ -574,7 +578,10 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choi
     var result=[];
     if(choice==0)
     result=timerangelist1;
-
+    // console.log("\n")
+    // console.log(util.inspect(timerangelist1, {depth: null}));
+    //  console.log(util.inspect(timerangelist2, {depth: null}));
+    // console.log("\n")
     timerangelist2.forEach(function(fromtimerange2) {
         timerangelist1.forEach(function(fromtimerange1) {
                 if( (fromtimerange1._start.ifsmallerthan(fromtimerange2._end))&& (fromtimerange1._end.ifbiggerthan(fromtimerange2._start))) {
@@ -590,12 +597,14 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choi
                     }else{
                         tempend=fromtimerange2._end;
                     }
+                    //console.log(util.inspect(result, {depth: null}));
                     result=result.filter(function(element) {
                         if( (element._start._hour==tempstart._hour) && (element._start._minute==tempstart._minute) && (element._end._hour==tempend._hour) && (element._end._minute==tempend._minute) )
                         return false;
                         else
                         return true;
                      });
+                     
                     result.push(new time_range(tempstart,tempend,fromtimerange1._value+mergevalue));
                 }
         });
@@ -603,34 +612,40 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choi
 return result;
 } 
 async function returnallappointments(customerid){ 
-    const appointments = await Appointment.findOne({client_id: customerid})
+    const appointments = await Appointment.find({client_id: customerid})
     return appointments;
 
  }
  async function mergewithcostumer(Free,appointments,oneDate){ 
-
-    return mergetimerangelists(Free,returnfreeondate(appointments,oneDate),0,1);
+    return await mergetimerangelists(Free, await returnfreeondate(appointments,oneDate),0,1);
 
 
  }
 async function returnfreeondate(appointments,oneDate){ 
     var free=[];
-    const appointmentsondate = appointments.filter(function(element) {
+    //console.log(oneDate)
+    //console.log(util.inspect(appointments, {depth: null}));
+    var appointmentsondate = appointments.filter(function(element) {
         if(moment(element.time.date).format("YYYY/MM/DD")=== moment(oneDate).format("YYYY/MM/DD"))
         return true;
-        else
         return false;
+        
      });
+
      var day= new BinarySearchTree();
     day.totree([ new time_range(new time(0,0) , new time(24,0) ) ]);
+    if(!isEmpty(appointmentsondate)){
+
      appointmentsondate.forEach(function(oneappointment) {
-         var tmptime=new time_range( new time(oneappointment.start._hour,oneappointment.start._minute) , new time(oneappointment.end._hour,oneappointment.end._minute) )
+         var tmptime=new time_range( new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) )
          var result= day.book(tmptime) ;
         if(result==false)
         console.log("error on finding date on customer");
 
     });
-    return day.arrayofstrings();
+    }   
+    //console.log(util.inspect(day.arrayofopjects(), {depth: null}));
+    return  day.arrayofopjects(); /* await pending */
 
  }
 
@@ -758,11 +773,11 @@ async function returnfreeondate(appointments,oneDate){
                     var workinghours =business.profile.working_hours;
                 }
 
-                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid);
-                
-                if( (toreturn===false) || (isEmpty(toreturn)) )
+                tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid);
+                //console.log(util.inspect(tempfreetime, {depth: null}));
+                if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
-                return toreturn;
+                return   tempfreetime;
             },
             //to use after you book
             booked: async (businessid,chosendate,chosentimerange)=>{ 
@@ -889,7 +904,7 @@ async function returnfreeondate(appointments,oneDate){
                     return result;
                 
             },
-            smart: async (businessid,services,customerid,days_to_return=7)=>{ 
+            smart: async (businessid,services,customerid,days_to_return=30,appontments_number_to_return=7)=>{ 
                 var toreturn=[];
                 var tempfreetime=[];
                 var temp;
@@ -909,11 +924,15 @@ async function returnfreeondate(appointments,oneDate){
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;
                 }
-                var date_from=moment().format('l');
-                date_from=moment(date_from).toDate();
+                
+                var tmp=new Date();
+                var date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
                 var date_until=moment(date_from).add(days_to_return, 'days').toDate();
                 tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,3,customerid);
-                console.log(util.inspect(obj, {depth: null}));
+                if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
+                return ({});
+                return   tempfreetime;
+                //console.log(util.inspect(tempfreetime, {depth: null}));
                 // var tmpfree=[];
                 // tmpfree.push( new time_range(new time(8,0) , new time(9,45) ) );
                 // tmpfree.push( new time_range(new time(11,0) , new time(12,0) ) );
