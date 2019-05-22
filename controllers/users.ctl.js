@@ -81,25 +81,20 @@ module.exports = {
   },
   booktest: async (req, res, next) => {
     // console.log('book Test Here');
-    // var timerange={
-    // 				"_start":{"_hour":12, "_minute":00},
-    // 				"_end":{"_hour":13,"_minute":00}
-    // 			  }
-    // var date=await new Date(2019, 3, 28);// 2019/04/28 => "2019-04-27T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-    // const test1 = await booked('5ca5210fa3e1e23000ac29dd',date,timerange);
-    const test1 = await smart();
+    const test1 = await smart("5ca5210fa3e1e23000ac29dd",["5ce1714bc578a09da7157522"],"5c9241cdc62fd40d957e7df3");
     res.status(200).json({ test1 });
   },
   databasetest: async (req, res, next) => {
     console.log("database Test Here");
-    var date1 = await new Date(2019, 4, 10);
-    var date2 = await new Date(2019, 4, 21);
+    var date1 = await new Date(2019, 4, 20);
+    var date2 = await new Date(2019, 5, 27);
     const test1 = await freeAlg(
       "5ca5210fa3e1e23000ac29dd",
-      ["5ca530337fd30731bbc006dc"],
+      ["5ce1714bc578a09da7157522"],
       date1,
       date2,
-      0
+      0,
+      "5c9241cdc62fd40d957e7df3"
     );
     res.status(200).json({ test1 });
   },
