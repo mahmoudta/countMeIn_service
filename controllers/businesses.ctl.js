@@ -10,7 +10,7 @@ createTime = async (time) => {
 	try {
 		let splitter = time.split(':');
 		let date = new Date();
-		date.setHours(Number(splitter[0]), Number(splitter[1]));
+		date.setHours(Number(splitter[0]), Number(splitter[1]), 0);
 		// console.log(`date: ${date}`);
 		return await date;
 	} catch (error) {
@@ -37,8 +37,8 @@ module.exports = {
 			services
 		} = req.body;
 		// checking if user already have a business
-		const business = await Businesses.findOne({ owner_id: req.user._id });
-		if (business) {
+		const Qbusiness = await Businesses.findOne({ owner_id: req.user._id });
+		if (Qbusiness) {
 			return res.status(403).json({ error: 'you already have a business' });
 		}
 
@@ -70,8 +70,9 @@ module.exports = {
 		};
 
 		/* splitting the categories and the services */
-		const NewCategories = await categories.map(async (category) => {
-			return await category.value;
+		const NewCategories = await categories.map((category) => {
+			console.log(category.value);
+			return category.value;
 		});
 		const NewServices = await services.map((service) => {
 			return {
@@ -80,7 +81,6 @@ module.exports = {
 				cost: Number(service.cost)
 			};
 		});
-		console.log(NewCategories);
 		const newBusiness = new Businesses({
 			owner_id: req.user._id,
 			profile: {
@@ -100,8 +100,8 @@ module.exports = {
 				break_time: !isEmpty(breakTime) ? breakTime : 10
 			}
 		});
-		await newBusiness.save();
-		res.status(200).json({ success: 'bussiness successfully created' });
+		const business = await newBusiness.save();
+		res.status(200).json({ business });
 	},
 
 	getAllBusinesses: async (req, res, next) => {
