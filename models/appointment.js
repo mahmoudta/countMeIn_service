@@ -16,7 +16,7 @@ var mongoose = require('mongoose'),
 		services: [ String ],
 		status: {
 			type: String,
-			enum: [ 'done', 'pendingClient', 'pendingBusiness', 'passed', 'ready' ],
+			enum: [ 'ready', 'inProgress', 'done', 'pendingClient', 'pendingBusiness', 'passed', 'canceled' ],
 			default: 'ready'
 		}
 		/*

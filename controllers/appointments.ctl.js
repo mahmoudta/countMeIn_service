@@ -7,6 +7,7 @@ const Users = require('../models/user');
 const { JWT_SECRET } = require('../consts');
 // const { freeTimeAlg } = require('./algs/free-alg');
 const { booked, deleted } = require('./algs/free-alg');
+const { getServices } = require('../utils/appointment.utils');
 
 module.exports = {
 	setAppointment: async (req, res, next) => {
@@ -142,26 +143,6 @@ module.exports = {
 	},
 
 	getBusinessAppointmentsByDate: async (req, res, next) => {
-		/* 
-			* need to handle the Business (req)  and Client 
-			* Busniess:{
-				busniess_id: 
-				busniess_name:
-				working:start,end
-				hours : number of working hours
-			}
-
-			* appointment : {
-				client_id,
-				client_name,
-				appointment_services,
-				start,
-				end,
-
-			}
-		
-		*/
-
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
 		const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -172,7 +153,46 @@ module.exports = {
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
 		const data = await getAppointmentData(appointments);
-		return res.json({ data });
+		return res.json({ appointments: data });
+	},
+	getTodaysReadyAppointments: async (req, res, next) => {
+		const dateNow = new Date(new Date().getTime() - 60 * 60 * 24 * 1000);
+		dateNow.setUTCHours(21, 0, 0, 0);
+		console.log(dateNow);
+		// dateNow.setUTCHours(21, 0, 0, 0);
+		// console.log(dateNow);
+		const appointments = await Appointments.find({
+			business_id: req.params.business_id,
+			// 'time.date': {
+			// 	$gte: dateNow
+			// },
+			'time.date': dateNow,
+			status: 'ready'
+		})
+			.limit(5)
+			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 });
+		// .sort(appointment_a,appointmentb)=>{
+		// 	let time_a = new Date(appointment.time.start._hour,appointment.time.start._minute,0,0);
+		// 	return time_a < time_b;
+		// });
+		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
+
+		const data = await getAppointmentData(appointments);
+		return res.status(200).json({ appointments: data });
+	},
+	setAppointmentActive: async (req, res, next) => {
+		console.log('set apppointment active');
+		const appointment_id = req.params.appointment_id;
+
+		const appointment = await Appointments.findOneAndUpdate(
+			{ _id: appointment_id },
+			{ $set: { status: 'inProgress' } },
+			{ new: true }
+		);
+		if (appointment) {
+			const data = await getAppointmentData([ appointment ]);
+			res.status(200).json({ appointment: data[0] });
+		}
 	}
 
 	// getBusinessAppointmentsByDate: async (req, res, next) => {
@@ -190,15 +210,23 @@ module.exports = {
 
 const getAppointmentData = async (appointments) => {
 	var data = [];
-	for (const appointment of appointments) {
+	for (let appointment of appointments) {
 		const user = await Users.findById(appointment.client_id, 'profile.name');
 		// const business = await Businesses.findById(appointment.business_id);
 
 		const Nservices = await Categories.find({ 'services._id': { $in: appointment.services } });
+		const services = await getServices(Nservices, appointment.services);
 		await data.push({
-			appointment,
-			user,
-			services: await getServices(Nservices, appointment.services)
+			_id: appointment._id,
+			business_id: appointment.business_id,
+			client: user,
+			time: {
+				date: appointment.time.date,
+				start: appointment.time.start,
+				end: appointment.time.end
+			},
+			services: services,
+			status: appointment.status
 		});
 	}
 	return await data;

@@ -3,6 +3,7 @@ const Businesses = require('../models/business');
 const Categories = require('../models/category');
 const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
+const { getFullserviceData } = require('../utils/categories.utils');
 const isEmpty = require('lodash/isEmpty');
 const { signInToken } = require('./users.ctl');
 
@@ -12,7 +13,6 @@ createTime = async (time) => {
 		let splitter = time.split(':');
 		let date = new Date();
 		date.setHours(Number(splitter[0]), Number(splitter[1]), 0);
-		// console.log(`date: ${date}`);
 		return await date;
 	} catch (error) {
 		throw new Error(error);
@@ -45,8 +45,8 @@ module.exports = {
 
 		//TODO
 		// if  category is not a real category
-		// const isCat = await Categories.findById(category, 'name');
-		// // if not => return error
+		// const isCat = await Categories.find(category, 'name');
+		// if not => return error
 		// if (!isCat) return res.status(404).json({ error: 'inValid Category' });
 
 		/* convert request working hours to real date object  */
@@ -72,7 +72,6 @@ module.exports = {
 
 		/* splitting the categories and the services */
 		const NewCategories = await categories.map((category) => {
-			console.log(category.value);
 			return category.value;
 		});
 		const NewServices = await services.map((service) => {
@@ -101,9 +100,10 @@ module.exports = {
 				break_time: !isEmpty(breakTime) ? breakTime : 10
 			}
 		});
-		const business = await newBusiness.save();
+		let business = await newBusiness.save();
 		if (!business) return res.status(403).json({ error: 'some error accourd during create' });
 		const token = signInToken(req.user, business._id);
+		// business.profile.services = [];
 		res.status(200).json({ business, token });
 	},
 
@@ -112,13 +112,6 @@ module.exports = {
 		if (!businesses) return res.status(404).json({ error: 'not found' });
 		res.status(200).json({ businesses });
 	},
-
-	// getBusinessForView: async (req, res, next) => {
-	// 	const id = req.params.id;
-	// 	const business = await Businesses.findById(id);
-	// 	if (!business) return res.status(404).json({ error: 'Business invalid' });
-	// 	res.status(200).json({ business });
-	// },
 
 	getBusinessForView: async (req, res, next) => {
 		console.log('business for view');
@@ -144,19 +137,101 @@ module.exports = {
 
 	getBusinessByOwner: async (req, res, next) => {
 		const owner_id = req.params.owner_id;
-		const business = await Businesses.findOne({ owner_id: owner_id });
-		if (!business) return res.status(404).json({ error: 'Business invalid' });
+		let business = await Businesses.findOne({ owner_id: owner_id }).lean();
+		if (!business) return res.status(404).json({ error: 'Business Not Found' });
 
-		res.status(200).json({ business });
+		/* get categories of thiss Business */
+		const categories = await Categories.find({ _id: { $in: business.profile.category_id } });
+		const services = await getFullserviceData(categories, business.profile.services);
+		// console.log(`my services: ${services}`);
+
+		business.profile.services = await getFullserviceData(categories, business.profile.services);
+
+		res.status(200).json({
+			business
+		});
 	},
 
 	editBusiness: async (req, res, next) => {
 		console.log('edit Business Called!');
-		//get id
+		const {
+			business_id,
+			street,
+			city,
+			building,
+			postal_code,
+			breakTime,
+			categories,
+			description,
+			name,
+			img,
+			phone,
+			working,
+			services
+		} = req.body;
+		// checking if user already have a business
+		// const Qbusiness = await Businesses.findOne({ owner_id: req.user._id });
+		// if (Qbusiness) {
+		// 	return res.status(403).json({ error: 'you already have a business' });
+		// }
 
-		// get all request params
+		/* convert request working hours to real date object  */
+		var items = [];
+		const fillTime = async () => {
+			for (const element of working) {
+				const from = await createTime(element.from);
+				const until = await createTime(element.until);
+				await items.push({
+					day: element.day,
+					opened: element.opened,
+					from: from,
+					until: until,
+					break: {
+						isBreak: element.break.isBreak,
+						from: await createTime(element.break.from),
+						until: await createTime(element.break.from)
+					}
+				});
+			}
+			return await items;
+		};
 
-		//
+		/* splitting the categories and the services */
+
+		const NewCategories = await categories.map((category) => {
+			return category.value;
+		});
+
+		const NewServices = await services.map((service) => {
+			return {
+				service_id: service.value,
+				time: Number(service.time),
+				cost: Number(service.cost)
+			};
+		});
+		const updateBusiness = {
+			profile: {
+				name: name,
+				img: !isEmpty(img) ? img : '',
+				location: {
+					street: !isEmpty(street) ? street : '',
+					city: !isEmpty(city) ? city : '',
+					building: !isEmpty(building) ? Number(building) : 0,
+					postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
+				},
+				services: NewServices,
+				phone: phone,
+				description: !isEmpty(description) ? description : '',
+				category_id: NewCategories,
+				working_hours: await fillTime(),
+				break_time: !isEmpty(breakTime) ? breakTime : 10
+			}
+		};
+
+		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness);
+		if (!business) return res.status(403).json({ error: 'some error accourd during update' });
+		// business.profile.services = [];
+		return res.status(200).json({ business });
 	},
 	followBusiness: async (req, res, next) => {
 		console.log('follow business');
@@ -261,7 +336,6 @@ module.exports = {
 		const ids = await business.profile.services.map((service) => {
 			return service.service_id;
 		});
-		console.log(ids);
 		const category = await Categories.findById(business.profile.category_id);
 
 		const services = await category.subCats.filter((elem) => {
@@ -274,8 +348,6 @@ module.exports = {
 	getBusinessesByCatagory: async (req, res, next) => {
 		const { catagoryId } = req.params;
 		//var catagoryId = JSON.parse(req.params);
-
-		console.log(catagoryId);
 
 		const ResultQuery = await Businesses.find(
 			{
@@ -301,7 +373,6 @@ module.exports = {
 				}
 			});
 		}
-		console.log(Schedule);
 		const update = { 'profile.working_hours': await Schedule };
 		const business = await Businesses.findOneAndUpdate({ _id: '5ca5210fa3e1e23000ac29dd' }, { update });
 		if (!business) res.json({ error: 'Error' });
