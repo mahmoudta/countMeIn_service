@@ -502,8 +502,8 @@ async function creatbusinessifempty(businessid){
     }
     return id;
  }
- //choice=0 only find free time of busness slice and return/choice=1 find free time of busness merge with free time of client then slice and return/choice=2 only find free time of busness and return
- async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice=0,customerid=0){ 
+ //choice=0 return the busness freetime slice it to slices /choice=1 choice=0 return the busness_freetime&costomer_freetime and slice it to slices/choice=2 only find free time of busness and return
+ async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness){ 
      if(id===false)
      return false
     var days=[];
@@ -512,8 +512,18 @@ async function creatbusinessifempty(businessid){
     var timeranges=[];
     var daysnum=diffDays(date_from,date_until);
     var customerappointment;
-    if(choice==1||choice==3)
-    customerappointment=await returnallappointments(customerid);
+    var customersbusnessappointment;
+    if(choice==1||choice==3){
+    customerappointment=await returnallappointmentsbycustomer(customerid);
+    if(checkifcustomerhavebusness){
+        
+        const customersbusness = await Business.findOne({owner_id: customerid})
+        if(!isEmpty(customersbusness)){
+        customersbusnessappointment=await returnallappointmentsbybusiness(customersbusness._id);
+        }
+    }
+    
+    }
     const freetime = await FreeTime.findById(id)
     mongodays=freetime.dates.filter(function(element) {
         return ( (0<=diffDays(element.day,date_until)) && (diffDays(element.day,date_until)<=daysnum) )
@@ -552,16 +562,24 @@ async function creatbusinessifempty(businessid){
                     }
                     tmpday.Free=tmpcorrector;
                     
-                    if(choice==1||choice==3)
-                    await tmpday.mergewithcustomerandsave(customerappointment);
+                    if(choice==1||choice==3){
+                        await tmpday.mergewithcustomerandsave(customerappointment);
+                        if( (checkifcustomerhavebusness) && (!isEmpty(customersbusness)) ){
+                        await tmpday.mergewithcustomerandsave(customersbusnessappointment);
+                        }
+                    }
                     if(choice==0||choice==1)
                     tmpday.slice(services_length,minutes_between_appointment);
                     daysfree.push(tmpday);
                     break;
                 }
                 tmpday.Free=posibletobook.arrayofopjects();
-                if(choice==1||choice==3)
+                if(choice==1||choice==3){
                  await tmpday.mergewithcustomerandsave(customerappointment);
+                 if( (checkifcustomerhavebusness) && (!isEmpty(customersbusness)) ){
+                 await tmpday.mergewithcustomerandsave(customersbusnessappointment);
+                 }
+                }
                 if(choice==0||choice==1)
                 tmpday.slice(services_length,minutes_between_appointment);
                 daysfree.push(tmpday)
@@ -611,8 +629,13 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choi
       });
 return result;
 } 
-async function returnallappointments(customerid){ 
+async function returnallappointmentsbycustomer(customerid){ 
     const appointments = await Appointment.find({client_id: customerid})
+    return appointments;
+
+ }
+ async function returnallappointmentsbybusiness(businessid){ 
+    const appointments = await Appointment.find({business_id: businessid})
     return appointments;
 
  }
@@ -752,7 +775,7 @@ async function returnfreeondate(appointments,oneDate){
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7)=>{
+            freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7,checkifcustomerhavebusness=true)=>{
                 var toreturn=[];
                 var tempfreetime=[];
                 var temp;
@@ -766,18 +789,22 @@ async function returnfreeondate(appointments,oneDate){
                     var tmpservice;
                     services.forEach(function(onepurpose) {
                         tmpservice=business.profile.services.find(o => o.service_id === onepurpose)
+                        if(!isEmpty(tmpservice)){
                         services_length+=tmpservice.time;
                         services_cost+=tmpservice.cost;
+                        }else 
+                        return ({error :'invalid service'});
                     });
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;
-                }
-
-                tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid);
+                    tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness);
                 //console.log(util.inspect(tempfreetime, {depth: null}));
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
                 return   tempfreetime;
+                }
+
+                
             },
             //to use after you book
             booked: async (businessid,chosendate,chosentimerange)=>{ 
@@ -918,8 +945,11 @@ async function returnfreeondate(appointments,oneDate){
                     var tmpservice;
                     services.forEach(function(onepurpose) {
                         tmpservice=business.profile.services.find(o => o.service_id === onepurpose)
-                        services_length+=tmpservice.time;
-                        services_cost+=tmpservice.cost;
+                        if(!isEmpty(tmpservice)){
+                            services_length+=tmpservice.time;
+                            services_cost+=tmpservice.cost;
+                        }else 
+                            return ({error :'invalid service'});
                     });
                     var minutes_between_appointment = business.profile.break_time;
                     var workinghours =business.profile.working_hours;

@@ -91,8 +91,8 @@ module.exports = {
 		// console.log('book Test Here');
 		const test1 = await smart(
 			'5ca5210fa3e1e23000ac29dd',
-			[ '5ce1714bc578a09da7157522' ],
-			'5c9241cdc62fd40d957e7df3'
+			[ '5ce17163c578a09da7157523' ],
+			'5ce444cb9ee4afc5d5b635b5'
 		);
 		res.status(200).json({ test1 });
 	},
@@ -102,7 +102,7 @@ module.exports = {
 		var date2 = await new Date(2019, 5, 27);
 		const test1 = await freeAlg(
 			'5ca5210fa3e1e23000ac29dd',
-			[ '5ce1714bc578a09da7157522' ],
+			[ '5ce17163c578a09da7157523' ],
 			date1,
 			date2,
 			0,
