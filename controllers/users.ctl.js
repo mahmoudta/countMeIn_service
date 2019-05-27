@@ -92,9 +92,9 @@ module.exports = {
 	booktest: async (req, res, next) => {
 		// console.log('book Test Here');
 		const test1 = await smart(
-			'5ca5210fa3e1e23000ac29dd',
-			[ '5ce17163c578a09da7157523' ],
-			'5ce444cb9ee4afc5d5b635b5'
+			'5ceb8f27b720131f3e4b0b83',
+			[ '5ceb8272a779ca1ca4aacd99' ],
+			'5ceb74be5e8a061a2f32b7d7'
 		);
 		res.status(200).json({ test1 });
 	},
@@ -103,12 +103,12 @@ module.exports = {
 		var date1 = await new Date(2019, 4, 20);
 		var date2 = await new Date(2019, 5, 27);
 		const test1 = await freeAlg(
-			'5ca5210fa3e1e23000ac29dd',
-			[ '5ce17163c578a09da7157523' ],
+			'5ceb8f27b720131f3e4b0b83',
+			[ '5ceb8272a779ca1ca4aacd99' ],
 			date1,
 			date2,
-			0,
-			'5c9241cdc62fd40d957e7df3'
+			1,
+			'5ceb74be5e8a061a2f32b7d7'
 		);
 		res.status(200).json({ test1 });
 	},
