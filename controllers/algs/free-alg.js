@@ -671,106 +671,74 @@ async function returnfreeondate(appointments,oneDate){
     return  day.arrayofopjects(); /* await pending */
 
  }
+ async function mergewithbusnessbusnessbusyhour(businessid,freetime){ 
+
+    var rate=await calculatebusnessbusyhours(businessid);
+    console.log(util.inspect(rate, {depth: null}));
+    freetime.forEach(function(oneday) {
+        var tmpdate=moment(oneday.Date).format('dddd').toLowerCase()
+        oneday.Free.forEach(function(onetimerange) {
+            var valuetoadd=0;
+            var newvalue=0;
+            var i;
+            var start= onetimerange._start._hour;
+
+            for (i = start; ((i <onetimerange._end._hour)||( (i==onetimerange._end._hour)&&(0<onetimerange._end._minute) )); i++) { 
+                    valuetoadd+=(rate[tmpdate][i]);
+
+
+            }
+            if(valuetoadd!=0)
+            newvalue=( 1/ ( valuetoadd/(i-start) ) );
+            onetimerange._value+=newvalue;
+
+        });
+        
+
+   });
+   //console.log(util.inspect(rate, {depth: null}));
+   return true;
+
+ }
+
+ async function calculatebusnessbusyhours(businessid){				
+    var rate={
+        sunday:{
+            0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0  
+        },
+        monday:{
+            0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0 
+        },
+        tuesday:{
+            0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0  
+        },
+        wednesday:{
+            0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0 
+        },
+        thursday:{
+            0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0
+        },
+        friday:{
+            0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0 
+        },
+        saturday:{
+            0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0 
+        }
+    }
+    const appointments = await returnallappointmentsbybusiness(businessid);
+    appointments.forEach(function(oneappointment) {
+        var tmpdaybefore=oneappointment.time.date
+        var tmpdayafter=moment(tmpdaybefore).format('dddd').toLowerCase();
+        var tmphour=oneappointment.time.start._hour;
+        rate[tmpdayafter][tmphour]++;
+   });
+    return rate;
+ }
 
 /***********************************************************************************/
 
 
 
-        // exports.freeTimeAlg = (businessid,purpose_id)=>{
-
-        //     console.log("free Time");
-        //     var days=[];
-        //     var daysfree=[];
-        //     /////////////////////////////////////////////////
-        //     var day1 = new BinarySearchTree();
-        //     day1.insert( new time_range(new time(8,0) , new time(9,45) ) );
-        //     day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
-        //     day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
-        //     day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
-        //     day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-        //     console.log("3/4/2019 : "+day1.arrayofstrings());
-        //     days.push(new Day(new Date(2019, 3, 4),day1.arrayofopjects()));
-        //     /////////////////////////////////////////////////
-        //     var day2 = new BinarySearchTree();
-        //     day2.insert( new time_range(new time(8,45) , new time(14,0) ) );
-        //     day2.insert( new time_range(new time(14,30) , new time(18,0) ) );
-        //     console.log("4/4/2019 : "+day2.arrayofstrings());
-        //     days.push(new Day(new Date(2019, 3, 5),day2.arrayofopjects()));
-        //     /////////////////////////////////////////////////
-        //     var day3 = new BinarySearchTree();
-        //     day3.insert( new time_range(new time(8,0) , new time(18,0) ) );
-        //     console.log("5/4/2019 : "+day3.arrayofstrings());
-        //     days.push(new Day(new Date(2019, 3, 6),day3.arrayofopjects()));
-        //    /////////////////////////////////////////////////
-        //     //i need busnees id and the porpose id
-        //     //var days=[];      //from freetime database of the busnese (should be sorted if posible)
-        //     var services_length=60;  //porpose lenth acording to the main bussnese database
-        //     console.log("porpose leanght="+services_length);
-        //     var minutes_between_appointment=5;//minutes between appointment acording to the main bussnese database
-        //     console.log("minutes between appointmen="+minutes_between_appointment);
-        //     var appontments_number_to_return=6;//number of appointment to return
-        //     console.log("number of appointment to return="+appontments_number_to_return);
-        //     var tmpday;
-        //     var counter=0;
-        //     var correcter=0;
-        //     var tmpcorrector;
-        //     var posibletobook = new BinarySearchTree();
-        //     var day = new BinarySearchTree();
-        //     do{
-        //         if (days === undefined || days.length == 0) {break;}
-        //         tmpday=days.shift();
-        //         day.totree(tmpday.Free);
-        //         posibletobook.totree(day.timerangesthatfit(services_length,minutes_between_appointment));
-        //         ///call slicer at posibletobook
-        //         counter+=posibletobook.getlength();
-        //         if (counter>=appontments_number_to_return) {
-        //             correcter=counter-appontments_number_to_return
-        //             //tmpcorrector=posibletobook.arrayofstrings();
-        //             tmpcorrector=posibletobook.arrayofopjects();
-        //             for (; 0 < correcter; correcter--) { 
-        //                 tmpcorrector.pop();
-        //             }
-        //             tmpday.Free=tmpcorrector;
-        //             tmpday.slice(services_length,minutes_between_appointment);
-        //             daysfree.push(tmpday);
-        //             break;
-        //         }
-        //         tmpday.Free=posibletobook.arrayofopjects();
-        //         tmpday.slice(services_length,minutes_between_appointment);
-        //         daysfree.push(tmpday)
-        //     }while(counter<appontments_number_to_return);
-        //     console.log("answer sent");
-
-        //     return(daysfree);
-        // };
-
-        // exports.booked = (businessid,timerange)=>{
-
-        //     console.log("booked");
-        //     /////////////////////////////////////////////////
-        //     var days=[];
-        //     var tmpfree=[];
-        //     var day1 = new BinarySearchTree();
-        //     day1.insert( new time_range(new time(8,0) , new time(9,45) ) );
-        //     day1.insert( new time_range(new time(11,0) , new time(12,0) ) );
-        //     day1.insert( new time_range(new time(12,40) , new time(14,0) ) );
-        //     day1.insert( new time_range(new time(14,30) , new time(15,0) ) );
-        //     day1.insert( new time_range(new time(15,0) , new time(18,0) ) );
-        //     console.log("3/4/2019 : "+day1.arrayofstrings());
-        //     days.push(new Day(new Date(2019, 3, 4),day1.arrayofopjects()));
-        //     /////////////////////////////////////////////////
-        //     //take from database days in spicific date
-        //     //want to book between 9:00 to 9:20
-        //     var tobook= new time_range(new time(9,0) , new time(9,20) );
-        //     var day= new BinarySearchTree();
-        //     tmpfree=days.shift();
-        //     day.totree(tmpfree.Free);
-        //     day.book(tobook);
-        //     console.log(day.arrayofstrings());
-        //     var date = new Date();
-        //     console.log(date);
-        //     return("done");
-        // };
 
         module.exports = {
 
@@ -934,6 +902,7 @@ async function returnfreeondate(appointments,oneDate){
             smart: async (businessid,services,customerid,days_to_return=30,appontments_number_to_return=7)=>{ 
                 var toreturn=[];
                 var tempfreetime=[];
+                var afteraddedrate=[];
                 var temp;
                 const business = await Business.findById(businessid)
                 if(isEmpty(business)){
@@ -958,7 +927,9 @@ async function returnfreeondate(appointments,oneDate){
                 var tmp=new Date();
                 var date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
                 var date_until=moment(date_from).add(days_to_return, 'days').toDate();
-                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,3,customerid);
+                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,1,customerid);
+                afteraddedrate=await mergewithbusnessbusnessbusyhour(businessid,tempfreetime);
+                //console.log(util.inspect(afteraddedrate, {depth: null}));
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
                 return   tempfreetime;
