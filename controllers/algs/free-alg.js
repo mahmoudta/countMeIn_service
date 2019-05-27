@@ -773,16 +773,14 @@ async function returnfreeondate(appointments,oneDate){
             var freetobook;
             var timeranges=[];
             const freetime = await FreeTime.findOne({business_id: businessid})
-            if(isEmpty(freetime)){
-                return({error :'invalid business'});
-            }
+            if(isEmpty(freetime))
+            return({error :'invalid business'});
+
             var daysinmongo =freetime.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
             var dateid=daysinmongo._id;
             var id=freetime._id;
-            if(isEmpty(daysinmongo)){
-                //console.log("date not found");
+            if(isEmpty(daysinmongo))
                 return({error :'invalid Date'});
-            }
             else{
                 //console.l]]]]og(daysinmongo);
                 freetobook=daysinmongo.freeTime
@@ -837,7 +835,7 @@ async function returnfreeondate(appointments,oneDate){
                     // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
                     return({error :'invalid business'});
                 }else{
-                    var workinghours =business.profile.working_hours;
+                    var workinghours =business.working_hours;
                     freeid =await creatifempty(businessid,workinghours,chosendate,chosendate);
                     if(freeid===false)
                     return false;
