@@ -5,7 +5,7 @@ var Business = require('../../models/business');
 var Appointment = require('../../models/appointment');
 const util = require('util');
 var inherits = require('util').inherits; 
-
+const mongoose = require('mongoose');
 const isEmpty = require('lodash/isEmpty');
 const moment = require('moment');
 
@@ -513,11 +513,12 @@ async function creatbusinessifempty(businessid){
     var daysnum=diffDays(date_from,date_until);
     var customerappointment;
     var customersbusnessappointment;
+    var customersbusness;
     if(choice==1||choice==3){
     customerappointment=await returnallappointmentsbycustomer(customerid);
     if(checkifcustomerhavebusness){
         
-        const customersbusness = await Business.findOne({owner_id: customerid})
+        customersbusness = await Business.findOne({owner_id: customerid})
         if(!isEmpty(customersbusness)){
         customersbusnessappointment=await returnallappointmentsbybusiness(customersbusness._id);
         }
@@ -674,7 +675,7 @@ async function returnfreeondate(appointments,oneDate){
  async function mergewithbusnessbusnessbusyhour(businessid,freetime){ 
 
     var rate=await calculatebusnessbusyhours(businessid);
-    console.log(util.inspect(rate, {depth: null}));
+    //console.log(util.inspect(rate, {depth: null}));
     freetime.forEach(function(oneday) {
         var tmpdate=moment(oneday.Date).format('dddd').toLowerCase()
         oneday.Free.forEach(function(onetimerange) {
@@ -744,35 +745,24 @@ async function returnfreeondate(appointments,oneDate){
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
             freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7,checkifcustomerhavebusness=true)=>{
-                var toreturn=[];
                 var tempfreetime=[];
-                var temp;
-                const business = await Business.findById(businessid)
-                if(isEmpty(business)){
-                    // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
-                    return({error :'invalid business'});
-                }else{
+                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                if(isEmpty(business))
+                return({error :'invalid business'});
+
                     var services_length=0;
                     var services_cost=0;
-                    var tmpservice;
-                    services.forEach(function(onepurpose) {
-                        tmpservice=business.profile.services.find(o => o.service_id === onepurpose)
-                        if(!isEmpty(tmpservice)){
-                        services_length+=tmpservice.time;
-                        services_cost+=tmpservice.cost;
-                        }else 
-                        return ({error :'invalid service'});
+                    business.services.forEach(function(oneservice) {
+                        services_length+=oneservice.time;
+                        services_cost+=oneservice.cost;
                     });
-                    var minutes_between_appointment = business.profile.break_time;
-                    var workinghours =business.profile.working_hours;
+                    var minutes_between_appointment = business.break_time;
+                    var workinghours =business.working_hours;
                     tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness);
                 //console.log(util.inspect(tempfreetime, {depth: null}));
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
-                return   tempfreetime;
-                }
-
-                
+                return   tempfreetime;  
             },
             //to use after you book
             booked: async (businessid,chosendate,chosentimerange)=>{ 
@@ -783,16 +773,14 @@ async function returnfreeondate(appointments,oneDate){
             var freetobook;
             var timeranges=[];
             const freetime = await FreeTime.findOne({business_id: businessid})
-            if(isEmpty(freetime)){
-                return({error :'invalid business'});
-            }
+            if(isEmpty(freetime))
+            return({error :'invalid business'});
+
             var daysinmongo =freetime.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== moment(chosendate).format("YYYY/MM/DD"));
             var dateid=daysinmongo._id;
             var id=freetime._id;
-            if(isEmpty(daysinmongo)){
-                //console.log("date not found");
+            if(isEmpty(daysinmongo))
                 return({error :'invalid Date'});
-            }
             else{
                 //console.l]]]]og(daysinmongo);
                 freetobook=daysinmongo.freeTime
@@ -847,7 +835,7 @@ async function returnfreeondate(appointments,oneDate){
                     // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
                     return({error :'invalid business'});
                 }else{
-                    var workinghours =business.profile.working_hours;
+                    var workinghours =business.working_hours;
                     freeid =await creatifempty(businessid,workinghours,chosendate,chosendate);
                     if(freeid===false)
                     return false;
@@ -869,7 +857,6 @@ async function returnfreeondate(appointments,oneDate){
                 
             },
             deleted: async (businessid,chosendate,chosentimerange)=>{ 
-                console.log("daye:"+chosendate+"time"+chosentimerange);
                 const freetime = await FreeTime.findOne({business_id: businessid})
                 if(isEmpty(freetime)){
                     return({error :'invalid business'});
@@ -900,34 +887,25 @@ async function returnfreeondate(appointments,oneDate){
                 
             },
             smart: async (businessid,services,customerid,days_to_return=30,appontments_number_to_return=7)=>{ 
-                var toreturn=[];
+                
                 var tempfreetime=[];
-                var afteraddedrate=[];
-                var temp;
-                const business = await Business.findById(businessid)
-                if(isEmpty(business)){
-                    // console.log("wtf wrong with you...wrong business_id you either dont know the difference between business_id and owned_id or you are fucking with me");
-                    return({error :'invalid business'});
-                }else{
+                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                if(isEmpty(business))
+                return({error :'invalid business'});
+
                     var services_length=0;
                     var services_cost=0;
-                    var tmpservice;
-                    services.forEach(function(onepurpose) {
-                        tmpservice=business.profile.services.find(o => o.service_id === onepurpose)
-                        if(!isEmpty(tmpservice)){
-                            services_length+=tmpservice.time;
-                            services_cost+=tmpservice.cost;
-                        }else 
-                            return ({error :'invalid service'});
+                    business.services.forEach(function(oneservice) {
+                        services_length+=oneservice.time;
+                        services_cost+=oneservice.cost;
                     });
-                    var minutes_between_appointment = business.profile.break_time;
-                    var workinghours =business.profile.working_hours;
-                }
-                
+                    var minutes_between_appointment = business.break_time;
+                    var workinghours =business.working_hours;
+
                 var tmp=new Date();
                 var date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
                 var date_until=moment(date_from).add(days_to_return, 'days').toDate();
-                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,1,customerid);
+                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,3,customerid);
                 afteraddedrate=await mergewithbusnessbusnessbusyhour(businessid,tempfreetime);
                 //console.log(util.inspect(afteraddedrate, {depth: null}));
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
