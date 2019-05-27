@@ -6,6 +6,7 @@ const { getFollowers, isUserFollower, getCustomer } = require('../utils/business
 const { getFullserviceData } = require('../utils/categories.utils');
 const isEmpty = require('lodash/isEmpty');
 const { signInToken } = require('./users.ctl');
+const mongoose = require('mongoose');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 createTime = async (time) => {
@@ -142,14 +143,56 @@ module.exports = {
 
 		/* get categories of thiss Business */
 		const categories = await Categories.find({ _id: { $in: business.profile.category_id } });
-		const services = await getFullserviceData(categories, business.profile.services);
-		// console.log(`my services: ${services}`);
-
 		business.profile.services = await getFullserviceData(categories, business.profile.services);
+
+		const users = await Users.find(
+			{
+				_id: {
+					$in: business.customers.map((elem) => {
+						return elem.customer_id;
+					})
+				}
+			},
+			'profile'
+		);
 
 		res.status(200).json({
 			business
 		});
+
+		// business.cutomers = business.customers.concat(users);
+		// business.customers = await new_array;
+
+		// const result = await Users.aggregate([
+		// 	{
+		// 		$match: {
+		// 			_id: {
+		// 				$in: business.customers.map((elem) => {
+		// 					return mongoose.Types.ObjectId(elem.customer_id);
+		// 				})
+		// 			}
+		// 		}
+		// 	}
+		// ]);
+
+		// const result = await Businesses.aggregate([
+		// 	{ $match: { owner_id: owner_id } },
+		// 	// { $unwind: '$customers' },
+		// 	// { $addFields: { 'customers.customer_objId': { $toObjectId: '$customers.customer_id' } } },
+		// 	{
+		// 		$lookup: {
+		// 			from: 'User',
+		// 			pipeline: [
+		// 				{
+		// 					$match: {
+		// 						_id: mongoose.Types.ObjectId('$customers.customer_id')
+		// 					}
+		// 				}
+		// 			],
+		// 			as: 'Full_user'
+		// 		}
+		// 	}
+		// ]);
 	},
 
 	editBusiness: async (req, res, next) => {
