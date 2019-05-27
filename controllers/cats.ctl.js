@@ -1,12 +1,15 @@
 const JWT = require('jsonwebtoken');
 const Categories = require('../models/category');
+const Services = require('../models/service');
+
 const Businesses = require('../models/business');
+const mongoose = require('mongoose');
 
 const { JWT_SECRET } = require('../consts');
 
 module.exports = {
 	getAllCategories: async (req, res, next) => {
-		const categories = await Categories.find({});
+		const categories = await Categories.find({}).populate('services', '-parent_category');
 		if (!categories) {
 			return res.status(404).json({ message: 'No category has been founded' });
 		}
@@ -18,34 +21,40 @@ module.exports = {
 		const cat = await Categories.findOne({ name });
 		if (cat) {
 			console.log('error');
-
 			return res.status(403).json({ error: 'This category already exsits' });
 		}
-		const category = new Categories({ name });
+		const category = new Categories({
+			_id: new mongoose.Types.ObjectId(),
+			name
+		});
 		await category.save();
 		res.status(200).json({ success: 'sucsessfully added' });
 	},
 
 	addService: async (req, res, next) => {
 		const { parent_category, name, time, cost } = req.body;
-		Categories.findOneAndUpdate(
-			{ _id: parent_category },
+		const service = new Services({
+			_id: new mongoose.Types.ObjectId(),
+			parent_category: mongoose.Types.ObjectId(parent_category),
+			title: name,
+			time: Number(time),
+			cost: Number(cost)
+		});
+
+		const saved = await service.save();
+		console.log(saved);
+
+		if (!saved) return res.status(404).json({ error: 'Error Ocured' });
+
+		const newCategory = await Categories.findOneAndUpdate(
+			{ _id: mongoose.Types.ObjectId(parent_category) },
 			{
-				$push: {
-					services: { title: name, time: Number(time), cost: Number(cost) }
-				}
+				$push: { services: saved._id }
 			},
-			(err, doc) => {
-				if (err) {
-					res.status(404).json({ error: 'No Category match' });
-					return;
-				} else if (doc.nModified == 0) {
-					res.status(403).json({ error: 'Permission Denied' });
-					return;
-				}
-				res.status(200).json({ success: 'new service has been added' });
-			}
-		);
+			{ $new: true }
+		).populate('services', '-parent_category');
+		/* TODO -CHECK HOW To return it back */
+		res.status(200).json({ category: newCategory });
 	},
 
 	deleteCategory: async (req, res, next) => {

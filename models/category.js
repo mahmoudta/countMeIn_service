@@ -1,5 +1,7 @@
 const mongoose = require('mongoose'),
 	category = new mongoose.Schema({
+		_id: { type: mongoose.Schema.Types.ObjectId },
+
 		name: {
 			type: String,
 			lowercase: true,
@@ -7,29 +9,7 @@ const mongoose = require('mongoose'),
 			unique: true,
 			trim: true
 		},
-		services: [{
-			title: {
-				type: String,
-				lowercase: true,
-				trim: true,
-				required: true
-			},
-			time: {
-				/* 
-				 *   time specified with minutes  
-				 *   minimum time for purpose is 10 min maximum 2 hours
-				 */
-				type: Number,
-				min: 10,
-				max: 120,
-				required: true
-			},
-			cost: {
-				type: Number,
-				min: 0,
-				default: 0
-			}
-		}]
+		services: [ { type: mongoose.Schema.Types.ObjectId, ref: 'Service' } ]
 	});
 
 // export default (isValidCategory = async function(category_id) {

@@ -9,6 +9,7 @@ const { smart } = require('./algs/free-alg');
 const { ifcanbook } = require('./algs/free-alg');
 const { freeAlg } = require('./algs/free-alg');
 const isEmpty = require('lodash.isempty');
+const mongoose = require('mongoose');
 
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 
@@ -34,6 +35,7 @@ module.exports = {
 			return res.status(403).json({ message: 'user already exist' });
 		}
 		const newUser = new Users({
+			_id: new mongoose.Types.ObjectId(),
 			method: 'local',
 			email: email,
 			local: {

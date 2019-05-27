@@ -1,10 +1,63 @@
 var mongoose = require('mongoose'),
 	business = new mongoose.Schema({
+		_id: { type: mongoose.Schema.Types.ObjectId },
 		Schedule_id: String /*the Schedule id for this bussniess*/,
 		owner_id: {
-			type: String /* id of client that owns this bussniess*/,
-			required: true
+			// type: String /* id of client that owns this bussniess*/,
+			required: true,
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User'
 		},
+		categories: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				required: true,
+				ref: 'Category'
+			},
+			{ _id: 0 }
+			//Array
+		],
+		services: [
+			{
+				//services
+				service_id: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: 'Service'
+				},
+				time: {
+					type: Number,
+					max: 120
+				},
+				cost: Number
+			},
+			{ _id: false }
+		],
+		break_time: {
+			type: Number,
+			default: 10
+		},
+		working_hours: [
+			{
+				/* array which length = 7 (week)*/
+				day: {
+					type: String
+					// enum: [ 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ]
+				},
+				opened: Boolean,
+				from: {
+					type: Date
+				},
+				until: {
+					type: Date
+				},
+				break: {
+					isBreak: Boolean,
+					from: Date,
+					until: Date
+				}
+			},
+			{ _id: false }
+		],
 		profile: {
 			name: {
 				type: String,
@@ -16,61 +69,26 @@ var mongoose = require('mongoose'),
 				index: { unique: true }
 			},
 			description: String,
-			category_id: {
-				type: Array,
-				required: true
-				//Array
-			},
+
 			img: String,
-			services: [
-				{
-					//services
-					service_id: String,
-					time: {
-						type: Number,
-						max: 120
-					},
-					cost: Number
-				}
-			],
+
 			rating: Number,
-			working_hours: [
-				{
-					/* array which length = 7 (week)*/
-					day: {
-						type: String
-						// enum: [ 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ]
-					},
-					opened: Boolean,
-					from: {
-						type: Date
-					},
-					until: {
-						type: Date
-					},
-					break: {
-						isBreak: Boolean,
-						from: Date,
-						until: Date
-					}
-				}
-			],
+
 			location: {
 				street: String,
 				city: String,
 				building: Number,
 				postal_code: Number
-			},
-			break_time: {
-				type: Number,
-				default: 10
 			}
 		} /*end of profile*/,
 		style_id: String /* id for style document*/,
 		//
 		customers: [
 			{
-				customer_id: String,
+				customer_id: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: 'User'
+				},
 				isFollower: Boolean,
 				experiance: {
 					type: Number,

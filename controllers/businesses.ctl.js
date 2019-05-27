@@ -73,17 +73,18 @@ module.exports = {
 
 		/* splitting the categories and the services */
 		const NewCategories = await categories.map((category) => {
-			return category.value;
+			return mongoose.Types.ObjectId(category.value);
 		});
 		const NewServices = await services.map((service) => {
 			return {
-				service_id: service.value,
+				service_id: mongoose.Types.ObjectId(service.value),
 				time: Number(service.time),
 				cost: Number(service.cost)
 			};
 		});
 		const newBusiness = new Businesses({
-			owner_id: req.user._id,
+			_id: new mongoose.Types.ObjectId(),
+			owner_id: mongoose.Types.ObjectId(req.user._id),
 			profile: {
 				name: name,
 				img: !isEmpty(img) ? img : '',
@@ -93,19 +94,23 @@ module.exports = {
 					building: !isEmpty(building) ? Number(building) : 0,
 					postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
 				},
-				services: NewServices,
 				phone: phone,
-				description: !isEmpty(description) ? description : '',
-				category_id: NewCategories,
-				working_hours: await fillTime(),
-				break_time: !isEmpty(breakTime) ? breakTime : 10
-			}
+				description: !isEmpty(description) ? description : ''
+			},
+			services: NewServices,
+			categories: NewCategories,
+			working_hours: await fillTime(),
+			break_time: !isEmpty(breakTime) ? breakTime : 10
 		});
-		let business = await newBusiness.save();
+		const business = await newBusiness.save();
 		if (!business) return res.status(403).json({ error: 'some error accourd during create' });
-		const token = signInToken(req.user, business._id);
+		const businessNew = await Businesses.findById(business._id)
+			.populate('services.service_id', 'title')
+			.populate('categories', 'name')
+			.exec();
+		// const token = signInToken(req.user, business._id);
 		// business.profile.services = [];
-		res.status(200).json({ business, token });
+		res.status(200).json({ businessNew });
 	},
 
 	getAllBusinesses: async (req, res, next) => {

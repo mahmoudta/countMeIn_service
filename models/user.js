@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose'),
 	user = new mongoose.Schema({
+		_id: { type: mongoose.Schema.Types.ObjectId },
 		method: {
 			type: String,
 			enum: [ 'local', 'google' ],
