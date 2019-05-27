@@ -43,7 +43,7 @@ async function returnallappointmentsbybusiness(businessid){
         var tmphour=oneappointment.time.start._hour;
         rate[tmpday][tmphour]++;
    });
-    return false;
+    return rate;
  }
 
 //module.exports = {}
