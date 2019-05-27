@@ -121,22 +121,37 @@ module.exports = {
 
 	getBusinessForView: async (req, res, next) => {
 		console.log('business for view');
-		const id = req.params.id;
-		const Reqbusiness = await Businesses.findById(id);
+		const id = mongoose.Types.ObjectId(req.params.id);
+		const business = await Businesses.findById(id).populate('services.service_id', '-parent_category');
 
-		if (!Reqbusiness) return res.status(404).json({ error: 'Business Not Found' });
+		if (!business) res.status(404).json({ error: 'business not found' });
 
-		const followers = await getFollowers(Reqbusiness.customers);
-		const isFollower = await isUserFollower(followers, req.user._id);
+		res.status(200).json({ business });
+
+		// const business = await Businesses.aggregate([
+		// 	{ $match: { _id: id } },
+		// 	{$lookup:{
+
+		// 	}}
+		//  ]);
+
+		// const Reqbusiness = await Businesses.findById(id)
+		// 	.populate('categories', 'name')
+		// 	.populate('service', '-parent_category');
+
+		// if (!Reqbusiness) return res.status(404).json({ error: 'Business Not Found' });
+
+		// const followers = await getFollowers(Reqbusiness.customers);
+		// const isFollower = await isUserFollower(followers, req.user._id);
 
 		// const isUserFollower = await isUserFollower(followers, req.user._id);
-		const business = {
-			_id: id,
-			owner_id: Reqbusiness.owner_id,
-			profile: Reqbusiness.profile,
-			followers: followers.length,
-			isFollower: isFollower
-		};
+		// const business = {
+		// 	_id: id,
+		// 	owner_id: Reqbusiness.owner_id,
+		// 	profile: Reqbusiness.profile,
+		// 	followers: followers.length,
+		// 	isFollower: isFollower
+		// };
 
 		res.status(200).json({ business });
 	},
