@@ -157,6 +157,7 @@ module.exports = {
 	},
 	getTodaysReadyAppointments: async (req, res, next) => {
 		const dateNow = new Date(new Date().getTime() - 60 * 60 * 24 * 1000);
+
 		dateNow.setUTCHours(21, 0, 0, 0);
 		console.log(dateNow);
 		// dateNow.setUTCHours(21, 0, 0, 0);

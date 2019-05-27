@@ -143,61 +143,13 @@ module.exports = {
 
 	getBusinessByOwner: async (req, res, next) => {
 		const owner_id = req.params.owner_id;
-		let business = await Businesses.findOne({ owner_id: owner_id }).lean();
+		const business = await Businesses.findOne({ owner_id: owner_id })
+			.populate('categories', 'name')
+			.populate('services.service_id', 'title')
+			.populate('customers.customer_id', 'profile');
 		if (!business) return res.status(404).json({ error: 'Business Not Found' });
 
-		/* get categories of thiss Business */
-		const categories = await Categories.find({ _id: { $in: business.profile.category_id } });
-		business.profile.services = await getFullserviceData(categories, business.profile.services);
-
-		const users = await Users.find(
-			{
-				_id: {
-					$in: business.customers.map((elem) => {
-						return elem.customer_id;
-					})
-				}
-			},
-			'profile'
-		);
-
-		res.status(200).json({
-			business
-		});
-
-		// business.cutomers = business.customers.concat(users);
-		// business.customers = await new_array;
-
-		// const result = await Users.aggregate([
-		// 	{
-		// 		$match: {
-		// 			_id: {
-		// 				$in: business.customers.map((elem) => {
-		// 					return mongoose.Types.ObjectId(elem.customer_id);
-		// 				})
-		// 			}
-		// 		}
-		// 	}
-		// ]);
-
-		// const result = await Businesses.aggregate([
-		// 	{ $match: { owner_id: owner_id } },
-		// 	// { $unwind: '$customers' },
-		// 	// { $addFields: { 'customers.customer_objId': { $toObjectId: '$customers.customer_id' } } },
-		// 	{
-		// 		$lookup: {
-		// 			from: 'User',
-		// 			pipeline: [
-		// 				{
-		// 					$match: {
-		// 						_id: mongoose.Types.ObjectId('$customers.customer_id')
-		// 					}
-		// 				}
-		// 			],
-		// 			as: 'Full_user'
-		// 		}
-		// 	}
-		// ]);
+		res.status(200).json({ business });
 	},
 
 	editBusiness: async (req, res, next) => {
@@ -308,20 +260,20 @@ module.exports = {
 			const update = {
 				$push: {
 					customers: {
-						customer_id: req.user._id,
+						customer_id: mongoose.Types.ObjectId(req.user._id),
 						isFollower: true
 					}
 				}
 			};
 			/* push user id to business */
-			updated_business = await Businesses.findByIdAndUpdate(business_id, update);
+			updated_business = await Businesses.findOneAndUpdate(business_id, update);
 		}
 
 		//push the business id to users array
 		if (!updated_business) return res.status(202).json({ error: 'Some Error Occured' });
 		const userUpdate = {
 			$push: {
-				following: business_id
+				following: mongoose.Types.ObjectId(business_id)
 			}
 		};
 
@@ -407,23 +359,14 @@ module.exports = {
 		res.status(200).json({ ResultQuery });
 	},
 	setfull: async (req, res, next) => {
-		const days = [ 'sunday', 'monday', 'tuesday', 'wedensday', 'thursday', 'friday', 'saturday' ];
-		let Schedule = [];
-		for (let i in days) {
-			await Schedule.push({
-				day: days[i],
-				opened: false,
-				from: new Date(),
-				until: new Date(),
-				break: {
-					from: new Date(),
-					until: new Date()
+		const users = await Categories.aggregate([
+			{
+				$group: {
+					_id: '$services',
+					services: { $sum: 1 }
 				}
-			});
-		}
-		const update = { 'profile.working_hours': await Schedule };
-		const business = await Businesses.findOneAndUpdate({ _id: '5ca5210fa3e1e23000ac29dd' }, { update });
-		if (!business) res.json({ error: 'Error' });
-		res.json({ success: 'Success' });
+			}
+		]);
+		res.json({ users });
 	}
 };

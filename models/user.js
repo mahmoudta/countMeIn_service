@@ -40,7 +40,7 @@ const mongoose = require('mongoose'),
 		//Notifaction:[]
 		//globalExpreince:Number
 		appointments: [ String ],
-		following: [ String ]
+		following: [ { type: mongoose.Schema.Types.ObjectId, ref: 'Business' } ]
 	});
 
 user.pre('save', async function(next) {
