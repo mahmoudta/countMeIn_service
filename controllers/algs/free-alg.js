@@ -1093,23 +1093,6 @@ function compareTime(v1, v2) {
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
                 return  tempfreetime;
-                //console.log(util.inspect(tempfreetime, {depth: null}));
-                // var morning=[];
-                // morning.push( new time_range(new time(8,0) , new time(12,0) ) );
-                // console.log("\nprefered time is morning(8:00-12:00),value=2 :\n");
-                // var tmmp=[];
-                // tmmp=await mergetimerangelists(tmpfree,free,1);
-                // console.log("\nafter added previous appoitments :");
-            
-                // tmmp.forEach(function(timerange) {
-                //     console.log(timerange.string()+" value="+timerange._value);
-                // });
-                // tmmp=await mergetimerangelists(tmmp,morning,2);
-                // console.log("\nafter added that the prefered time is morning:");
-                // tmmp.forEach(function(timerange) {
-                //     console.log(timerange.string()+" value="+timerange._value);
-                // });
-                
             },
             aftereditingbusnessworkinghours: async (businessid)=>{ 
                 
