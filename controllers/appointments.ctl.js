@@ -149,7 +149,9 @@ module.exports = {
 		const appointments = await Appointments.find({
 			business_id: business_id,
 			'time.date': Ndate
-		});
+		})
+			.populate('client_id', 'profile')
+			.populate('services', 'title');
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
 		const data = await getAppointmentData(appointments);
