@@ -1,6 +1,7 @@
 const JWT = require("jsonwebtoken");
 const Businesses = require("../models/business");
 const Categories = require("../models/category");
+const Services = require("../models/service");
 const Users = require("../models/user");
 const {
   getFollowers,
@@ -66,9 +67,9 @@ module.exports = {
           from: from,
           until: until,
           break: {
-            isBreak: element.break.isBreak,
+            isBreak: element.break.isBreak ? true : false,
             from: await createTime(element.break.from),
-            until: await createTime(element.break.from)
+            until: await createTime(element.break.until)
           }
         });
       }
@@ -129,39 +130,23 @@ module.exports = {
   getBusinessForView: async (req, res, next) => {
     console.log("business for view");
     const id = mongoose.Types.ObjectId(req.params.id);
-    const business = await Businesses.findById(id).populate(
-      "services.service_id",
-      "-parent_category"
+    const user_id = req.user.id;
+    console.log(req.user.id);
+    const business = await Businesses.findById(id)
+      .populate("services.service_id", "title")
+      .populate("categories", "name")
+      .lean();
+    const follower = await business.customers.find(
+      async customer => (await customer.customer_id) == req.user.id
     );
+    const followers = await business.customers.filter(async customer => {
+      return await customer.isFollower;
+    });
+
+    business["isFollower"] = await follower.isFollower;
+    business["followers"] = await followers.length;
 
     if (!business) res.status(404).json({ error: "business not found" });
-
-    res.status(200).json({ business });
-
-    // const business = await Businesses.aggregate([
-    // 	{ $match: { _id: id } },
-    // 	{$lookup:{
-
-    // 	}}
-    //  ]);
-
-    // const Reqbusiness = await Businesses.findById(id)
-    // 	.populate('categories', 'name')
-    // 	.populate('service', '-parent_category');
-
-    // if (!Reqbusiness) return res.status(404).json({ error: 'Business Not Found' });
-
-    // const followers = await getFollowers(Reqbusiness.customers);
-    // const isFollower = await isUserFollower(followers, req.user._id);
-
-    // const isUserFollower = await isUserFollower(followers, req.user._id);
-    // const business = {
-    // 	_id: id,
-    // 	owner_id: Reqbusiness.owner_id,
-    // 	profile: Reqbusiness.profile,
-    // 	followers: followers.length,
-    // 	isFollower: isFollower
-    // };
 
     res.status(200).json({ business });
   },
@@ -212,9 +197,9 @@ module.exports = {
           from: from,
           until: until,
           break: {
-            isBreak: element.break.isBreak,
+            isBreak: element.break.isBreak ? true : false,
             from: await createTime(element.break.from),
-            until: await createTime(element.break.from)
+            until: await createTime(element.break.until)
           }
         });
       }
@@ -244,13 +229,13 @@ module.exports = {
           building: !isEmpty(building) ? Number(building) : 0,
           postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
         },
-        services: NewServices,
         phone: phone,
-        description: !isEmpty(description) ? description : "",
-        category_id: NewCategories,
-        working_hours: await fillTime(),
-        break_time: !isEmpty(breakTime) ? breakTime : 10
-      }
+        description: !isEmpty(description) ? description : ""
+      },
+      services: NewServices,
+      category_id: NewCategories,
+      working_hours: await fillTime(),
+      break_time: !isEmpty(breakTime) ? breakTime : 10
     };
 
     let business = await Businesses.findOneAndUpdate(

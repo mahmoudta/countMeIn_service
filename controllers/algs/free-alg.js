@@ -512,13 +512,42 @@ return false;
 
 
 }
+async function findtotalminutes(businessid){ 
+    var totalminutes=0;
+    const business = await Business.findOne({_id:businessid});
+    business.working_hours.forEach(function(element) {
+        if(element.opened){
+            if(!(element.break.isBreak)){
+                var from=new time(element.from.getHours(),element.from.getMinutes());
+                var until=new time(element.until.getHours(),element.until.getMinutes());
+                var tmptimerange= new time_range(from , until ); 
+                totalminutes+=tmptimerange.tominutes();
+            }else{
+                from1=new time(element.from.getHours(),element.from.getMinutes());
+                until1=new time(element.break.from.getHours(),element.break.from.getMinutes());
+                var tmptimerange1= new time_range(from1 , until1 ); 
+                totalminutes+=tmptimerange1.tominutes();
+                from2=new time(element.break.until.getHours(),element.break.until.getMinutes());
+                until2=new time(element.until.getHours(),element.until.getMinutes());
+                var tmptimerange2= new time_range(from2 , until2 ); 
+                totalminutes+=tmptimerange2.tominutes();
+
+            }
+        }
+
+    });
+        return totalminutes;
+                
+                
+ } 
+
 async function creatbusinessifempty(businessid){ 
     //creatbusinessifempty
     const free=await FreeTime.findOne({business_id: businessid});
     //console.log(free);
         if(!isEmpty(free)) return free;
-                    //console.log("business empty");
-        const newfree = await FreeTime.create({ business_id: businessid });
+        var totalminutes= await findtotalminutes(businessid);
+        const newfree = await FreeTime.create({ business_id: businessid,totalworkingminuts: totalminutes});
 
         if(isEmpty(newfree)) return null;
 
@@ -713,26 +742,32 @@ async function returnfreeondate(appointments,oneDate){
     return  day.arrayofopjects(); /* await pending */
 
  }
- async function mergewithbusnessbusnessbusyhour(businessid,freetime){ 
+ async function mergewithbusnessbusnessbusyhour(businessid,freetime,valueofbusnessbusyhours){ 
     
     var rate=await calculatebusnessbusyhours(businessid);
+    var countpointment=rate.totalpointment;
+    var totalminutes= await findtotalminutes(businessid);
+    var avgappointmentpeerhour=(countpointment/(totalminutes/60))
     //console.log(util.inspect(freetime, {depth: null}));
     freetime.forEach(function(oneday) {
         var tmpdate=moment(oneday.Date).format('dddd').toLowerCase()
         oneday.Free.forEach(function(onetimerange) {
-            var valuetoadd=0;
-            var newvalue=0;
+            var totalrate=0;
+            var timerangerateavg=0;
+            var finalvaluetoadd=0;
             var i;
             var start= onetimerange._start._hour;
 
             for (i = start; ((i <onetimerange._end._hour)||( (i==onetimerange._end._hour)&&(0<onetimerange._end._minute) )); i++) { 
-                    valuetoadd+=(rate[tmpdate][i]);
+                totalrate+=(rate[tmpdate][i]);
 
 
             }
-            if(valuetoadd!=0)
-            newvalue=( 1/ ( valuetoadd/(i-start) ) );
-            onetimerange._value+=newvalue;
+            if(totalrate!=0){
+            timerangerateavg=((totalrate/(i-start)));
+            finalvaluetoadd=(avgappointmentpeerhour/timerangerateavg)*valueofbusnessbusyhours;
+            onetimerange._value+=finalvaluetoadd;
+            }
 
         });
         
@@ -765,7 +800,8 @@ async function returnfreeondate(appointments,oneDate){
         },
         saturday:{
             0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0 
-        }
+        },
+        totalpointment:0
     }
     const appointments = await returnallappointmentsbybusiness(businessid);
     appointments.forEach(function(oneappointment) {
@@ -773,6 +809,7 @@ async function returnfreeondate(appointments,oneDate){
         var tmpdayafter=moment(tmpdaybefore).format('dddd').toLowerCase();
         var tmphour=oneappointment.time.start._hour;
         rate[tmpdayafter][tmphour]++;
+        rate.totalpointment++;
    });
     return rate;
  }
@@ -1006,7 +1043,7 @@ function compareTime(v1, v2) {
                     return result;
                 
             },
-            smart: async (businessid,services,customerid,checkifcustomerhavebusness=true,preferhours=0,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=1,days_to_return=14,appontments_number_to_return=7)=>{ 
+            smart: async (businessid,services,customerid,checkifcustomerhavebusness=true,preferhours=0,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=3,valueofbusnessbusyhours=3,days_to_return=14,appontments_number_to_return=7)=>{ 
                 var choice;
                 var exp;
                 var prevelaged=false;
@@ -1047,7 +1084,7 @@ function compareTime(v1, v2) {
                 if( !(preferhours===false) )
                 await mergewithpreferhours(preferhours,tempfreetime,valueofpreferhours);
                 
-                await mergewithbusnessbusnessbusyhour(businessid,tempfreetime);
+                await mergewithbusnessbusnessbusyhour(businessid,tempfreetime,valueofbusnessbusyhours);
                 if(prevelaged==true)
                 await pickthehighestifsliced(tempfreetime);
                 else
@@ -1056,23 +1093,6 @@ function compareTime(v1, v2) {
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
                 return  tempfreetime;
-                //console.log(util.inspect(tempfreetime, {depth: null}));
-                // var morning=[];
-                // morning.push( new time_range(new time(8,0) , new time(12,0) ) );
-                // console.log("\nprefered time is morning(8:00-12:00),value=2 :\n");
-                // var tmmp=[];
-                // tmmp=await mergetimerangelists(tmpfree,free,1);
-                // console.log("\nafter added previous appoitments :");
-            
-                // tmmp.forEach(function(timerange) {
-                //     console.log(timerange.string()+" value="+timerange._value);
-                // });
-                // tmmp=await mergetimerangelists(tmmp,morning,2);
-                // console.log("\nafter added that the prefered time is morning:");
-                // tmmp.forEach(function(timerange) {
-                //     console.log(timerange.string()+" value="+timerange._value);
-                // });
-                
             },
             aftereditingbusnessworkinghours: async (businessid)=>{ 
                 
