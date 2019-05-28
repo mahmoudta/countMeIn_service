@@ -33,8 +33,8 @@ module.exports = {
     const newAppointment = new Appointments(
       {
         _id: new mongoose.Types.ObjectId(),
-        business_id: mongoose.Schema.Types.ObjectId(businessId),
-        client_id: mongoose.Schema.Types.ObjectId(costumerId),
+        business_id: businessId,
+        client_id: costumerId,
         time: {
           date: newDate,
           start: {

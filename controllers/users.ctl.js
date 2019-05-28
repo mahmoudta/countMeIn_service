@@ -8,6 +8,7 @@ const { booked } = require("./algs/free-alg");
 const { smart } = require("./algs/free-alg");
 const { ifcanbook } = require("./algs/free-alg");
 const { freeAlg } = require("./algs/free-alg");
+const { zeroPad } = require("../utils/appointment.utils");
 const isEmpty = require("lodash.isempty");
 const mongoose = require("mongoose");
 
@@ -114,32 +115,33 @@ module.exports = {
   },
   getUpcommingAppointments: async (req, res, next) => {
     let ResArray = new Array();
-    console.log(req.user._id);
+    //let services = new Array();
+
+    console.log("user", req.user._id);
     const QueryRes = await Appointments.find({
       client_id: req.user._id
-    }).populate("business_id", "profile");
-    var promise = QueryRes.map(async (appointment, i) => {
-      const BusinessProfile = await Businesses.findById(
-        appointment.business_id
-      );
-      // let ServiceNames = appointment.services.map(async serviceTemp => {
-      //   console.log(serviceTemp);
-      //   const SingleName = await Categories.findById({ serviceTemp });
-      //   console.log("catname");
-      //   console.log(SingleName);
+    })
+      .populate({
+        path: "services",
+        populate: { path: "services" }
+      })
+      .populate("business_id");
 
-      //   return SingleName;
-      // });
-      // ServiceNames = await Promise.all(innerPromise);
-      // console.log("ServiceName", ServiceNames);
-      const BusinessName = BusinessProfile.profile.name;
+    console.log("queryQ", QueryRes);
+
+    var promise = QueryRes.map(async (appointment, i) => {
+      const BusinessName = appointment.business_id.profile.name;
       let shour = appointment.time.start._hour;
-      let sminute = appointment.time.start._minute;
+      let sminute = zeroPad(appointment.time.start._minute, 2);
       let thisdate = appointment.time.date;
-      let services = appointment.services;
+      const services = await Promise.all(
+        appointment.services.map(async service => {
+          return await service.title;
+        })
+      );
       let time = shour.toString() + ":" + sminute.toString();
       ResArray = [
-        appointment.business_id,
+        appointment.business_id._id,
         appointment._id,
         i + 1,
         BusinessName,
@@ -147,14 +149,15 @@ module.exports = {
         thisdate,
         services
       ];
-      console.log(time);
+
       //	ResArray.push(BusinessProfile.profile.name);
       //	console.log(ResArray);
       //console.log({ BusinessProfile });
       return ResArray;
     });
+    console.log("res", ResArray);
     const FinalArray = await Promise.all(promise);
-
+    console.log("Final".FinalArray);
     res.json(FinalArray);
   },
 
