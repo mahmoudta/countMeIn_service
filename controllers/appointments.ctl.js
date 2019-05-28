@@ -8,6 +8,7 @@ const { JWT_SECRET } = require('../consts');
 // const { freeTimeAlg } = require('./algs/free-alg');
 const { booked, deleted } = require('./algs/free-alg');
 const { getServices } = require('../utils/appointment.utils');
+const mongoose = require('mongoose');
 
 module.exports = {
 	setAppointment: async (req, res, next) => {
@@ -22,6 +23,7 @@ module.exports = {
 
 		const newAppointment = new Appointments(
 			{
+				_id: new mongoose.Types.ObjectId(),
 				business_id: businessId,
 				client_id: costumerId,
 				time: {
@@ -119,6 +121,7 @@ module.exports = {
 
 		res.status(200).json({ QueryRes });
 	},
+
 	setBusinessApoointment: async (req, res, next) => {
 		const { client, business, services, start, end, date } = req.body;
 
@@ -217,7 +220,9 @@ const getAppointmentData = async (appointments) => {
 		const user = await Users.findById(appointment.client_id, 'profile.name');
 		// const business = await Businesses.findById(appointment.business_id);
 
-		const Nservices = await Categories.find({ 'services._id': { $in: appointment.services } });
+		const Nservices = await Categories.find({
+			'services._id': { $in: appointment.services }
+		});
 		const services = await getServices(Nservices, appointment.services);
 		await data.push({
 			_id: appointment._id,
