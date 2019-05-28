@@ -90,28 +90,28 @@ module.exports = {
     res.status(200).json({ result: test1 });
   },
   booktest: async (req, res, next) => {
-    // console.log('book Test Here');
-    const test1 = await smart(
-      "5ceb8f27b720131f3e4b0b83",
-      ["5ceb8272a779ca1ca4aacd99"],
-      "5ceb74be5e8a061a2f32b7d7"
-    );
-    res.status(200).json({ test1 });
-  },
-  databasetest: async (req, res, next) => {
-    console.log("database Test Here");
-    var date1 = await new Date(2019, 4, 20);
-    var date2 = await new Date(2019, 5, 27);
-    const test1 = await freeAlg(
-      "5ceb8f27b720131f3e4b0b83",
-      ["5ceb8272a779ca1ca4aacd99"],
-      date1,
-      date2,
-      1,
-      "5ceb74be5e8a061a2f32b7d7"
-    );
-    res.status(200).json({ test1 });
-  },
+		// console.log('book Test Here');
+		const test1 = await smart(
+			'5ceb8f27b720131f3e4b0b83',
+			[ '5ceb8272a779ca1ca4aacd99' ],
+			'5cec597f91a98b27021ceb28'
+		);
+		res.status(200).json({ test1 });
+	},
+	databasetest: async (req, res, next) => {
+		console.log('database Test Here');
+		var date1 = await new Date(2019, 4, 20);
+		var date2 = await new Date(2019, 5, 27);
+		const test1 = await freeAlg(
+			'5ceb8f27b720131f3e4b0b83',
+			[ '5ceb8272a779ca1ca4aacd99' ],
+			date1,
+			date2,
+			1,
+			'5ceb74be5e8a061a2f32b7d7'
+		);
+		res.status(200).json({ test1 });
+	},
   getUpcommingAppointments: async (req, res, next) => {
     let ResArray = new Array();
     console.log(req.user._id);
