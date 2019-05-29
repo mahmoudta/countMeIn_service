@@ -405,7 +405,7 @@ time_range.prototype.slice = function (length,minutes_between_appointment,minsev
 
         if(remainintimerange<minsevicetime){
 
-        if((remainintimerange>minutes_between_appointment)&&(remainintimerange!=0))
+        if((remainintimerange>=minutes_between_appointment)&&(remainintimerange!=0))
         tmp.pop();
         }
     }
