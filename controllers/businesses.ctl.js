@@ -661,19 +661,19 @@ module.exports = {
 	unfollowBusiness: async (req, res, next) => {
 		const { business_id } = req.body;
 		// check if business
-		const business = await Businesses.findById(business_id);
+		const business = await Businesses.findById(business_id).lean();
 		if (!business) return res.status(404).json({ error: 'business Not Found' });
 
 		//unfollow
 		const update = {
 			$set: {
-				'customers.$.isFollower': false
+				'customers.customer_id._id.isFollower': false
 			}
 		};
 
 		const userUpdate = {
 			$pull: {
-				following: business_id
+				"following._id": business_id
 			}
 		};
 		/* push user id to business */
