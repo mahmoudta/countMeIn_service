@@ -394,16 +394,20 @@ time_range.prototype.slice = function (length,minutes_between_appointment,minsev
     var sum=length+minutes_between_appointment;
     var minutes=this.tominutes();
     var remainintimerange=minutes%sum;
+    var timerangecount=minutes/sum;
     var i=0;
-    for(i=0; sum*(i+1)<=minutes;i++){
-        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)),this._minute_value)  );
+    for(i=0; i<timerangecount;i++){
+        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)),this._value)  );
     }
     
     if(!isEmpty(tmp)){
-    tmp[0]._value+=valuefornospaces;
+        tmp[0]._value+=valuefornospaces;
 
-    if((remainintimerange>minutes_between_appointment)&&(remainintimerange<minsevicetime))
-    tmp.pop();
+        if(remainintimerange<minsevicetime){
+
+        if((remainintimerange>minutes_between_appointment)&&(remainintimerange!=0))
+        tmp.pop();
+        }
     }
     return tmp;
 };
@@ -422,7 +426,7 @@ Day.prototype.slice = function (length,minutes_between_appointment,minsevicetime
 };
 Day.prototype.slicewithnospace = function (length,minutes_between_appointment,minsevicetime,valuefornospaces) {
     var tmp=[];
-
+    console.log(util.inspect(this.Free, {depth: null}));
     this.Free.forEach(timerange => {
         var tmptimerange=[];
         tmptimerange=timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces);
@@ -435,7 +439,7 @@ Day.prototype.slicewithnospace = function (length,minutes_between_appointment,mi
 
 Day.prototype.removeduplicates = function  () {
     var uniquefreetime = [];
-
+    //console.log(util.inspect(this.Free, {depth: null}));
     this.Free.forEach(function(onetimerange) {
         if(!isEmpty(uniquefreetime)){
             var foundindex = uniquefreetime.findIndex(element => ( (element._start._hour==onetimerange._start._hour) && (element._start._minute==onetimerange._start._minute) && (element._end._hour==onetimerange._end._hour) && (element._end._minute==onetimerange._end._minute) ) );
@@ -634,6 +638,7 @@ async function creatbusinessifempty(businessid){
                     tmpday.Free=tmpcorrector;
                     
                     if(choice==1||choice==3){
+                       // console.log(util.inspect(tmpday, {depth: null}));
                         await tmpday.mergewithcustomerandsave(customerappointment);
                         if( (checkifcustomerhavebusness) && (!isEmpty(customersbusness)) ){
                         await tmpday.mergewithcustomerandsave(customersbusnessappointment);
@@ -838,10 +843,10 @@ function compareTime(v1, v2) {
           tomerge.push( new time_range(new time(7,0) , new time(12,0) ) );
           break;
         case 1:
-          tomerge.push( new time_range(new time(12,0) , new time(18,0) ) );
+          tomerge.push( new time_range(new time(12,0) , new time(17,0) ) );
           break;
         case 2:
-        tomerge.push( new time_range(new time(18,0) , new time(23,0) ) );
+        tomerge.push( new time_range(new time(17,0) , new time(21,0) ) );
         break;
         default:
           // code block
@@ -870,8 +875,9 @@ function compareTime(v1, v2) {
 
  }
  async function pickthehighestifnotsliced(freetime,services_length,minutes_between_appointment,minsevicetime,valuefornospaces){ 
-
+    
     for(let i = 0; i < freetime.length; i++){
+        
         var tmparray=[]
 
         freetime[i].slicewithnospace(services_length,minutes_between_appointment,minsevicetime,valuefornospaces);
@@ -1086,7 +1092,6 @@ function compareTime(v1, v2) {
                 date_until=moment(date_from).add(days_to_return, 'days').toDate();
                 }
                 tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces);
-                
                 if( !(preferhours===false) )
                 await mergewithpreferhours(preferhours,tempfreetime,valueofpreferhours);
                 
