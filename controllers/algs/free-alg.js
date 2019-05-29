@@ -393,18 +393,25 @@ time_range.prototype.slice = function (length,minutes_between_appointment,minsev
     var tmp=[];
     var sum=length+minutes_between_appointment;
     var minutes=this.tominutes();
-    var remainintimerange=minutes%sum;
+    
+    var remainintimerange=0;
+    remainintimerange=minutes%sum;
+    var timerangecount=minutes/sum;
     var i=0;
-    for(i=0; sum*(i+1)<=minutes;i++){
-        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)),this._minute_value)  );
+    for(i=0;i<timerangecount;i++){
+        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)),this._value)  );
     }
     
     if(!isEmpty(tmp)){
     tmp[0]._value+=valuefornospaces;
 
-    if((remainintimerange>minutes_between_appointment)&&(remainintimerange<minsevicetime))
-    tmp.pop();
+    if(remainintimerange<minsevicetime){
+
+        if(remainintimerange>minutes_between_appointment)
+        tmp.pop();
+        }
     }
+
     return tmp;
 };
 
@@ -418,11 +425,11 @@ Day.prototype.slice = function (length,minutes_between_appointment,minsevicetime
     this.Free.forEach(timerange => {
         tmp=tmp.concat(timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces));
     });
+    this.Free=[];
     this.Free=tmp;
 };
 Day.prototype.slicewithnospace = function (length,minutes_between_appointment,minsevicetime,valuefornospaces) {
     var tmp=[];
-
     this.Free.forEach(timerange => {
         var tmptimerange=[];
         tmptimerange=timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces);
@@ -435,7 +442,7 @@ Day.prototype.slicewithnospace = function (length,minutes_between_appointment,mi
 
 Day.prototype.removeduplicates = function  () {
     var uniquefreetime = [];
-
+    //console.log(util.inspect(this.Free, {depth: null}));
     this.Free.forEach(function(onetimerange) {
         if(!isEmpty(uniquefreetime)){
             var foundindex = uniquefreetime.findIndex(element => ( (element._start._hour==onetimerange._start._hour) && (element._start._minute==onetimerange._start._minute) && (element._end._hour==onetimerange._end._hour) && (element._end._minute==onetimerange._end._minute) ) );
@@ -634,6 +641,7 @@ async function creatbusinessifempty(businessid){
                     tmpday.Free=tmpcorrector;
                     
                     if(choice==1||choice==3){
+                       // console.log(util.inspect(tmpday, {depth: null}));
                         await tmpday.mergewithcustomerandsave(customerappointment);
                         if( (checkifcustomerhavebusness) && (!isEmpty(customersbusness)) ){
                         await tmpday.mergewithcustomerandsave(customersbusnessappointment);
@@ -838,10 +846,10 @@ function compareTime(v1, v2) {
           tomerge.push( new time_range(new time(7,0) , new time(12,0) ) );
           break;
         case 1:
-          tomerge.push( new time_range(new time(12,0) , new time(18,0) ) );
+          tomerge.push( new time_range(new time(12,0) , new time(17,0) ) );
           break;
         case 2:
-        tomerge.push( new time_range(new time(18,0) , new time(23,0) ) );
+        tomerge.push( new time_range(new time(17,0) , new time(21,0) ) );
         break;
         default:
           // code block
@@ -870,8 +878,9 @@ function compareTime(v1, v2) {
 
  }
  async function pickthehighestifnotsliced(freetime,services_length,minutes_between_appointment,minsevicetime,valuefornospaces){ 
-
+    
     for(let i = 0; i < freetime.length; i++){
+        
         var tmparray=[]
 
         freetime[i].slicewithnospace(services_length,minutes_between_appointment,minsevicetime,valuefornospaces);
@@ -902,14 +911,19 @@ function compareTime(v1, v2) {
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
             freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7,checkifcustomerhavebusness=true)=>{
                 var tempfreetime=[];
-                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                const business = await Business.findOne({_id:businessid});
+
+                const servicearray = await business.services.filter(function(service) {
+                    return services.includes(service.service_id.toString())
+                    
+                 });
                 var minsevicetime =await findmintimeinservice(businessid);
                 if(isEmpty(business))
                 return({error :'invalid business'});
 
                     var services_length=0;
                     var services_cost=0;
-                    business.services.forEach(function(oneservice) {
+                    servicearray.forEach(function(oneservice) {
                         services_length+=oneservice.time;
                         services_cost+=oneservice.cost;
                     });
@@ -1043,14 +1057,20 @@ function compareTime(v1, v2) {
                     return result;
                 
             },            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            smart: async (businessid,services,customerid,checkifcustomerhavebusness=true,preferhours=1,customerdesidedates=false,datefrom=false,dateuntil=false,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=9,valueofbusnessbusyhours=3,days_to_return=14,appontments_number_to_return=7)=>{ 
+            smart: async (businessid,services,customerid,preferhours=1,checkifcustomerhavebusness=true,customerdesidedates=false,datefrom=false,dateuntil=false,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=9,valueofbusnessbusyhours=3,days_to_return=14,appontments_number_to_return=7)=>{ 
                 var choice;
                 var exp;
                 var date_from;
                 var date_until;
                 var prevelaged=false;
                 var tempfreetime=[];
-                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                const business = await Business.findOne({_id:businessid});
+
+                const servicearray = await business.services.filter(function(service) {
+                    return services.includes(service.service_id.toString())
+                    
+                 });
+
                 var minsevicetime =await findmintimeinservice(businessid);
                 if(isEmpty(business))
                 return({error :'invalid business'});
@@ -1061,7 +1081,7 @@ function compareTime(v1, v2) {
                         else
                             exp=0;
                     }else{exp=0;}
-                    if(exp<10){
+                    if(exp>=10){
                     prevelaged=true;
                     choice=1;
                     }else{
@@ -1071,10 +1091,11 @@ function compareTime(v1, v2) {
 
                     var services_length=0;
                     var services_cost=0;
-                    business.services.forEach(function(oneservice) {
+                    servicearray.forEach(function(oneservice) {
                         services_length+=oneservice.time;
                         services_cost+=oneservice.cost;
                     });
+
                     var minutes_between_appointment = business.break_time;
                     var workinghours =business.working_hours;
                     if( (customerdesidedates !== false)&&(datefrom!== false)&(dateuntil !== false) ){
@@ -1086,7 +1107,6 @@ function compareTime(v1, v2) {
                 date_until=moment(date_from).add(days_to_return, 'days').toDate();
                 }
                 tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces);
-                
                 if( !(preferhours===false) )
                 await mergewithpreferhours(preferhours,tempfreetime,valueofpreferhours);
                 
