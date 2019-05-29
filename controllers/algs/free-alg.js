@@ -1042,7 +1042,7 @@ function compareTime(v1, v2) {
                      }
                     return result;
                 
-            },
+            },            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             smart: async (businessid,services,customerid,checkifcustomerhavebusness=true,preferhours=1,customerdesidedates=false,datefrom=false,dateuntil=false,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=9,valueofbusnessbusyhours=3,days_to_return=14,appontments_number_to_return=7)=>{ 
                 var choice;
                 var exp;
