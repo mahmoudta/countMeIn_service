@@ -96,7 +96,7 @@ module.exports = {
 		const test1 = await smart(
 			'5cedfa110a209a0eddbb2bbb',
 			[ '5cedf5403e3dad305192241d' ],
-			'5cedf44d0a209a0eddbb2bb7',2
+			'5cedf44d0a209a0eddbb2bb7',1
 		);
 		res.status(200).json({ test1 });
 	},
@@ -105,12 +105,12 @@ module.exports = {
 		var date1 = await new Date(2019, 4, 20);
 		var date2 = await new Date(2019, 5, 27);
 		const test1 = await freeAlg(
-			'5ceb8f27b720131f3e4b0b83',
-			[ '5ceb8272a779ca1ca4aacd99' ],
+			'5cedfa110a209a0eddbb2bbb',
+			[ '5cedf5403e3dad305192241d' ],
 			date1,
 			date2,
 			1,
-			'5ceb74be5e8a061a2f32b7d7'
+			'5cedf44d0a209a0eddbb2bb7'
 		);
 		res.status(200).json({ test1 });
 	},

@@ -393,22 +393,25 @@ time_range.prototype.slice = function (length,minutes_between_appointment,minsev
     var tmp=[];
     var sum=length+minutes_between_appointment;
     var minutes=this.tominutes();
-    var remainintimerange=minutes%sum;
+    
+    var remainintimerange=0;
+    remainintimerange=minutes%sum;
     var timerangecount=minutes/sum;
     var i=0;
-    for(i=0; i<timerangecount;i++){
+    for(i=0;i<timerangecount;i++){
         tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)),this._value)  );
     }
     
     if(!isEmpty(tmp)){
-        tmp[0]._value+=valuefornospaces;
+    tmp[0]._value+=valuefornospaces;
 
-        if(remainintimerange<minsevicetime){
+    if(remainintimerange<minsevicetime){
 
-        if((remainintimerange>=minutes_between_appointment)&&(remainintimerange!=0))
+        if(remainintimerange>minutes_between_appointment)
         tmp.pop();
         }
     }
+
     return tmp;
 };
 
@@ -422,11 +425,11 @@ Day.prototype.slice = function (length,minutes_between_appointment,minsevicetime
     this.Free.forEach(timerange => {
         tmp=tmp.concat(timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces));
     });
+    this.Free=[];
     this.Free=tmp;
 };
 Day.prototype.slicewithnospace = function (length,minutes_between_appointment,minsevicetime,valuefornospaces) {
     var tmp=[];
-    console.log(util.inspect(this.Free, {depth: null}));
     this.Free.forEach(timerange => {
         var tmptimerange=[];
         tmptimerange=timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces);
@@ -908,14 +911,19 @@ function compareTime(v1, v2) {
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
             freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7,checkifcustomerhavebusness=true)=>{
                 var tempfreetime=[];
-                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                const business = await Business.findOne({_id:businessid});
+
+                const servicearray = await business.services.filter(function(service) {
+                    return services.includes(service.service_id.toString())
+                    
+                 });
                 var minsevicetime =await findmintimeinservice(businessid);
                 if(isEmpty(business))
                 return({error :'invalid business'});
 
                     var services_length=0;
                     var services_cost=0;
-                    business.services.forEach(function(oneservice) {
+                    servicearray.forEach(function(oneservice) {
                         services_length+=oneservice.time;
                         services_cost+=oneservice.cost;
                     });
@@ -1056,7 +1064,13 @@ function compareTime(v1, v2) {
                 var date_until;
                 var prevelaged=false;
                 var tempfreetime=[];
-                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                const business = await Business.findOne({_id:businessid});
+
+                const servicearray = await business.services.filter(function(service) {
+                    return services.includes(service.service_id.toString())
+                    
+                 });
+
                 var minsevicetime =await findmintimeinservice(businessid);
                 if(isEmpty(business))
                 return({error :'invalid business'});
@@ -1077,10 +1091,11 @@ function compareTime(v1, v2) {
 
                     var services_length=0;
                     var services_cost=0;
-                    business.services.forEach(function(oneservice) {
+                    servicearray.forEach(function(oneservice) {
                         services_length+=oneservice.time;
                         services_cost+=oneservice.cost;
                     });
+
                     var minutes_between_appointment = business.break_time;
                     var workinghours =business.working_hours;
                     if( (customerdesidedates !== false)&&(datefrom!== false)&(dateuntil !== false) ){
