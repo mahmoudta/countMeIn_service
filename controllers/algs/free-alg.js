@@ -1043,9 +1043,11 @@ function compareTime(v1, v2) {
                     return result;
                 
             },
-            smart: async (businessid,services,customerid,checkifcustomerhavebusness=true,preferhours=0,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=3,valueofbusnessbusyhours=3,days_to_return=14,appontments_number_to_return=7)=>{ 
+            smart: async (businessid,services,customerid,checkifcustomerhavebusness=true,preferhours=1,customerdesidedates=false,datefrom=false,dateuntil=false,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=9,valueofbusnessbusyhours=3,days_to_return=14,appontments_number_to_return=7)=>{ 
                 var choice;
                 var exp;
+                var date_from;
+                var date_until;
                 var prevelaged=false;
                 var tempfreetime=[];
                 const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
@@ -1059,7 +1061,7 @@ function compareTime(v1, v2) {
                         else
                             exp=0;
                     }else{exp=0;}
-                    if(exp>=10){
+                    if(exp<10){
                     prevelaged=true;
                     choice=1;
                     }else{
@@ -1075,10 +1077,14 @@ function compareTime(v1, v2) {
                     });
                     var minutes_between_appointment = business.break_time;
                     var workinghours =business.working_hours;
-
+                    if( (customerdesidedates !== false)&&(datefrom!== false)&(dateuntil !== false) ){
+                    date_from=datefrom;
+                    date_until=dateuntil;
+                    }else{
                 var tmp=new Date();
-                var date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
-                var date_until=moment(date_from).add(days_to_return, 'days').toDate();
+                date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
+                date_until=moment(date_from).add(days_to_return, 'days').toDate();
+                }
                 tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces);
                 
                 if( !(preferhours===false) )
