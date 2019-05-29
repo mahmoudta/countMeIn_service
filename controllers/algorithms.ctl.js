@@ -39,7 +39,7 @@ module.exports = {
     //free days to return
     const {
       businessId,
-      ServicesArr,
+      servicesArr,
       customerId,
       ifCustomer,
       timeScope,
@@ -50,9 +50,20 @@ module.exports = {
       daysToSearch,
       daysToReturn
     } = req.body;
+
+    console.log(
+      "businessId",
+      businessId,
+      "servicesArr",
+      servicesArr,
+      "customerId",
+      customerId,
+      "timeScop",
+      timeScope
+    );
     const smartData = await smart(
       businessId,
-      ServicesArr,
+      servicesArr,
       customerId,
       timeScope,
       true
