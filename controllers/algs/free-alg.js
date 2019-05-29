@@ -1061,7 +1061,7 @@ function compareTime(v1, v2) {
                         else
                             exp=0;
                     }else{exp=0;}
-                    if(exp<10){
+                    if(exp>=10){
                     prevelaged=true;
                     choice=1;
                     }else{
