@@ -626,7 +626,7 @@ module.exports = {
 				}
 			};
 			updated_business = await Businesses.findOneAndUpdate(
-				{ _id: business_id, 'customers.customer_id': req.user._id },
+				{ _id: business_id, 'customers.customer_id._id': req.user._id },
 				update
 			);
 		} else {
