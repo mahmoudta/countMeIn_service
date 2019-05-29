@@ -1,4 +1,6 @@
 const JWT = require('jsonwebtoken');
+const { JWT_SECRET } = require('../consts');
+
 const Businesses = require('../models/business');
 const Categories = require('../models/category');
 const Services = require('../models/service');
@@ -6,9 +8,21 @@ const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
 const { getFullserviceData } = require('../utils/categories.utils');
 const isEmpty = require('lodash/isEmpty');
-const { signInToken } = require('./users.ctl');
+
 const mongoose = require('mongoose');
 
+signInToken = (user, business_id = '') => {
+	return JWT.sign(
+		{
+			sub: user._id,
+			isAdmin: user.isAdmin,
+			profile: user.profile,
+			isBusinessOwner: !isEmpty(business_id) ? true : false,
+			business_id: business_id
+		},
+		JWT_SECRET
+	);
+};
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 createTime = async (time) => {
 	try {
@@ -105,13 +119,14 @@ module.exports = {
 		});
 		const business = await newBusiness.save();
 		if (!business) return res.status(403).json({ error: 'some error accourd during create' });
+		console.log('mybusiness', business);
 		const businessNew = await Businesses.findById(business._id)
 			.populate('services.service_id', 'title')
-			.populate('categories', 'name')
-			.exec();
-		// const token = signInToken(req.user, business._id);
+			.populate('categories');
+
+		const token = signInToken(req.user, business._id);
 		// business.profile.services = [];
-		res.status(200).json({ businessNew });
+		res.status(200).json({ business: businessNew, token });
 	},
 
 	getAllBusinesses: async (req, res, next) => {
@@ -129,12 +144,14 @@ module.exports = {
 			.populate('services.service_id', 'title')
 			.populate('categories', 'name')
 			.lean();
+		/* Object of this user inside the Business */
 		const follower = await business.customers.find(async (customer) => (await customer.customer_id) == req.user.id);
+
 		const followers = await business.customers.filter(async (customer) => {
 			return await customer.isFollower;
 		});
 
-		business['isFollower'] = await follower.isFollower;
+		business['isFollower'] = (await isEmpty(follower)) ? false : follower.isFollower;
 		business['followers'] = await followers.length;
 
 		if (!business) res.status(404).json({ error: 'business not found' });
@@ -145,10 +162,13 @@ module.exports = {
 	getBusinessByOwner: async (req, res, next) => {
 		const owner_id = req.params.owner_id;
 		const business = await Businesses.findOne({ owner_id: owner_id })
-			.populate('categories', 'name')
+			.populate('categories')
 			.populate('services.service_id', 'title')
-			.populate('customers.customer_id', 'profile');
+			.populate('customers.customer_id', 'profile')
+			.lean();
 		if (!business) return res.status(404).json({ error: 'Business Not Found' });
+		// const categories = await Categories.find({ _id: { $in: 'business.categories' } }).populate('services', 'title');
+		// business.categories = categories;
 
 		res.status(200).json({ business });
 	},
@@ -200,12 +220,12 @@ module.exports = {
 		/* splitting the categories and the services */
 
 		const NewCategories = await categories.map((category) => {
-			return category.value;
+			return mongoose.Types.ObjectId(category.value);
 		});
 
 		const NewServices = await services.map((service) => {
 			return {
-				service_id: service.value,
+				service_id: mongoose.Types.ObjectId(service.value),
 				time: Number(service.time),
 				cost: Number(service.cost)
 			};
@@ -224,7 +244,7 @@ module.exports = {
 				description: !isEmpty(description) ? description : ''
 			},
 			services: NewServices,
-			category_id: NewCategories,
+			categories: NewCategories,
 			working_hours: await fillTime(),
 			break_time: !isEmpty(breakTime) ? breakTime : 10
 		};
