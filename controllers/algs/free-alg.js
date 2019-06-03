@@ -568,10 +568,10 @@ async function creatbusinessifempty(businessid){
     var or =curfree.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== oneDate);
     var id=curfree._id;
     if(isEmpty(or)){
-        await FreeTime.findById(id, function(err, FreeTime) {
+        await FreeTime.findById(id, function(err, freeTime) {
             if (err) throw err;
-            FreeTime.dates.push({ "day" : oneDate, "freeTime" : free })
-            FreeTime.save(function(err) {
+            freeTime.dates.push({ "day" : oneDate, "freeTime" : free })
+            freeTime.save(function(err) {
                 if (err) throw err;     
                 //FreeTime updated successfully
             });
@@ -900,6 +900,45 @@ function compareTime(v1, v2) {
     const min = Math.min.apply(null, business.services.map(oneservice => oneservice.time));
         return min;
  }
+ 
+ async function findchangesandupdate(businessid,appointments,array,days) { 
+    const freetime = await FreeTime.findOne( {business_id: businessid} )
+    if(isEmpty(freetime))
+    return {state:'there are no apointments to update' }
+    freetime.dates.forEach(function(onedate) {
+        if( array[ days[ moment(onedate.day).format('dddd').toLowerCase() ] ] ){
+            var onedateapointments=appointments.find( o => moment(onedate.day,"DD/MM/YYYY") == moment(o.time.date,"DD/MM/YYYY") )
+            //to do
+            var check=FreeTime.findOneAndUpdate( {business_id: businessid},{$pull:{"dates.day":onedate.day}},{ new: true, passRawResult : true} )
+            if(!isEmpty(check)){
+                onedateapointments.forEach(function(oneappointment) {
+                    var chosentimerange=new time_range(new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) ) 
+                    if(ifcanbook(businessid,onedate.day,chosentimerange)){
+                        booked(businessid,onedate.day,chosentimerange)
+                    }else{
+                        
+                        //to do
+                         Appointment.findById(oneappointment._id, function(err, appointment) {
+                            if (err) throw err;
+                            appointment.status="canceled"
+                            appointment.save(function(err) {
+                                if (err) throw err;     
+                                //appointment updated successfully
+                            });
+                        });
+
+                    }
+
+                });
+
+            }
+
+        }
+
+        
+    });
+    return freetime._id;
+ }
 
 /***********************************************************************************/
 
@@ -1120,24 +1159,22 @@ function compareTime(v1, v2) {
                 return ({});
                 return  tempfreetime;
             },
-            aftereditingbusnessworkinghours: async (businessid)=>{ 
-                
-                var tempfreetime=[];
-                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
-                if(isEmpty(business))
-                return({error :'invalid business'});
-
-                    var services_length=0;
-                    var services_cost=0;
-                    business.services.forEach(function(oneservice) {
-                        services_length+=oneservice.time;
-                        services_cost+=oneservice.cost;
+            aftereditingbusnessworkinghours: async (businessid,array)=>{ 
+                var days={'sunday':0, 'monday':1, 'tuesday':2, 'wednesday':3, 'thursday':4, 'friday':5, 'saturday':6 }
+                var appointments=await returnallappointmentsbybusiness(businessid);
+                var totalminutes=findtotalminutes(businessid);
+                if(isEmpty(appointments))
+                return({error :'business have no apintment'});
+                var freetimeid=await findchangesandupdate(businessid,appointments,array,days) 
+                await FreeTime.findById(freetimeid, function(err, freeTime) {
+                    if (err) throw err;
+                    freeTime.totalworkingminuts=totalminutes;
+                    freeTime.save(function(err) {
+                        if (err) throw err;     
+                        //FreeTime updated successfully
                     });
-                    var minutes_between_appointment = business.break_time;
-                    var workinghours =business.working_hours;
+                });
 
-
-                
                 return ({});
             
                 
