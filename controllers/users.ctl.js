@@ -31,7 +31,8 @@ module.exports = {
 	signUp: async (req, res, next) => {
 		console.log('signUp Called!!');
 
-		const { email, password, first_name, last_name } = req.value.body;
+		const { email, password, first_name, last_name, imgUrl_, phone_ } = req.value.body;
+		console.log("email", email, "password", password, "first", first_name, "last", last_name, "img ", imgUrl_, phone_)
 		const user = await Users.findOne({ email });
 		if (user) {
 			return res.status(403).json({ message: 'user already exist' });
@@ -47,7 +48,10 @@ module.exports = {
 				name: {
 					first: first_name,
 					last: last_name
-				}
+				},
+				imgUrl: imgUrl_,
+				phone: phone_
+
 			}
 		});
 		await newUser.save();
@@ -95,8 +99,8 @@ module.exports = {
 		// console.log('book Test Here');
 		const test1 = await smart(
 			'5cedfa110a209a0eddbb2bbb',
-			[ '5cedf5403e3dad305192241d' ],
-			'5cedf44d0a209a0eddbb2bb7',1
+			['5cedf5403e3dad305192241d'],
+			'5cedf44d0a209a0eddbb2bb7', 1
 		);
 		res.status(200).json({ test1 });
 	},
@@ -106,7 +110,7 @@ module.exports = {
 		var date2 = await new Date(2019, 5, 27);
 		const test1 = await freeAlg(
 			'5cedfa110a209a0eddbb2bbb',
-			[ '5cedf5403e3dad305192241d' ],
+			['5cedf5403e3dad305192241d'],
 			date1,
 			date2,
 			1,
@@ -141,7 +145,7 @@ module.exports = {
 				})
 			);
 			let time = shour.toString() + ':' + sminute.toString();
-			ResArray = [ appointment.business_id._id, appointment._id, i + 1, BusinessName, time, thisdate, services ];
+			ResArray = [appointment.business_id._id, appointment._id, i + 1, BusinessName, time, thisdate, services];
 
 			//	ResArray.push(BusinessProfile.profile.name);
 			//	console.log(ResArray);
