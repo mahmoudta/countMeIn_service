@@ -11,7 +11,7 @@ const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 
 module.exports = {
-	setAppointment: async (req, res, next) => {
+	setAppointment                : async (req, res, next) => {
 		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute } = req.body;
 		//console.log(sstart);
 
@@ -23,21 +23,21 @@ module.exports = {
 
 		const newAppointment = new Appointments(
 			{
-				_id: new mongoose.Types.ObjectId(),
-				business_id: businessId,
-				client_id: costumerId,
-				time: {
-					date: newDate,
-					start: {
-						_hour: shour,
-						_minute: sminute
+				_id         : new mongoose.Types.ObjectId(),
+				business_id : businessId,
+				client_id   : costumerId,
+				time        : {
+					date  : newDate,
+					start : {
+						_hour   : shour,
+						_minute : sminute
 					},
-					end: {
-						_hour: ehour,
-						_minute: eminute
+					end   : {
+						_hour   : ehour,
+						_minute : eminute
 					}
 				},
-				services: [ service ]
+				services    : [ service ]
 			}
 
 			// 	business_id: businessId,
@@ -60,12 +60,12 @@ module.exports = {
 		//   _end: { _hour: Number(13), _minute: Number(10) }
 		// });
 		booked(businessId, newDate, {
-			_start: newAppointment.time.start,
-			_end: newAppointment.time.end
+			_start : newAppointment.time.start,
+			_end   : newAppointment.time.end
 		});
 		res.status(200).json('suceess');
 	},
-	deleteAppointment: async (req, res, next) => {
+	deleteAppointment             : async (req, res, next) => {
 		const { appointmentId } = req.body;
 		const thisAppointment = await Appointments.findById(appointmentId);
 
@@ -85,35 +85,35 @@ module.exports = {
 		});
 
 		const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
-			_start: {
-				_hour: Number(thisAppointment.time.start._hour),
-				_minute: Number(thisAppointment.time.start._minute)
+			_start : {
+				_hour   : Number(thisAppointment.time.start._hour),
+				_minute : Number(thisAppointment.time.start._minute)
 			},
-			_end: {
-				_hour: Number(thisAppointment.time.end._hour),
-				_minute: Number(thisAppointment.time.end._minute)
+			_end   : {
+				_hour   : Number(thisAppointment.time.end._hour),
+				_minute : Number(thisAppointment.time.end._minute)
 			}
 		});
 		console.log(del);
 		res.json({ QueryRes });
 	},
 
-	getClientsAppointments: async (req, res, next) => {
+	getClientsAppointments        : async (req, res, next) => {
 		//getmyappointment for clients
 		const QueryRes = await Appointments.find({
-			client_id: req.params.clientId
+			client_id : req.params.clientId
 		});
 		res.json({ QueryRes });
 	},
 
-	getBusinessAppointments: async (req, res, next) => {
+	getBusinessAppointments       : async (req, res, next) => {
 		const appointments = await Appointments.find({
-			business_id: req.params.businessId
+			business_id : req.params.businessId
 		}).sort({ 'time.date': 1 });
 		res.json({ appointments });
 	},
 
-	getSubCategories: async (req, res, next) => {
+	getSubCategories              : async (req, res, next) => {
 		const QueryRes = await Businesses.findById(req.params.businessId, 'profile.purposes', function(err, usr) {});
 		console.log(req.params.businessId);
 
@@ -122,21 +122,21 @@ module.exports = {
 		res.status(200).json({ QueryRes });
 	},
 
-	setBusinessApoointment: async (req, res, next) => {
+	setBusinessApoointment        : async (req, res, next) => {
 		const { client, business, services, start, end, date } = req.body;
 
 		var newDate = new Date(date);
 		console.log(start);
 		console.log(end);
 		const newAppointment = new Appointments({
-			business_id: business,
-			client_id: client,
-			time: {
-				date: newDate,
-				start: start,
-				end: end
+			business_id : business,
+			client_id   : client,
+			time        : {
+				date  : newDate,
+				start : start,
+				end   : end
 			},
-			services: services
+			services    : services
 		});
 		const appointment = await newAppointment.save();
 		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
@@ -145,22 +145,21 @@ module.exports = {
 		res.status(200).json({ appointment });
 	},
 
-	getBusinessAppointmentsByDate: async (req, res, next) => {
+	getBusinessAppointmentsByDate : async (req, res, next) => {
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
 		const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
 		const appointments = await Appointments.find({
-			business_id: business_id,
-			'time.date': Ndate
+			business_id : business_id,
+			'time.date' : Ndate
 		})
-			.populate('client_id', 'profile')
-			.populate('services', 'title');
+			.populate('services')
+			.populate('client_id', 'profile');
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
-		const data = await getAppointmentData(appointments);
-		return res.json({ appointments: data });
+		return res.json({ appointments });
 	},
-	getTodaysReadyAppointments: async (req, res, next) => {
+	getTodaysReadyAppointments    : async (req, res, next) => {
 		const dateNow = new Date(new Date().getTime() - 60 * 60 * 24 * 1000);
 
 		dateNow.setUTCHours(21, 0, 0, 0);
@@ -168,12 +167,12 @@ module.exports = {
 		// dateNow.setUTCHours(21, 0, 0, 0);
 		// console.log(dateNow);
 		const appointments = await Appointments.find({
-			business_id: req.params.business_id,
+			business_id : req.params.business_id,
 			// 'time.date': {
 			// 	$gte: dateNow
 			// },
-			'time.date': dateNow,
-			status: 'ready'
+			'time.date' : dateNow,
+			status      : 'ready'
 		})
 			.limit(5)
 			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 });
@@ -186,7 +185,7 @@ module.exports = {
 		const data = await getAppointmentData(appointments);
 		return res.status(200).json({ appointments: data });
 	},
-	setAppointmentActive: async (req, res, next) => {
+	setAppointmentActive          : async (req, res, next) => {
 		console.log('set apppointment active');
 		const appointment_id = req.params.appointment_id;
 
@@ -196,7 +195,6 @@ module.exports = {
 			{ new: true }
 		);
 		if (appointment) {
-			const data = await getAppointmentData([ appointment ]);
 			res.status(200).json({ appointment: data[0] });
 		}
 	}
@@ -212,30 +210,4 @@ module.exports = {
 	// 	const data = await getAppointmentData(appointments);
 	// 	return res.json({ data });
 	// }
-};
-
-const getAppointmentData = async (appointments) => {
-	var data = [];
-	for (let appointment of appointments) {
-		const user = await Users.findById(appointment.client_id, 'profile.name');
-		// const business = await Businesses.findById(appointment.business_id);
-
-		const Nservices = await Categories.find({
-			'services._id': { $in: appointment.services }
-		});
-		const services = await getServices(Nservices, appointment.services);
-		await data.push({
-			_id: appointment._id,
-			business_id: appointment.business_id,
-			client: user,
-			time: {
-				date: appointment.time.date,
-				start: appointment.time.start,
-				end: appointment.time.end
-			},
-			services: services,
-			status: appointment.status
-		});
-	}
-	return await data;
 };
