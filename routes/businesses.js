@@ -6,6 +6,7 @@ const passport = require('passport');
 const passportConf = require('../passport');
 const passportJWT = passport.authenticate('jwt', { session: false });
 
+router.route('/getAllBusinesses').get(businessCtl.getAllBusinesses)
 router.route('/').post(passportJWT, businessCtl.createBusiness).get(passportJWT, businessCtl.getAllBusinesses);
 router.route('/getAllCustomers').get(passportJWT, businessCtl.getAllCustomers);
 router.route('/:id').get(passportJWT, businessCtl.getBusinessForView);
@@ -15,6 +16,9 @@ router.route('/unfollow').put(passportJWT, businessCtl.unfollowBusiness);
 router.route('/edit').put(passportJWT, businessCtl.editBusiness);
 router.route('/services/:id').get(passportJWT, businessCtl.getServicesByBusiness);
 router.route('/getBusinessesByCatagory/:catagoryId').get(passportJWT, businessCtl.getBusinessesByCatagory);
+//router.route('/getBusinessesByCatagoryArray').post(businessCtl.getBusinessesByCatagoryArray);
+
+
 router.route('/test/add').get(businessCtl.setfull);
 
 module.exports = router;

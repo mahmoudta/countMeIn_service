@@ -49,6 +49,20 @@ module.exports = {
 
 		res.status(200).json({ ResultQuery });
 	},
+	getBusinessesByCatagoryArray: async (req, res, next) => {
+		console.log(req.body);
+		const { catagoryIdArray } = req.body;
+		const ResultQuery = ["empty"];
+		catagoryIdArray.forEach(async (value, i) => {
+			ResultQuery = await Businesses.find(
+				{
+					'profile.category_id': value
+				},
+				'_id'
+			);
+		})
+		res.status(200).json({ ResultQuery });
+	},
 
 	createBusiness: async (req, res, next) => {
 		console.log('create Business called!!');
