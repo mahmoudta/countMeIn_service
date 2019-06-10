@@ -396,7 +396,7 @@ time_range.prototype.slice = function (length,minutes_between_appointment,minsev
     
     var remainintimerange=0;
     remainintimerange=minutes%sum;
-    var timerangecount=minutes/sum;
+    var timerangecount=Math.floor(minutes/sum);
     var i=0;
     for(i=0;i<timerangecount;i++){
         tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)),this._value)  );
@@ -902,35 +902,40 @@ function compareTime(v1, v2) {
  }
  
  async function findchangesandupdate(businessid,appointments,array,days) { 
-    const freetime = await FreeTime.findOne( {business_id: businessid} )
+    const freetime = await FreeTime.findOne( {business_id: businessid} ).lean();
+    let allDates = freeTime.dates;
     if(isEmpty(freetime))
-    return {state:'there are no apointments to update' }
-    freetime.dates.forEach(function(onedate) {
+    return {state:'there are no freetime to update' }
+    allDates.forEach(function(onedate) {
         if( array[ days[ moment(onedate.day).format('dddd').toLowerCase() ] ] ){
+            //onedate.FreeTime=jdgfksdg
             var onedateapointments=appointments.find( o => moment(onedate.day,"DD/MM/YYYY") == moment(o.time.date,"DD/MM/YYYY") )
             //to do
-            var check=FreeTime.findOneAndUpdate( {business_id: businessid},{$pull:{"dates.day":onedate.day}},{ new: true, passRawResult : true} )
-            if(!isEmpty(check)){
-                onedateapointments.forEach(function(oneappointment) {
-                    var chosentimerange=new time_range(new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) ) 
-                    if(ifcanbook(businessid,onedate.day,chosentimerange)){
-                        booked(businessid,onedate.day,chosentimerange)
-                    }else{
-                        
-                        //to do
-                         Appointment.findById(oneappointment._id, function(err, appointment) {
+
+            if(!isEmpty(onedateapointments)){
+                // var check=FreeTime.findOneAndUpdate( {business_id: businessid},{$pull:{"dates.day":onedate.day}},{ new: true, passRawResult : true} )
+                // if(!isEmpty(check)){
+                  onedateapointments.forEach(function(oneappointment) {
+                      var chosentimerange=new time_range(new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) ) 
+                      if(ifcanbook(businessid,onedate.day,chosentimerange)){
+                            booked(businessid,onedate.day,chosentimerange)
+                        }else{
+                            
+                         //to do
+                            Appointment.findById(oneappointment._id, function(err, appointment) {
                             if (err) throw err;
-                            appointment.status="canceled"
-                            appointment.save(function(err) {
-                                if (err) throw err;     
-                                //appointment updated successfully
+                                appointment.status="canceled"
+                                appointment.save(function(err) {
+                                    if (err) throw err;     
+                                    //appointment updated successfully
+                                });
                             });
-                        });
 
-                    }
+                        }
 
-                });
+                    });
 
+                //}
             }
 
         }
@@ -1162,7 +1167,7 @@ function compareTime(v1, v2) {
             aftereditingbusnessworkinghours: async (businessid,array)=>{ 
                 var days={'sunday':0, 'monday':1, 'tuesday':2, 'wednesday':3, 'thursday':4, 'friday':5, 'saturday':6 }
                 var appointments=await returnallappointmentsbybusiness(businessid);
-                var totalminutes=findtotalminutes(businessid);
+                var totalminutes=await findtotalminutes(businessid);
                 if(isEmpty(appointments))
                 return({error :'business have no apintment'});
                 var freetimeid=await findchangesandupdate(businessid,appointments,array,days) 

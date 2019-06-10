@@ -8,6 +8,7 @@ const { booked } = require('./algs/free-alg');
 const { smart } = require('./algs/free-alg');
 const { ifcanbook } = require('./algs/free-alg');
 const { freeAlg } = require('./algs/free-alg');
+const { aftereditingbusnessworkinghours } = require('./algs/free-alg');
 const { zeroPad } = require('../utils/appointment.utils');
 const isEmpty = require('lodash.isempty');
 const mongoose = require('mongoose');
@@ -81,13 +82,10 @@ module.exports = {
 	},
 
 	test: async (req, res, next) => {
-		console.log('Test ifcanbook Here');
-		var timerange = {
-			_start: { _hour: 11, _minute: 00 },
-			_end: { _hour: 18, _minute: 00 }
-		};
-		var date = await new Date(2019, 3, 28); // 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		const test1 = await ifcanbook('5ca5210fa3e1e23000ac29dd', date, timerange);
+		console.log('Test aftereditingbusnessworkinghours Here');
+		var array=[true,true,true,true,true,true,true];
+		//var date = await new Date(2019, 3, 28); // 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
+		const test1 = await aftereditingbusnessworkinghours('5cee32220d1aca9031f576d9', array);
 
 		res.status(200).json({ result: test1 });
 	},
@@ -105,7 +103,7 @@ module.exports = {
 		var date1 = await new Date(2019, 4, 20);
 		var date2 = await new Date(2019, 5, 27);
 		const test1 = await freeAlg(
-			'5cedfa110a209a0eddbb2bbb',
+			'5cee32220d1aca9031f576d9',
 			[ '5cedf5403e3dad305192241d' ],
 			date1,
 			date2,
