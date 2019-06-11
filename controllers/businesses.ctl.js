@@ -314,6 +314,7 @@ module.exports = {
 		if (!business) return res.status(403).json({ error: 'some error accourd during update' });
 
 		/* send the working edits array to free time tree to make a changes on the tree. */
+		console.log(working_edits);
 		aftereditingbusnessworkinghours(business._id, working_edits);
 		res.status(200).json({ business });
 	},

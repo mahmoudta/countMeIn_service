@@ -9,6 +9,7 @@ const { JWT_SECRET } = require('../consts');
 const { booked, deleted } = require('./algs/free-alg');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
+const moment = require('moment');
 
 module.exports = {
 	setAppointment                : async (req, res, next) => {
@@ -174,18 +175,15 @@ module.exports = {
 		return res.json({ appointments });
 	},
 	getTodayUpcomingAppointments  : async (req, res, next) => {
-		const dateNow = new Date(new Date().getTime() - 60 * 60 * 24 * 1000);
+		let date = moment().format('L');
+		date = moment(date).toDate();
 
-		dateNow.setUTCHours(21, 0, 0, 0);
-		console.log(dateNow);
-		// dateNow.setUTCHours(21, 0, 0, 0);
-		// console.log(dateNow);
 		const appointments = await Appointments.find({
 			business_id : req.params.business_id,
 			// 'time.date': {
 			// 	$gte: dateNow
 			// },
-			'time.date' : dateNow,
+			'time.date' : date,
 			status      : { $in: [ 'ready', 'inProgress' ] }
 		})
 			.limit(5)
@@ -200,15 +198,19 @@ module.exports = {
 
 		return res.status(200).json({ appointments });
 	},
-	setAppointmentActive          : async (req, res, next) => {
+	appointmentCheck              : async (req, res, next) => {
 		console.log('set apppointment active');
-		const appointment_id = req.params.appointment_id;
-
-		const appointment = await Appointments.findOneAndUpdate(
-			{ _id: appointment_id },
-			{ $set: { status: 'inProgress' } },
-			{ new: true }
-		)
+		const { appointment_id, action } = req.params;
+		let query = {};
+		switch (action) {
+			case 'in':
+				query = { $set: { status: 'inProgress', 'time.check_in': new Date() } };
+				break;
+			case 'out':
+				query = { $set: { status: 'done', 'time.check_out': new Date() } };
+				break;
+		}
+		const appointment = await Appointments.findOneAndUpdate({ _id: appointment_id }, query, { new: true })
 			.populate('services')
 			.populate('client_id', 'profile');
 		if (appointment) {

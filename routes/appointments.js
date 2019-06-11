@@ -12,7 +12,9 @@ router.route('/getBusinessAppointments/:businessId').get(appointmentCtl.getBusin
 router.route('/getSubCategories/:businessId').get(appointmentCtl.getSubCategories);
 router.route('/business/setAppointmnet').post(appointmentCtl.setBusinessAppointment);
 router.route('/getBusinessAppointmentsByDate/:business_id/:date').get(appointmentCtl.getBusinessAppointmentsByDate);
-router.route('/getTodaysReadyAppointments/:business_id').get(passportJWT, appointmentCtl.getTodayUpcomingAppointments);
-router.route('/setAppointmentActive/:appointment_id').put(appointmentCtl.setAppointmentActive);
+router
+	.route('/getTodayUpcomingAppointments/:business_id')
+	.get(passportJWT, appointmentCtl.getTodayUpcomingAppointments);
+router.route('/appointmentCheck/:appointment_id/:action').put(appointmentCtl.appointmentCheck);
 
 module.exports = router;
