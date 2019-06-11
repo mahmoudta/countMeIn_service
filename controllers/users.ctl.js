@@ -83,32 +83,32 @@ module.exports = {
 
 	test: async (req, res, next) => {
 		console.log('Test aftereditingbusnessworkinghours Here');
-		var array=[true,true,true,true,true,true,true];
+		var array=[false,false,false,false,true,false,false];
 		//var date = await new Date(2019, 3, 28); // 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		const test1 = await aftereditingbusnessworkinghours('5cee32220d1aca9031f576d9', array);
+		const test1 = await aftereditingbusnessworkinghours('5cedfa110a209a0eddbb2bbb', array);
 
 		res.status(200).json({ result: test1 });
 	},
 	booktest: async (req, res, next) => {
 		// console.log('book Test Here');
 		const test1 = await smart(
-			'5cee32220d1aca9031f576d9',
-			[ '5cedf89f3e3dad3051922423' ],
+			'5cedfa110a209a0eddbb2bbb',
+			[ '5cedf5813e3dad305192241e' ],
 			'5cedf3d20a209a0eddbb2bb2',1
 		);
 		res.status(200).json({ test1 });
 	},
 	databasetest: async (req, res, next) => {
 		console.log('database Test Here');
-		var date1 = await new Date(2019, 4, 20);
-		var date2 = await new Date(2019, 5, 27);
+		var date1 = await new Date(2019, 5, 11);
+		var date2 = await new Date(2019, 5, 20);
 		const test1 = await freeAlg(
-			'5cee32220d1aca9031f576d9',
-			[ '5cedf5403e3dad305192241d' ],
+			'5cedfa110a209a0eddbb2bbb',
+			[ '5cedf5813e3dad305192241e' ],
 			date1,
 			date2,
 			1,
-			'5cedf44d0a209a0eddbb2bb7'
+			'5cedf3d20a209a0eddbb2bb2'
 		);
 		res.status(200).json({ test1 });
 	},
