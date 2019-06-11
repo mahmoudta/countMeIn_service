@@ -4,14 +4,22 @@ var mongoose = require('mongoose'),
 		business_id : { type: mongoose.Schema.Types.ObjectId, ref: 'Business' },
 		client_id   : { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 		time        : {
-			date  : Date,
-			start : {
+			date      : Date,
+			start     : {
 				_hour   : Number,
 				_minute : Number
 			},
-			end   : {
+			end       : {
 				_hour   : Number,
 				_minute : Number
+			},
+			check_in  : {
+				type    : Date,
+				default : Date.now
+			},
+			check_out : {
+				type    : Date,
+				default : Date.now
 			}
 		},
 		services    : [ { type: mongoose.Schema.Types.ObjectId, ref: 'Service' } ],
