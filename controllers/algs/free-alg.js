@@ -60,7 +60,7 @@ class BinarySearchTree
     // it moves over the tree to find the location 
     // to insert a node with a given data  
     insertNode(node, newNode) 
-    { 
+    {  
         // if the data is less than the node 
         // data move left of the tree  
         if( (newNode.data.end().hour()<node.data.start().hour()) || ( (newNode.data.end().hour()==node.data.start().hour()) && (newNode.data.end().minute()>=node.data.start().minute()) ) ) 
@@ -95,8 +95,10 @@ class BinarySearchTree
     // removeNode with a given data 
     remove(data) 
     { 
+         
         // root is re-initialized with 
         // root of a modified tree. 
+        //console.log(data)
         this.root = this.removeNode(this.root, data); 
         this.length--;
         return true;
@@ -108,7 +110,11 @@ class BinarySearchTree
     // data and removes it 
     removeNode(node, key) 
     { 
-            
+        console.log("\ndelete\n");   
+        console.log(key);  
+        console.log("\nfrom\n");   
+        console.log(util.inspect(node, {depth: null}));
+        
          // if the root is null then tree is  
          // empty 
         if(node === null) {
@@ -149,7 +155,7 @@ class BinarySearchTree
         } 
         // if data to be delete is lesser than  
         // roots data then move to left subtree
-        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()>=node.data.start().minute()) ) ) 
+        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()<=node.data.start().minute()) ) ) 
         { 
             node.left = this.removeNode(node.left, key); 
             return node; 
@@ -157,7 +163,7 @@ class BinarySearchTree
     
         // if data to be delete is greater than  
         // roots data then move to right subtree 
-        else if( (key.start().hour()<node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) 
+        else if( (key.start().hour()>node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) 
         { 
             
             node.right = this.removeNode(node.right, key); 
@@ -236,13 +242,13 @@ class BinarySearchTree
         } 
         // if data is less than node's data 
         // move left 
-        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()>=node.data.start().minute()) ) ){
+        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()<=node.data.start().minute()) ) ){
             return this.search(node.left, data); 
         }
     
         // if data is greater than node's data 
         // move right 
-        else if( (key.start().hour()<node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) {
+        else if( (key.start().hour()>node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) {
             return this.search(node.right, data); 
         }
             
@@ -281,13 +287,19 @@ class BinarySearchTree
     }
     //book
     book(timerange_to_book){
+        
+        //console.log("\nbook this\n");   
+        //console.log(timerange_to_book);   
         var checker=0
         var free=[];
         var lefttimerange;
         var righttimerange;
         free=this.arrayofopjects();
+        //console.log("free",free)
         free.forEach(timerange => {
+            
             if(this.ifinthetimerange(timerange,timerange_to_book)){
+                
                 this.remove(timerange);
                 lefttimerange=new time_range(timerange.start(),timerange_to_book.start());
                 righttimerange=new time_range(timerange_to_book.end(),timerange.end());
@@ -317,6 +329,7 @@ class BinarySearchTree
                 }
 
             }
+
         
         });
         if(checker==1)
@@ -426,6 +439,7 @@ Day.prototype.slice = function (length,minutes_between_appointment,minsevicetime
         tmp=tmp.concat(timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces));
     });
     this.Free=[];
+    //to do (check date)
     this.Free=tmp;
 };
 Day.prototype.slicewithnospace = function (length,minutes_between_appointment,minsevicetime,valuefornospaces) {
@@ -506,7 +520,6 @@ async function creatifempty(businessid,workinghours,date_from,date_until){
             from2=new time(element.break.until.getHours(),element.break.until.getMinutes());
             until2=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from2 , until2 ) ); 
-
             }
 
         });
@@ -709,22 +722,29 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choi
 return result;
 } 
 async function returnallappointmentsbycustomer(customerid){ 
-    const appointments = await Appointment.find({client_id: customerid})
+    const appointments = await Appointment.find({client_id: customerid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'pendingBusiness', 'passed']}})
     return appointments;
 
  }
  async function returnallappointmentsbybusiness(businessid){ 
-    const appointments = await Appointment.find({business_id: businessid})
+    const appointments = await Appointment.find({business_id: businessid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'pendingBusiness', 'passed']}})
     return appointments;
 
  }
  async function mergewithcostumer(Free,appointments,oneDate){ 
+    //  console.log("merge this\n")
+    //  console.log(await returnfreeondate(appointments,oneDate))
+    //  console.log("with this\n")
+    //  console.log(Free)
+    //  console.log("=\n")
+    //  console.log(await mergetimerangelists(Free, await returnfreeondate(appointments,oneDate),0,1))
     return await mergetimerangelists(Free, await returnfreeondate(appointments,oneDate),0,1);
 
 
  }
 async function returnfreeondate(appointments,oneDate){ 
     var free=[];
+    
     //console.log(oneDate)
     //console.log(util.inspect(appointments, {depth: null}));
     var appointmentsondate = appointments.filter(function(element) {
@@ -733,11 +753,11 @@ async function returnfreeondate(appointments,oneDate){
         return false;
         
      });
-
+     
      var day= new BinarySearchTree();
     day.totree([ new time_range(new time(0,0) , new time(24,0) ) ]);
     if(!isEmpty(appointmentsondate)){
-
+    //console.log(util.inspect(appointmentsondate, {depth: null}));
      appointmentsondate.forEach(function(oneappointment) {
          var tmptime=new time_range( new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) )
          var result= day.book(tmptime) ;
@@ -745,8 +765,9 @@ async function returnfreeondate(appointments,oneDate){
         console.log("error on finding date on customer");
 
     });
-    }   
-    //console.log(util.inspect(day.arrayofopjects(), {depth: null}));
+    }  
+    if( isEmpty( day.arrayofopjects()) ) 
+    return [];
     return  day.arrayofopjects(); /* await pending */
 
  }
@@ -902,48 +923,105 @@ function compareTime(v1, v2) {
  }
  
  async function findchangesandupdate(businessid,appointments,array,days) { 
-    const freetime = await FreeTime.findOne( {business_id: businessid} ).lean();
-    let allDates = freeTime.dates;
+    const freetime = await FreeTime.findOne( {business_id: businessid} );
+    const business = await Business.findOne({_id:businessid});
     if(isEmpty(freetime))
     return {state:'there are no freetime to update' }
-    allDates.forEach(function(onedate) {
+    let allDates = freetime.dates;
+   const test =  await allDates.forEach(async function(onedate,i) {
         if( array[ days[ moment(onedate.day).format('dddd').toLowerCase() ] ] ){
-            //onedate.FreeTime=jdgfksdg
             var onedateapointments=appointments.find( o => moment(onedate.day,"DD/MM/YYYY") == moment(o.time.date,"DD/MM/YYYY") )
-            //to do
+            var oneworkinghours = business.working_hours.find(function(element) {
+                if(element.opened){  
+                return element.day === moment(onedate.day).format('dddd').toLowerCase();
+                }
+                else
+                return false;
+             });
+             if(!isEmpty(oneworkinghours)){
+                var tmpfree= await updatethisdayandretturn(onedateapointments,oneworkinghours)
+                allDates[i].freeTime=tmpfree;
+                //console.log(util.inspect(await onedate, {depth: null}));
 
-            if(!isEmpty(onedateapointments)){
-                // var check=FreeTime.findOneAndUpdate( {business_id: businessid},{$pull:{"dates.day":onedate.day}},{ new: true, passRawResult : true} )
-                // if(!isEmpty(check)){
-                  onedateapointments.forEach(function(oneappointment) {
-                      var chosentimerange=new time_range(new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) ) 
-                      if(ifcanbook(businessid,onedate.day,chosentimerange)){
-                            booked(businessid,onedate.day,chosentimerange)
-                        }else{
-                            
-                         //to do
-                            Appointment.findById(oneappointment._id, function(err, appointment) {
-                            if (err) throw err;
-                                appointment.status="canceled"
-                                appointment.save(function(err) {
-                                    if (err) throw err;     
-                                    //appointment updated successfully
-                                });
-                            });
+             }else{
+                 await updatethisdayandretturn(onedateapointments)
+                allDates.splice(i, 1);
+             }
 
+        }
+    })
+    await test;
+    const edits = await allDates;
+    console.log(util.inspect(edits, {depth: null}));
+
+    
+    const update = {
+        $set:{
+            dates: edits
+        }
+    }
+    const newfree = await FreeTime.findOneAndUpdate({business_id:businessid},update,{new:true});
+
+
+    //console.log(newfree);
+    // console.log(util.inspect(newfree, {depth: null}));
+    return freetime._id;
+ }
+ async function updatethisdayandretturn(onedateapointments,oneworkinghours=false){
+    var free=[];
+    if(oneworkinghours!==false){
+           
+                if(!(oneworkinghours.break.isBreak)){
+                    var from=new time(oneworkinghours.from.getHours(),oneworkinghours.from.getMinutes());
+                    var until=new time(oneworkinghours.until.getHours(),oneworkinghours.until.getMinutes());
+                    free.push( new time_range(from , until ) ); 
+                }else{
+                    var from1=new time(oneworkinghours.from.getHours(),oneworkinghours.from.getMinutes());
+                    var until1=new time(oneworkinghours.break.from.getHours(),oneworkinghours.break.from.getMinutes());
+                    free.push( new time_range(from1 , until1 ) ); 
+        
+                    var from2=new time(oneworkinghours.break.until.getHours(),oneworkinghours.break.until.getMinutes());
+                    var until2=new time(oneworkinghours.until.getHours(),oneworkinghours.until.getMinutes());
+                    free.push( new time_range(from2 , until2 ) ); 
+                }
+
+                 if(!isEmpty(onedateapointments)){
+                    var day= new BinarySearchTree();
+                    day.totree(free);
+                    onedateapointments.forEach(async function(oneappointment) {
+                        var chosentimerange=new time_range(new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) ) 
+                        if( !(day.book(chosentimerange)) ){
+                             await cancelappointmentbyid(oneappointment._id)
+                             console.log("canceled apointment id = "+oneappointment._id)
                         }
 
                     });
-
-                //}
+                    free=[];
+                    free=day.arrayofopjects()
             }
+       
+    }else{
 
+        if(!isEmpty(onedateapointments)){
+            onedateapointments.forEach( function(oneappointment) {cancelappointmentbyid(oneappointment._id);} );
+            console.log("canceled all this apointment in this day "+onedateapointments[0].day)
         }
+    }
+    return free;
 
-        
+}
+async function cancelappointmentbyid(appointmentid){
+
+    Appointment.findById(appointmentid, function(err, appointment) {
+        if (err) throw err;
+        appointment.status="pendingBusiness"
+        appointment.save(function(err) {
+            if (err) throw err;     
+            //appointment updated successfully
+        });
     });
-    return freetime._id;
- }
+
+}
 
 /***********************************************************************************/
 
@@ -1061,7 +1139,7 @@ function compareTime(v1, v2) {
                      freetobook.forEach(function(onetimerange) {
                        timeranges.push( new time_range(new time(onetimerange._start._hour,onetimerange._start._minute) , new time(onetimerange._end._hour,onetimerange._end._minute) ) );
                      });
-                    var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
+                    var tobook= new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
                     var day= new BinarySearchTree();
                     day.totree(timeranges);
                     result=await day.book(tobook);
@@ -1168,8 +1246,8 @@ function compareTime(v1, v2) {
                 var days={'sunday':0, 'monday':1, 'tuesday':2, 'wednesday':3, 'thursday':4, 'friday':5, 'saturday':6 }
                 var appointments=await returnallappointmentsbybusiness(businessid);
                 var totalminutes=await findtotalminutes(businessid);
-                if(isEmpty(appointments))
-                return({error :'business have no apintment'});
+                //if(isEmpty(appointments))
+                //return({error :'business have no apintment'});
                 var freetimeid=await findchangesandupdate(businessid,appointments,array,days) 
                 await FreeTime.findById(freetimeid, function(err, freeTime) {
                     if (err) throw err;
