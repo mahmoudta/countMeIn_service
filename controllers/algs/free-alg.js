@@ -1243,6 +1243,7 @@ async function cancelappointmentbyid(appointmentid){
                 return  tempfreetime;
             },
             aftereditingbusnessworkinghours: async (businessid,array)=>{ 
+                
                 var days={'sunday':0, 'monday':1, 'tuesday':2, 'wednesday':3, 'thursday':4, 'friday':5, 'saturday':6 }
                 var appointments=await returnallappointmentsbybusiness(businessid);
                 var totalminutes=await findtotalminutes(businessid);
