@@ -110,10 +110,6 @@ class BinarySearchTree
     // data and removes it 
     removeNode(node, key) 
     { 
-        console.log("\ndelete\n");   
-        console.log(key);  
-        console.log("\nfrom\n");   
-        console.log(util.inspect(node, {depth: null}));
         
          // if the root is null then tree is  
          // empty 
@@ -930,7 +926,11 @@ function compareTime(v1, v2) {
     let allDates = freetime.dates;
    const test =  await allDates.forEach(async function(onedate,i) {
         if( array[ days[ moment(onedate.day).format('dddd').toLowerCase() ] ] ){
-            var onedateapointments=appointments.find( o => moment(onedate.day,"DD/MM/YYYY") == moment(o.time.date,"DD/MM/YYYY") )
+            var onedateapointments = appointments.filter(function(element) {
+                if(moment(element.time.date).format("YYYY/MM/DD")=== moment(onedate.day).format("YYYY/MM/DD"))
+                return true;
+                return false;   
+             });
             var oneworkinghours = business.working_hours.find(function(element) {
                 if(element.opened){  
                 return element.day === moment(onedate.day).format('dddd').toLowerCase();
@@ -952,7 +952,7 @@ function compareTime(v1, v2) {
     })
     await test;
     const edits = await allDates;
-    console.log(util.inspect(edits, {depth: null}));
+    //console.log(util.inspect(edits, {depth: null}));
 
     
     const update = {
@@ -968,6 +968,7 @@ function compareTime(v1, v2) {
     return freetime._id;
  }
  async function updatethisdayandretturn(onedateapointments,oneworkinghours=false){
+
     var free=[];
     if(oneworkinghours!==false){
            
@@ -986,13 +987,15 @@ function compareTime(v1, v2) {
                 }
 
                  if(!isEmpty(onedateapointments)){
+                   
+                    
                     var day= new BinarySearchTree();
                     day.totree(free);
                     onedateapointments.forEach(async function(oneappointment) {
                         var chosentimerange=new time_range(new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) ) 
                         if( !(day.book(chosentimerange)) ){
                              await cancelappointmentbyid(oneappointment._id)
-                             console.log("canceled apointment id = "+oneappointment._id)
+                             //console.log("canceled apointment id = "+oneappointment._id)
                         }
 
                     });
@@ -1004,7 +1007,7 @@ function compareTime(v1, v2) {
 
         if(!isEmpty(onedateapointments)){
             onedateapointments.forEach( function(oneappointment) {cancelappointmentbyid(oneappointment._id);} );
-            console.log("canceled all this apointment in this day "+onedateapointments[0].day)
+            //console.log("canceled all this apointment in this day "+onedateapointments[0].day)
         }
     }
     return free;
@@ -1243,7 +1246,7 @@ async function cancelappointmentbyid(appointmentid){
                 return  tempfreetime;
             },
             aftereditingbusnessworkinghours: async (businessid,array)=>{ 
-                
+
                 var days={'sunday':0, 'monday':1, 'tuesday':2, 'wednesday':3, 'thursday':4, 'friday':5, 'saturday':6 }
                 var appointments=await returnallappointmentsbybusiness(businessid);
                 var totalminutes=await findtotalminutes(businessid);
