@@ -65,8 +65,12 @@ class BinarySearchTree
         // data move left of the tree  
         if( (newNode.data.end().hour()<node.data.start().hour()) || ( (newNode.data.end().hour()==node.data.start().hour()) && (newNode.data.end().minute()>=node.data.start().minute()) ) ) 
         { 
+            if( (newNode.data.end().hour()==node.data.start().hour()) && (newNode.data.end().minute()==node.data.start().minute()) ){
+                node.data._start._hour=newNode.data.start().hour();
+                node.data._start._minute=newNode.data.start().minute();
+            }
             // if left is null insert node here 
-            if(node.left === null) {
+            else if(node.left === null) {
                 node.left = newNode; 
             }
             else{
@@ -80,8 +84,12 @@ class BinarySearchTree
         // data move right of the tree  
         else
         { 
+            if( (newNode.data.start().hour()==node.data.end().hour()) && (newNode.data.start().minute()==node.data.end().minute()) ){
+                node.data._end._hour=newNode.data.end().hour();
+                node.data._end._minute=newNode.data.end().minute();
+            }
             // if right is null insert node here 
-            if(node.right === null) {
+            else if(node.right === null) {
                 node.right = newNode; 
             }
             else{
