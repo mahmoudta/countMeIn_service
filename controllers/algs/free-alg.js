@@ -65,8 +65,12 @@ class BinarySearchTree
         // data move left of the tree  
         if( (newNode.data.end().hour()<node.data.start().hour()) || ( (newNode.data.end().hour()==node.data.start().hour()) && (newNode.data.end().minute()>=node.data.start().minute()) ) ) 
         { 
+            if( (newNode.data.end().hour()==node.data.start().hour()) && (newNode.data.end().minute()==node.data.start().minute()) ){
+                node.data._start._hour=newNode.data.start().hour();
+                node.data._start._minute=newNode.data.start().minute();
+            }
             // if left is null insert node here 
-            if(node.left === null) {
+            else if(node.left === null) {
                 node.left = newNode; 
             }
             else{
@@ -80,8 +84,12 @@ class BinarySearchTree
         // data move right of the tree  
         else
         { 
+            if( (newNode.data.start().hour()==node.data.end().hour()) && (newNode.data.start().minute()==node.data.end().minute()) ){
+                node.data._end._hour=newNode.data.end().hour();
+                node.data._end._minute=newNode.data.end().minute();
+            }
             // if right is null insert node here 
-            if(node.right === null) {
+            else if(node.right === null) {
                 node.right = newNode; 
             }
             else{
@@ -589,7 +597,7 @@ async function creatbusinessifempty(businessid){
     return id;
  }
  //choice=0 return the busness freetime slice it to slices /choice=1 choice=0 return the busness_freetime&costomer_freetime and slice it to slices/choice=2 only find free time of busness and return
- async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces=0){ 
+ async function returnfreetime(id,fromsmart=true,services_length,minutes_between_appointment,number_of_days_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces=0){ 
      if(id===false)
      return false
     var days=[];
@@ -627,6 +635,7 @@ async function creatbusinessifempty(businessid){
         days.push(new Day(thedate,timeranges));
     });
     var tmpday;
+    var tmpfree;
             var counter=0;
             var correcter=0;
             var tmpcorrector;
@@ -636,12 +645,27 @@ async function creatbusinessifempty(businessid){
             do{
                 if (days === undefined || days.length == 0) {break;}
                 tmpday=days.shift();
-                day.totree(tmpday.Free);
+                tmpfree=tmpday.Free;
+               if( moment(tmpday.Date).format("YYYY/MM/DD") == moment().format("YYYY/MM/DD") ){
+                var today = new Date()
+                var tmptime;
+                if(fromsmart===false)
+                tmptime =new time(today.getHours(),today.getMinutes()) 
+                else
+                tmptime =new time( today.getHours()+1 , Math.round(today.getMinutes()) )
+
+                tmpfree=await mergetimerangelists(tmpfree,[new time_range( tmptime , new time(24,0) )],0,1 )
+               }
+            //    else if( moment(tmpday.Date).format("YYYY/MM/DD") < moment().format("YYYY/MM/DD") ){
+            //     tmpfree=[];
+            //    }
+            //just remove above to block previuse dates
+                day.totree(tmpfree);
                 posibletobook.totree(day.timerangesthatfit(services_length,minutes_between_appointment));
                 ///call slicer at posibletobook
                 counter+=posibletobook.getlength();
-                if (counter>=appontments_number_to_return) {
-                    correcter=counter-appontments_number_to_return
+                if (counter>=number_of_days_to_return) {
+                    correcter=counter-number_of_days_to_return
                     //tmpcorrector=posibletobook.arrayofstrings();
                     tmpcorrector=posibletobook.arrayofopjects();
                     for (; 0 < correcter; correcter--) { 
@@ -671,7 +695,7 @@ async function creatbusinessifempty(businessid){
                 if(choice==0||choice==1)
                 tmpday.slice(services_length,minutes_between_appointment,minsevicetime,valuefornospaces);
                 daysfree.push(tmpday)
-            }while(counter<appontments_number_to_return);
+            }while(counter<number_of_days_to_return);
 
 return(daysfree);
 
@@ -718,12 +742,12 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choi
 return result;
 } 
 async function returnallappointmentsbycustomer(customerid){ 
-    const appointments = await Appointment.find({client_id: customerid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'pendingBusiness', 'passed']}})
+    const appointments = await Appointment.find({client_id: customerid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'passed']}})
     return appointments;
 
  }
  async function returnallappointmentsbybusiness(businessid){ 
-    const appointments = await Appointment.find({business_id: businessid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'pendingBusiness', 'passed']}})
+    const appointments = await Appointment.find({business_id: businessid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'passed']}})
     return appointments;
 
  }
@@ -1034,7 +1058,7 @@ async function cancelappointmentbyid(appointmentid){
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7,checkifcustomerhavebusness=true)=>{
+            freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,number_of_days_to_return=7,checkifcustomerhavebusness=true)=>{
                 var tempfreetime=[];
                 const business = await Business.findOne({_id:businessid});
 
@@ -1054,7 +1078,7 @@ async function cancelappointmentbyid(appointmentid){
                     });
                     var minutes_between_appointment = business.break_time;
                     var workinghours =business.working_hours;
-                    tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime);
+                    tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),false,services_length,minutes_between_appointment,number_of_days_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime);
                 //console.log(util.inspect(tempfreetime, {depth: null}));
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
@@ -1182,7 +1206,7 @@ async function cancelappointmentbyid(appointmentid){
                     return result;
                 
             },            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            smart: async (businessid,services,customerid,preferhours=1,checkifcustomerhavebusness=true,customerdesidedates=false,datefrom=false,dateuntil=false,icaraboutcustomeexperiance=true,valuefornospaces=5,valueofpreferhours=9,valueofbusnessbusyhours=3,days_to_return=14,appontments_number_to_return=7)=>{ 
+            smart: async (businessid,services,customerid,preferhours=1,checkifcustomerhavebusness=true,customerdesidedates=false,datefrom=false,dateuntil=false)=>{ 
                 var choice;
                 var exp;
                 var date_from;
@@ -1190,6 +1214,13 @@ async function cancelappointmentbyid(appointmentid){
                 var prevelaged=false;
                 var tempfreetime=[];
                 const business = await Business.findOne({_id:businessid});
+                
+                const icaraboutcustomeexperiance=business.schedule_settings.customers_exp;
+                const valuefornospaces=business.schedule_settings.continuity;
+                const valueofpreferhours=9;//business.schedule_settings.********
+                const valueofbusnessbusyhours=business.schedule_settings.distrbuted_time;
+                const days_to_return=business.schedule_settings.days_calculate_length;
+                const number_of_days_to_return=business.schedule_settings.max_appointment_response;
 
                 const servicearray = await business.services.filter(function(service) {
                     return services.includes(service.service_id.toString())
@@ -1231,7 +1262,7 @@ async function cancelappointmentbyid(appointmentid){
                 date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
                 date_until=moment(date_from).add(days_to_return, 'days').toDate();
                 }
-                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces);
+                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),true,services_length,minutes_between_appointment,number_of_days_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces);
                 if( !(preferhours===false) )
                 await mergewithpreferhours(preferhours,tempfreetime,valueofpreferhours);
                 
