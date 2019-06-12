@@ -1214,12 +1214,14 @@ async function cancelappointmentbyid(appointmentid){
                 var prevelaged=false;
                 var tempfreetime=[];
                 const business = await Business.findOne({_id:businessid});
-                const icaraboutcustomeexperiance=true;
-                const valuefornospaces=5;
-                const valueofpreferhours=9;
-                const valueofbusnessbusyhours=3;
-                const days_to_return=14;
-                const number_of_days_to_return=7;
+                
+                const icaraboutcustomeexperiance=business.schedule_settings.customers_exp;
+                const valuefornospaces=business.schedule_settings.continuity;
+                const valueofpreferhours=9;//business.schedule_settings.********
+                const valueofbusnessbusyhours=business.schedule_settings.distrbuted_time;
+                const days_to_return=business.schedule_settings.days_calculate_length;
+                const number_of_days_to_return=business.schedule_settings.max_appointment_response;
+
                 const servicearray = await business.services.filter(function(service) {
                     return services.includes(service.service_id.toString())
                     
