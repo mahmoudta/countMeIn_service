@@ -199,7 +199,6 @@ module.exports = {
 		return res.status(200).json({ appointments });
 	},
 	appointmentCheck              : async (req, res, next) => {
-		console.log('set apppointment active');
 		const { appointment_id, action } = req.params;
 		let query = {};
 		switch (action) {
@@ -213,9 +212,9 @@ module.exports = {
 		const appointment = await Appointments.findOneAndUpdate({ _id: appointment_id }, query, { new: true })
 			.populate('services')
 			.populate('client_id', 'profile');
-		if (appointment) {
-			res.status(200).json({ appointment });
-		}
+		if (!appointment) return res.json({ error: 'an error occoured' });
+
+		res.status(200).json({ appointment });
 	}
 
 	// getBusinessAppointmentsByDate: async (req, res, next) => {

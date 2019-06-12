@@ -37,7 +37,7 @@ createTime = async (time) => {
 };
 
 module.exports = {
-	getBusinessesByCatagory : async (req, res, next) => {
+	getBusinessesByCatagory       : async (req, res, next) => {
 		const { catagoryId } = req.params;
 		//var catagoryId = JSON.parse(req.params);
 
@@ -51,7 +51,7 @@ module.exports = {
 		res.status(200).json({ ResultQuery });
 	},
 
-	getAllCustomers         : async (req, res, next) => {
+	getAllCustomers               : async (req, res, next) => {
 		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
 		if (!business) return res.status(404).json({ error: 'business not found' });
 		const ids = await business.customers.map((customer) => {
@@ -64,7 +64,7 @@ module.exports = {
 
 		res.status(200).json({ customers });
 	},
-	getServicesByBusiness   : async (req, res, next) => {
+	getServicesByBusiness         : async (req, res, next) => {
 		const { id } = req.params;
 		const business = await Businesses.findById(id);
 		if (!business) return res.status(404).json({ error: 'business not found' });
@@ -81,7 +81,7 @@ module.exports = {
 		res.status(200).json({ services });
 	},
 
-	getBusinessesByCatagory : async (req, res, next) => {
+	getBusinessesByCatagory       : async (req, res, next) => {
 		const { catagoryId } = req.params;
 		//var catagoryId = JSON.parse(req.params);
 
@@ -95,14 +95,14 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	getAllBusinesses        : async (req, res, next) => {
+	getAllBusinesses              : async (req, res, next) => {
 		const businesses = await Businesses.find({});
 		if (!businesses) return res.status(404).json({ error: 'not found' });
 		res.status(200).json({ businesses });
 	},
 
 	/* Adhamm */
-	getBusinessForView      : async (req, res, next) => {
+	getBusinessForView            : async (req, res, next) => {
 		console.log('business for view');
 		const id = mongoose.Types.ObjectId(req.params.id);
 		const user_id = req.user.id;
@@ -127,7 +127,7 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	getBusinessByOwner      : async (req, res, next) => {
+	getBusinessByOwner            : async (req, res, next) => {
 		const owner_id = req.params.owner_id;
 		const business = await Businesses.findOne({ owner_id: owner_id })
 			.populate('categories')
@@ -141,7 +141,7 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	createBusiness          : async (req, res, next) => {
+	createBusiness                : async (req, res, next) => {
 		console.log('create Business called!!');
 		// get all params
 		const {
@@ -233,7 +233,7 @@ module.exports = {
 		res.status(200).json({ business: businessNew, token });
 	},
 
-	editBusiness            : async (req, res, next) => {
+	editBusiness                  : async (req, res, next) => {
 		console.log('edit Business Called!');
 		const {
 			business_id,
@@ -322,7 +322,7 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	followBusiness          : async (req, res, next) => {
+	followBusiness                : async (req, res, next) => {
 		console.log('follow business');
 		const { business_id } = req.body;
 		let business_query = {}; /* object to hold the query for business */
@@ -385,7 +385,7 @@ module.exports = {
 		res.status(200).json({ isFollower: true });
 	},
 
-	unfollowBusiness        : async (req, res, next) => {
+	unfollowBusiness              : async (req, res, next) => {
 		const { business_id } = req.body;
 		// check if business
 		const business = await Businesses.findById(business_id)
@@ -420,7 +420,7 @@ module.exports = {
 
 		res.status(200).json({ isFollower: false });
 	},
-	getAllCustomers         : async (req, res, next) => {
+	getAllCustomers               : async (req, res, next) => {
 		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
 		if (!business) return res.status(404).json({ error: 'business not found' });
 		const ids = await business.customers.map((customer) => {
@@ -433,7 +433,7 @@ module.exports = {
 
 		res.status(200).json({ customers });
 	},
-	getServicesByBusiness   : async (req, res, next) => {
+	getServicesByBusiness         : async (req, res, next) => {
 		const { id } = req.params;
 		const business = await Businesses.findById(id);
 		if (!business) return res.status(404).json({ error: 'business not found' });
@@ -449,7 +449,35 @@ module.exports = {
 		if (!services) return res.status(404).json({ error: 'an error occurred' });
 		res.status(200).json({ services });
 	},
-	setfull                 : async (req, res, next) => {
+	UpdateSmartAlgorithmsSettings : async (req, res, next) => {
+		const {
+			customers_exp,
+			continuity,
+			distrbuted_time,
+			days_calculate_length,
+			max_working_days_response
+		} = req.body;
+		update = {
+			$set : {
+				schedule_settings : {
+					customers_exp             : customers_exp,
+					continuity                : continuity,
+					distrbuted_time           : distrbuted_time,
+					days_calculate_length     : days_calculate_length,
+					max_working_days_response : max_working_days_response
+				}
+			}
+		};
+		const business = await Businesses.findOneAndUpdate({ owner_id: req.user._id }, update, { new: true })
+			.populate('categories')
+			.populate('services.service_id', 'title')
+			.populate('customers.customer_id', 'profile');
+
+		if (!business) return res.json({ error: 'Error accourd while updating' });
+
+		res.status(200).json({ business });
+	},
+	setfull                       : async (req, res, next) => {
 		const users = await Categories.aggregate([
 			{
 				$group : {

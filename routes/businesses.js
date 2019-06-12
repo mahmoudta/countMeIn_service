@@ -15,6 +15,7 @@ router.route('/unfollow').put(passportJWT, businessCtl.unfollowBusiness);
 router.route('/edit').put(passportJWT, businessCtl.editBusiness);
 router.route('/services/:id').get(passportJWT, businessCtl.getServicesByBusiness);
 router.route('/getBusinessesByCatagory/:catagoryId').get(passportJWT, businessCtl.getBusinessesByCatagory);
+router.route('/UpdateSmartAlgorithmsSettings').put(passportJWT, businessCtl.UpdateSmartAlgorithmsSettings);
 router.route('/test/add').get(businessCtl.setfull);
 
 module.exports = router;

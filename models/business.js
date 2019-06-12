@@ -60,29 +60,29 @@ var mongoose = require('mongoose'),
 		],
 		schedule_settings : {
 			/* */
-			customers_exp            : {
+			customers_exp             : {
 				type    : Boolean,
 				default : true
 			},
-			continuity               : {
+			continuity                : {
 				type    : Number,
 				default : 3,
 				max     : 10,
 				min     : 0
 			},
-			distrbuted_time          : {
+			distrbuted_time           : {
 				type    : Number,
 				default : 3,
 				max     : 20,
 				min     : 1
 			},
-			days_calculate_length    : {
+			days_calculate_length     : {
 				type    : Number,
 				default : 7,
 				min     : 2,
 				max     : 30
 			},
-			max_appointment_response : {
+			max_working_days_response : {
 				type    : Number,
 				default : 7,
 				min     : 1,
