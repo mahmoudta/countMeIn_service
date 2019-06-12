@@ -7,6 +7,7 @@ const Services = require('../models/service');
 const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
 const { getFullserviceData } = require('../utils/categories.utils');
+const { aftereditingbusnessworkinghours } = require('./algs/free-alg');
 const isEmpty = require('lodash/isEmpty');
 
 const mongoose = require('mongoose');
@@ -247,7 +248,8 @@ module.exports = {
 			img,
 			phone,
 			working,
-			services
+			services,
+			working_edits
 		} = req.body;
 		// checking if user already have a business
 		// const Qbusiness = await Businesses.findOne({ owner_id: req.user._id });
@@ -310,8 +312,11 @@ module.exports = {
 
 		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness);
 		if (!business) return res.status(403).json({ error: 'some error accourd during update' });
-		// business.profile.services = [];
-		return res.status(200).json({ business });
+
+		/* send the working edits array to free time tree to make a changes on the tree. */
+		console.log(working_edits);
+		aftereditingbusnessworkinghours(business._id, working_edits);
+		res.status(200).json({ business });
 	},
 
 	followBusiness          : async (req, res, next) => {
@@ -340,7 +345,8 @@ module.exports = {
 
 			business_update = {
 				$set : {
-					'customers.$.isFollower' : true
+					'customers.$.isFollower' : true,
+					$inc                     : { 'customers.$.experiance': 2 }
 				}
 			};
 		} else {
@@ -350,7 +356,8 @@ module.exports = {
 				$push : {
 					customers : {
 						customer_id : mongoose.Types.ObjectId(req.user._id),
-						isFollower  : true
+						isFollower  : true,
+						experiance  : 3
 					}
 				}
 			};
@@ -387,7 +394,8 @@ module.exports = {
 		//unfollow
 		const update = {
 			$set : {
-				'customers.$.isFollower' : false
+				'customers.$.isFollower' : false,
+				$inc                     : { 'customers.$.experiance': -3 }
 			}
 		};
 

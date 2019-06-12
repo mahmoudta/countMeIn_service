@@ -1,98 +1,129 @@
 var mongoose = require('mongoose'),
 	business = new mongoose.Schema({
-		_id: { type: mongoose.Schema.Types.ObjectId },
-		Schedule_id: String /*the Schedule id for this bussniess*/,
-		owner_id: {
+		_id               : { type: mongoose.Schema.Types.ObjectId },
+		Schedule_id       : String /*the Schedule id for this bussniess*/,
+		owner_id          : {
 			// type: String /* id of client that owns this bussniess*/,
-			required: true,
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'User'
+			required : true,
+			type     : mongoose.Schema.Types.ObjectId,
+			ref      : 'User'
 		},
-		categories: [
+		categories        : [
 			{
-				type: mongoose.Schema.Types.ObjectId,
-				required: true,
-				ref: 'Category'
+				type     : mongoose.Schema.Types.ObjectId,
+				required : true,
+				ref      : 'Category'
 			},
 			{ _id: 0 }
 			//Array
 		],
-		services: [
+		services          : [
 			{
 				//services
-				service_id: {
-					type: mongoose.Schema.Types.ObjectId,
-					ref: 'Service'
+				service_id : {
+					type : mongoose.Schema.Types.ObjectId,
+					ref  : 'Service'
 				},
-				time: {
-					type: Number,
-					max: 120
+				time       : {
+					type : Number,
+					max  : 120
 				},
-				cost: Number
+				cost       : Number
 			},
 			{ _id: false }
 		],
-		break_time: {
-			type: Number,
-			default: 10
+		break_time        : {
+			type    : Number,
+			default : 10
 		},
-		working_hours: [
+		working_hours     : [
 			{
 				/* array which length = 7 (week)*/
-				day: {
-					type: String
+				day    : {
+					type : String
 					// enum: [ 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ]
 				},
-				opened: Boolean,
-				from: {
-					type: Date
+				opened : Boolean,
+				from   : {
+					type : Date
 				},
-				until: {
-					type: Date
+				until  : {
+					type : Date
 				},
-				break: {
-					isBreak: Boolean,
-					from: Date,
-					until: Date
+				break  : {
+					isBreak : Boolean,
+					from    : Date,
+					until   : Date
 				}
 			},
 			{ _id: false }
 		],
-		profile: {
-			name: {
-				type: String,
-				required: true
+		schedule_settings : {
+			/* */
+			customers_exp            : {
+				type    : Boolean,
+				default : true
 			},
-			phone: {
-				type: String,
-				required: true,
-				index: { unique: true }
+			continuity               : {
+				type    : Number,
+				default : 3,
+				max     : 10,
+				min     : 0
 			},
-			description: String,
+			distrbuted_time          : {
+				type    : Number,
+				default : 3,
+				max     : 20,
+				min     : 1
+			},
+			days_calculate_length    : {
+				type    : Number,
+				default : 7,
+				min     : 2,
+				max     : 30
+			},
+			max_appointment_response : {
+				type    : Number,
+				default : 7,
+				min     : 1,
+				max     : 30
+			}
+		},
+		profile           : {
+			name        : {
+				type     : String,
+				required : true
+			},
+			phone       : {
+				type     : String,
+				required : true,
+				index    : { unique: true }
+			},
+			description : String,
 
-			img: String,
+			img         : String,
 
-			rating: Number,
+			rating      : Number,
 
-			location: {
-				street: String,
-				city: String,
-				building: Number,
-				postal_code: Number
+			location    : {
+				street      : String,
+				city        : String,
+				building    : Number,
+				postal_code : Number
 			}
 		} /*end of profile*/,
-		style_id: String /* id for style document*/,
+		style_id          : String /* id for style document*/,
 		//
-		customers: [
+		customers         : [
 			{
-				customer_id: {
-					type: mongoose.Schema.Types.ObjectId,
-					ref: 'User'
+				customer_id : {
+					type : mongoose.Schema.Types.ObjectId,
+					ref  : 'User'
 				},
-				isFollower: Boolean,
-				experiance: {
-					type: Number,
-					default: 0
+				isFollower  : Boolean,
+				experiance  : {
+					type    : Number,
+					default : 0
 				}
 			}
 		] /* array of Clients_ids */

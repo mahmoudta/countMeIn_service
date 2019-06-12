@@ -9,6 +9,7 @@ const { JWT_SECRET } = require('../consts');
 const { booked, deleted } = require('./algs/free-alg');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
+const moment = require('moment');
 
 module.exports = {
 	setAppointment                : async (req, res, next) => {
@@ -122,27 +123,40 @@ module.exports = {
 		res.status(200).json({ QueryRes });
 	},
 
-	setBusinessApoointment        : async (req, res, next) => {
-		const { client, business, services, start, end, date } = req.body;
-
+	setBusinessAppointment        : async (req, res, next) => {
+		const { client_id, business_id, services, _start, _end, date } = req.body;
+		const newServices = await services.map((service) => {
+			return service.value;
+		});
 		var newDate = new Date(date);
-		console.log(start);
-		console.log(end);
+
 		const newAppointment = new Appointments({
-			business_id : business,
-			client_id   : client,
+			_id         : new mongoose.Types.ObjectId(),
+			business_id : business_id,
+			client_id   : client_id,
 			time        : {
 				date  : newDate,
-				start : start,
-				end   : end
+				start : _start,
+				end   : _end
 			},
-			services    : services
+			services    : newServices
 		});
-		const appointment = await newAppointment.save();
-		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
 
-		booked(business, date, { _start: start, _end: end });
-		res.status(200).json({ appointment });
+		const appointment = await newAppointment.save();
+		if (!appointment) return res.json({ error: 'an error occoured' });
+
+		const addedAppointment = await Appointments.findById(appointment._id)
+			.populate('services')
+			.populate('client_id', 'profile');
+		/* 
+		*	booked function should take:  
+		*	business_id
+		*	Utc Date()....
+		*	_start:{_hour:number,_minute:_}
+		*/
+		const elem = await booked(business_id, date, { _start, _end });
+
+		if (elem) res.status(200).json({ appointment: addedAppointment });
 	},
 
 	getBusinessAppointmentsByDate : async (req, res, next) => {
@@ -153,49 +167,54 @@ module.exports = {
 			business_id : business_id,
 			'time.date' : Ndate
 		})
-			.populate('services')
-			.populate('client_id', 'profile');
+			.populate('client_id', 'profile')
+			.populate('services', 'title');
+
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
 		return res.json({ appointments });
 	},
-	getTodaysReadyAppointments    : async (req, res, next) => {
-		const dateNow = new Date(new Date().getTime() - 60 * 60 * 24 * 1000);
+	getTodayUpcomingAppointments  : async (req, res, next) => {
+		let date = moment().format('L');
+		date = moment(date).toDate();
 
-		dateNow.setUTCHours(21, 0, 0, 0);
-		console.log(dateNow);
-		// dateNow.setUTCHours(21, 0, 0, 0);
-		// console.log(dateNow);
 		const appointments = await Appointments.find({
 			business_id : req.params.business_id,
 			// 'time.date': {
 			// 	$gte: dateNow
 			// },
-			'time.date' : dateNow,
-			status      : 'ready'
+			'time.date' : date,
+			status      : { $in: [ 'ready', 'inProgress' ] }
 		})
 			.limit(5)
-			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 });
+			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 })
+			.populate('services')
+			.populate('client_id', 'profile');
 		// .sort(appointment_a,appointmentb)=>{
 		// 	let time_a = new Date(appointment.time.start._hour,appointment.time.start._minute,0,0);
 		// 	return time_a < time_b;
 		// });
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
-		const data = await getAppointmentData(appointments);
-		return res.status(200).json({ appointments: data });
+		return res.status(200).json({ appointments });
 	},
-	setAppointmentActive          : async (req, res, next) => {
+	appointmentCheck              : async (req, res, next) => {
 		console.log('set apppointment active');
-		const appointment_id = req.params.appointment_id;
-
-		const appointment = await Appointments.findOneAndUpdate(
-			{ _id: appointment_id },
-			{ $set: { status: 'inProgress' } },
-			{ new: true }
-		);
+		const { appointment_id, action } = req.params;
+		let query = {};
+		switch (action) {
+			case 'in':
+				query = { $set: { status: 'inProgress', 'time.check_in': new Date() } };
+				break;
+			case 'out':
+				query = { $set: { status: 'done', 'time.check_out': new Date() } };
+				break;
+		}
+		const appointment = await Appointments.findOneAndUpdate({ _id: appointment_id }, query, { new: true })
+			.populate('services')
+			.populate('client_id', 'profile');
 		if (appointment) {
-			res.status(200).json({ appointment: data[0] });
+			res.status(200).json({ appointment });
 		}
 	}
 
