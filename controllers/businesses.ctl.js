@@ -310,7 +310,10 @@ module.exports = {
 			break_time    : !isEmpty(breakTime) ? breakTime : 10
 		};
 
-		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness);
+		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness, { new: true })
+			.populate('categories')
+			.populate('services.service_id', 'title')
+			.populate('customers.customer_id', 'profile');
 		if (!business) return res.status(403).json({ error: 'some error accourd during update' });
 
 		/* send the working edits array to free time tree to make a changes on the tree. */
