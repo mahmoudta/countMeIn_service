@@ -215,6 +215,56 @@ module.exports = {
 		if (!appointment) return res.json({ error: 'an error occoured' });
 
 		res.status(200).json({ appointment });
+	},
+	BusinessStatisticsHeader      : async (req, res, next) => {
+		let allData = {};
+		let first_of_month = moment().startOf('month').toDate();
+		let end_of_month = moment().startOf('month').add(1, 'M').toDate();
+		// .endOf('month').toDate();
+
+		let id = mongoose.Types.ObjectId(req.params.business_id);
+
+		const this_month = await Appointments.aggregate([
+			{
+				$match : {
+					business_id : id,
+					'time.date' : { $gte: first_of_month, $lt: end_of_month }
+				}
+			},
+			// { $group: { _id: { date: '$time.date', status: '$status' }, count: { $sum: 1 } } },
+			{ $group: { _id: { status: '$status' }, count: { $sum: 1 } } },
+
+			{ $project: { count: '$count', status: '$status' } }
+			// { $sort: { '_id.date': -1 } }
+		]);
+
+		/*  */
+		const saved = new Promise((resolve) => {
+			this_month.map((result) => {
+				// const arrKey = new Date(result._id.date).getTime();
+				const arrKey = id;
+
+				if (!allData[arrKey]) {
+					allData[arrKey] = {
+						ready           : 0,
+						inProgress      : 0,
+						pendingClient   : 0,
+						pendingBusiness : 0,
+						passed          : 0,
+						canceled        : 0,
+						total           : 0,
+						done            : 0,
+						date            : ''
+					};
+				}
+				allData[arrKey].total += result.count;
+				allData[arrKey].date = result._id.date;
+				allData[arrKey][result._id.status] += result.count;
+			});
+			resolve(allData);
+		}).then((statistics) => {
+			res.status(200).json({ statistics });
+		});
 	}
 
 	// getBusinessAppointmentsByDate: async (req, res, next) => {
