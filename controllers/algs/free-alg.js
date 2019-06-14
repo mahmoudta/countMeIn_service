@@ -646,19 +646,17 @@ async function creatbusinessifempty(businessid){
                 tmpday=days.shift();
                 tmpfree=tmpday.Free;
                 //to undo
-                /*
-               if( moment(tmpday.Date).format("YYYY/MM/DD") == moment().format("YYYY/MM/DD") ){
-                var today = new Date()
-                var tmptime;
-                if(fromsmart===false)
-                tmptime =new time(today.getHours(),today.getMinutes()) 
-                else
-                tmptime =new time( today.getHours()+1 , Math.round(today.getMinutes()) )
+            //    if( moment(tmpday.Date).format("YYYY/MM/DD") == moment().format("YYYY/MM/DD") ){
+            //         var today = new Date()
+            //         var tmptime;
+            //         if(fromsmart===false)
+            //             tmptime =new time(today.getHours(),today.getMinutes()) 
+            //         else
+            //             tmptime =new time( today.getHours()+1 , Math.round(today.getMinutes()) )
 
-                tmpfree=await mergetimerangelists(tmpfree,[new time_range( tmptime , new time(24,0) )],0,1 )
-                */
+            //         tmpfree=await mergetimerangelists(tmpfree,[new time_range( tmptime , new time(24,0) )],0,1 )
 
-               }
+            //    }
             //    else if( moment(tmpday.Date).format("YYYY/MM/DD") < moment().format("YYYY/MM/DD") ){
             //     tmpfree=[];
             //    }
