@@ -645,6 +645,8 @@ async function creatbusinessifempty(businessid){
                 if (days === undefined || days.length == 0) {break;}
                 tmpday=days.shift();
                 tmpfree=tmpday.Free;
+                //to undo
+                /*
                if( moment(tmpday.Date).format("YYYY/MM/DD") == moment().format("YYYY/MM/DD") ){
                 var today = new Date()
                 var tmptime;
@@ -654,6 +656,8 @@ async function creatbusinessifempty(businessid){
                 tmptime =new time( today.getHours()+1 , Math.round(today.getMinutes()) )
 
                 tmpfree=await mergetimerangelists(tmpfree,[new time_range( tmptime , new time(24,0) )],0,1 )
+                */
+
                }
             //    else if( moment(tmpday.Date).format("YYYY/MM/DD") < moment().format("YYYY/MM/DD") ){
             //     tmpfree=[];
