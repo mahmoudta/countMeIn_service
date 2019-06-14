@@ -729,15 +729,15 @@ async function mergetimerangelists(timerangelist1, timerangelist2, mergevalue, c
 }
 async function returnallappointmentsbycustomer(customerid) {
 	const appointments = await Appointment.find({
-		client_id: customerid,
-		status: { $in: [ 'ready', 'inProgress', 'done', 'pendingClient', 'passed' ] }
+		client_id : customerid,
+		status    : { $in: [ 'ready', 'inProgress', 'done', 'pendingClient', 'passed' ] }
 	});
 	return appointments;
 }
 async function returnallappointmentsbybusiness(businessid) {
 	const appointments = await Appointment.find({
-		business_id: businessid,
-		status: { $in: [ 'ready', 'inProgress', 'done', 'pendingClient', 'passed' ] }
+		business_id : businessid,
+		status      : { $in: [ 'ready', 'inProgress', 'done', 'pendingClient', 'passed' ] }
 	});
 	return appointments;
 }
