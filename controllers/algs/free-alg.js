@@ -1483,7 +1483,7 @@ module.exports = {
 
 		return {};
 	},
-	shiftappointmentifpossible      : async (appointmentid, array) => {
+	shiftappointmentifpossible      : async (businessid, appointmentid) => {
 		const appointment = await Appointment.findById(appointmentid);
 
 		var apointmentdate = appointment.time.date;
