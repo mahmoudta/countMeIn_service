@@ -10,6 +10,7 @@ const { booked, deleted } = require('./algs/free-alg');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
+const isEmpty = require('lodash/isEmpty');
 
 module.exports = {
 	setAppointment                : async (req, res, next) => {
@@ -73,11 +74,6 @@ module.exports = {
 		if (thisAppointment.time.end._minute === null) {
 			thisAppointment.time.end._minute = 0;
 		}
-
-		console.log(thisAppointment.business_id);
-		console.log(thisAppointment.time.date);
-		console.log(thisAppointment.time.start);
-		console.log(thisAppointment.time.end);
 
 		const QueryRes = await Appointments.deleteOne({ _id: appointmentId }, (err) => {
 			if (err) {
@@ -167,6 +163,7 @@ module.exports = {
 			business_id : business_id,
 			'time.date' : Ndate
 		})
+			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 })
 			.populate('client_id', 'profile')
 			.populate('services', 'title');
 
@@ -199,15 +196,30 @@ module.exports = {
 		return res.status(200).json({ appointments });
 	},
 	appointmentCheck              : async (req, res, next) => {
-		const { appointment_id, action } = req.params;
+		const { appointment_id, client_id, business_id, action, isLate, time } = req.body;
 		let query = {};
+		let expUpdate = {};
 		switch (action) {
 			case 'in':
-				query = { $set: { status: 'inProgress', 'time.check_in': new Date() } };
+				if (isLate.late) {
+					expUpdate = {
+						$set : {
+							$inc : { 'customers.$.experiance': -Number(isLate.minutes / 5) }
+						}
+					};
+				}
+				query = { $set: { status: 'inProgress', 'time.check_in': new Date(time) } };
 				break;
 			case 'out':
-				query = { $set: { status: 'done', 'time.check_out': new Date() } };
+				query = { $set: { status: 'done', 'time.check_out': new Date(time) } };
 				break;
+		}
+
+		if (!isEmpty(expUpdate)) {
+			const business = await Businesses.findOneAndUpdate(
+				{ _id: business_id, 'customers.customer_id': client_id },
+				expUpdate
+			);
 		}
 		const appointment = await Appointments.findOneAndUpdate({ _id: appointment_id }, query, { new: true })
 			.populate('services')
@@ -233,11 +245,11 @@ module.exports = {
 			},
 			// { $group: { _id: { date: '$time.date', status: '$status' }, count: { $sum: 1 } } },
 			{ $group: { _id: { status: '$status' }, count: { $sum: 1 } } },
-
-			{ $project: { count: '$count', status: '$status' } }
-			// { $sort: { '_id.date': -1 } }
+			{ $project: { count: '$count', status: '$status' } },
+			{ $sort: { '_id.date': -1 } }
 		]);
 
+		// res.send(this_month);
 		/*  */
 		const saved = new Promise((resolve) => {
 			this_month.map((result) => {
@@ -267,15 +279,54 @@ module.exports = {
 		});
 	}
 
-	// getBusinessAppointmentsByDate: async (req, res, next) => {
-	// 	const { date, business_id } = req.params;
-	// 	var parts = date.split('-');
-	// 	const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
-	// 	console.log(Ndate);
-	// 	const appointments = await Appointments.find({ business_id: business_id, 'time.date': Ndate });
-	// 	if (!appointments) return res.status(403).json({ error: 'an error occoured' });
+	// BusinessStatisticsHeader      : async (req, res, next) => {
+	// 	let allData = {};
+	// 	let first_of_month = moment().startOf('month').toDate();
+	// 	let end_of_month = moment().startOf('month').add(1, 'M').toDate();
+	// 	// .endOf('month').toDate();
 
-	// 	const data = await getAppointmentData(appointments);
-	// 	return res.json({ data });
+	// 	let id = mongoose.Types.ObjectId(req.params.business_id);
+
+	// 	const this_month = await Appointments.aggregate([
+	// 		{
+	// 			$match : {
+	// 				business_id : id,
+	// 				'time.date' : { $gte: first_of_month, $lt: end_of_month }
+	// 			}
+	// 		},
+	// 		{ $group: { _id: { date: '$time.date', status: '$status' }, count: { $sum: 1 } } },
+	// 		// { $group: { _id: { status: '$status' }, count: { $sum: 1 } } },
+	// 		{ $project: { count: '$count', status: '$status' } },
+	// 		{ $sort: { '_id.date': -1 } }
+	// 	]);
+
+	// 	// res.send(this_month);
+	// 	/*  */
+	// 	const saved = new Promise((resolve) => {
+	// 		this_month.map((result) => {
+	// 			const arrKey = new Date(result._id.date).getTime();
+	// 			// const arrKey = id;
+
+	// 			if (!allData[arrKey]) {
+	// 				allData[arrKey] = {
+	// 					ready           : 0,
+	// 					inProgress      : 0,
+	// 					pendingClient   : 0,
+	// 					pendingBusiness : 0,
+	// 					passed          : 0,
+	// 					canceled        : 0,
+	// 					total           : 0,
+	// 					done            : 0,
+	// 					date            : ''
+	// 				};
+	// 			}
+	// 			allData[arrKey].total += result.count;
+	// 			allData[arrKey].date = result._id.date;
+	// 			allData[arrKey][result._id.status] += result.count;
+	// 		});
+	// 		resolve(allData);
+	// 	}).then((statistics) => {
+	// 		res.status(200).json({ statistics });
+	// 	});
 	// }
 };

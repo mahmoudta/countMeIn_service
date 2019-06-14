@@ -18,6 +18,6 @@ router.route('/getBusinessAppointmentsByDate/:business_id/:date').get(appointmen
 router
 	.route('/getTodayUpcomingAppointments/:business_id')
 	.get(passportJWT, appointmentCtl.getTodayUpcomingAppointments);
-router.route('/appointmentCheck/:appointment_id/:action').put(appointmentCtl.appointmentCheck);
+router.route('/appointmentCheck').put(appointmentCtl.appointmentCheck);
 
 module.exports = router;

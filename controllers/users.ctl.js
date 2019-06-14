@@ -83,7 +83,7 @@ module.exports = {
 
 	test                     : async (req, res, next) => {
 		console.log('Test aftereditingbusnessworkinghours Here');
-		var array=[false,false,false,true,false,false,false];
+		var array = [ false, false, false, true, false, false, false ];
 		//var date = await new Date(2019, 3, 28); // 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
 		const test1 = await aftereditingbusnessworkinghours('5cedfa110a209a0eddbb2bbb', array);
 
@@ -94,7 +94,8 @@ module.exports = {
 		const test1 = await smart(
 			'5cedfa110a209a0eddbb2bbb',
 			[ '5cedf5813e3dad305192241e' ],
-			'5cedf3d20a209a0eddbb2bb2',1
+			'5cedf3d20a209a0eddbb2bb2',
+			1
 		);
 		res.status(200).json({ test1 });
 	},
@@ -102,12 +103,7 @@ module.exports = {
 		console.log('database Test Here');
 		var date1 = await new Date(2019, 5, 12);
 		var date2 = await new Date(2019, 5, 12);
-		const test1 = await freeAlg(
-			'5cedfa110a209a0eddbb2bbb',
-			[ '5cedf5813e3dad305192241e' ],
-			date1,
-			date2
-		);
+		const test1 = await freeAlg('5cedfa110a209a0eddbb2bbb', [ '5cedf5813e3dad305192241e' ], date1, date2);
 		res.status(200).json({ test1 });
 	},
 	getUpcommingAppointments : async (req, res, next) => {
@@ -163,7 +159,15 @@ module.exports = {
 	},
 
 	appendNotification       : async (req, res, next) => {
-		const { title, type, my_business, appointment_id } = req.body;
+		const { title, type, my_business, appointment_id, status } = req.body;
+
+		if (!isEmpty(appointment_id)) {
+			const isAlreadyHere = await Users.find({
+				'notification.appointment_id' : appointment_id,
+				'notification.status'         : status
+			});
+			if (isAlreadyHere) return res.status(200).json({ notifications: isAlreadyHere });
+		}
 		let update = {
 			$push : {
 				notification : { title, Type: type, my_business, appointment_id }
