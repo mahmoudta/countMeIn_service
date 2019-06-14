@@ -333,7 +333,6 @@ class BinarySearchTree
                 }
 
             }
-
         
         });
         if(checker==1)
@@ -1138,9 +1137,9 @@ async function cancelappointmentbyid(appointmentid){
                 ///////////////////////////////////////////////
                 
                 //console.log(newfreetime);
-                return({answer : "done"});
+                return true ;
             }else{
-                return({error :'invalid Time'});
+                return false ;
             }
                 
 
