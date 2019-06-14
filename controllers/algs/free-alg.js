@@ -1482,5 +1482,47 @@ module.exports = {
 		});
 
 		return {};
+	},
+	shiftappointmentifpossible      : async (appointmentid, array) => {
+		const appointment = await Appointment.findById(appointmentid);
+
+		var apointmentdate = appointment.time.date;
+		var apointmentstart = appointment.start;
+		var apointmentend = appointment.end;
+		var checkindate = appointment.time.check_in;
+		var checkinminute = moment(checkindate).minutes();
+		var checkinhours = moment(checkindate).hours();
+		var todelete = new time_range(
+			new time(apointmentstart._hour, apointmentstart._minute),
+			new time(aapointmentend._hour, apointmentend._minute)
+		);
+		var apointmentlenght = todelete.tominutes();
+		var tobookstart = new time(checkinhours, checkinminute);
+		var tobookend = tobookstart.add_and_return(apointmentlenght);
+
+		var tobook = new time_range(tobookstart, tobookend);
+
+		deleted(businessid, apointmentdate, todelete);
+		if (booked(businessid, apointmentdate, tobook)) {
+			const update = {
+				$set : {
+					start : {
+						_hour   : tobookstart._hour,
+						_minute : tobookstart._minute
+					},
+					end   : {
+						_hour   : tobookend._hour,
+						_minute : tobookend._minute
+					}
+				}
+			};
+			const newappointment = await Appointment.findByIdAndUpdate(appointmentid, update, { new: true });
+			if (!isEmpty(newappointment)) return true;
+		} else {
+			if (booked(businessid, apointmentdate, todelete)) {
+				return { error: 'failed and in rebooking' };
+			}
+		}
+		return false;
 	}
 };
