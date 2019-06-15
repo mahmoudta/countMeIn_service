@@ -18,6 +18,8 @@ router.route('/getBusinessAppointmentsByDate/:business_id/:date').get(appointmen
 router
 	.route('/getTodayUpcomingAppointments/:business_id')
 	.get(passportJWT, appointmentCtl.getTodayUpcomingAppointments);
-router.route('/appointmentCheck/:appointment_id/:action').put(appointmentCtl.appointmentCheck);
+router.route('/setBusinessReview').put(passportJWT, appointmentCtl.setBusinessReview);
+router.route('/appointmentCheck').put(appointmentCtl.appointmentCheck);
+router.route('/newnewnew/reviews').get(appointmentCtl.createReviews);
 
 module.exports = router;
