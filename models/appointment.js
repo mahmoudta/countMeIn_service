@@ -1,3 +1,4 @@
+
 var mongoose = require('mongoose'),
 	appointment = new mongoose.Schema({
 		_id         : { type: mongoose.Schema.Types.ObjectId },
@@ -28,14 +29,10 @@ var mongoose = require('mongoose'),
 			enum    : [ 'ready', 'inProgress', 'done', 'pendingClient', 'pendingBusiness', 'passed', 'canceled' ],
 			default : 'ready'
 		}
-		/*
-		feedback:{
-			clinet:
-			business:
-		}
-		*/
-	});
 
-var Appointment = mongoose.model('Appointment', appointment);
+
+  });
+
+var Appointment = mongoose.model("Appointment", appointment);
 
 module.exports = Appointment;

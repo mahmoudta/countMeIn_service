@@ -1,11 +1,12 @@
-const JWT = require('jsonwebtoken');
-const Appointments = require('../models/appointment');
-const Businesses = require('../models/business');
-const Categories = require('../models/category');
-const Users = require('../models/user');
+const JWT = require("jsonwebtoken");
+const Appointments = require("../models/appointment");
+const Businesses = require("../models/business");
+const Categories = require("../models/category");
+const Users = require("../models/user");
 
-const { JWT_SECRET } = require('../consts');
+const { JWT_SECRET } = require("../consts");
 // const { freeTimeAlg } = require('./algs/free-alg');
+
 const { booked, deleted } = require('./algs/free-alg');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
@@ -330,4 +331,31 @@ module.exports = {
 	// 		res.status(200).json({ statistics });
 	// 	});
 	// }
+};
+
+const getAppointmentData = async appointments => {
+  var data = [];
+  for (let appointment of appointments) {
+    const user = await Users.findById(appointment.client_id, "profile.name");
+    // const business = await Businesses.findById(appointment.business_id);
+
+    const Nservices = await Categories.find({
+      "services._id": { $in: appointment.services }
+    });
+    const services = await getServices(Nservices, appointment.services);
+    await data.push({
+      _id: appointment._id,
+      business_id: appointment.business_id,
+      client: user,
+      time: {
+        date: appointment.time.date,
+        start: appointment.time.start,
+        end: appointment.time.end
+      },
+      services: services,
+      status: appointment.status
+    });
+  }
+  return await data;
+
 };
