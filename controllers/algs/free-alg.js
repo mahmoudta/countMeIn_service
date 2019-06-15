@@ -1619,7 +1619,7 @@ module.exports = {
 		deleted(businessid, apointmentdate, todelete);
 		if (booked(businessid, apointmentdate, tobook)) {
 			updatethisapointmenttonewtimerange(appointmentid, tobook);
-			return [ true ];
+			return { ok: true };
 		} else {
 			var result = searchforawaytoswitch(
 				businessid,
@@ -1629,9 +1629,9 @@ module.exports = {
 				todelete,
 				apointmentlenght
 			);
-			if (result === 0) return [ false, false ];
+			if (result === 0) return { ok: false, fixed: false };
 			updatethisapointmenttonewtimerange(appointmentid, result[1]);
-			return [ false, true, result[0], result[1] ];
+			return { ok: false, fixed: true, afectedappointmentid: result[0], appointmentnewtimerange: result[1] };
 		}
 	}
 };
