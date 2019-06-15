@@ -204,32 +204,36 @@ module.exports = {
 		let expUpdate = {};
 		switch (action) {
 			case 'in':
+				query = { $set: { status: 'inProgress', 'time.check_in': new Date(time) } };
+
 				if (isLate.late) {
 					expUpdate = {
 						$inc : { 'customers.$.experiance': -Number(isLate.minutes / 5) }
 					};
 				} else if (isEmpty(isLate.late)) {
-					query = { $set: { status: 'inProgress', 'time.check_in': new Date(time) } };
 					const alg = await shiftappointmentifpossible(business_id, appointment_id, new Date(time));
+
 					if (alg.ok === true || (alg.ok === false && alg.fixed === true)) {
 						/* alg : {
 						ok:{true - shifted with no problems , false-check fixed} 
 					} 	fixed :{false: no changes will happened, true:{affectedappointmentid: ,}}
 						*/
-						query = {
-							$set : {
-								status          : 'inProgress',
-								'time.check_in' : new Date(time),
-								'time.start'    : {
-									_hour   : alg.appointmentnewtimerange._start._hour,
-									_minute : alg.appointmentnewtimerange._start._minute
-								},
-								'time.end'      : {
-									_hour   : alg.appointmentnewtimerange._start._hour,
-									_minute : alg.appointmentnewtimerange._start._minute
+						if (!isEmpty(alg.appointmentnewtimerange)) {
+							query = {
+								$set : {
+									status          : 'inProgress',
+									'time.check_in' : new Date(time),
+									'time.start'    : {
+										_hour   : alg.appointmentnewtimerange._start._hour,
+										_minute : alg.appointmentnewtimerange._start._minute
+									},
+									'time.end'      : {
+										_hour   : alg.appointmentnewtimerange.end._hour,
+										_minute : alg.appointmentnewtimerange.end._minute
+									}
 								}
-							}
-						};
+							};
+						}
 					}
 				}
 				break;
