@@ -215,6 +215,7 @@ module.exports = {
 				break;
 		}
 
+		/* updating the experince if it's the vustomer is late in check in */
 		if (!isEmpty(expUpdate)) {
 			const business = await Businesses.findOneAndUpdate(
 				{ _id: business_id, 'customers.customer_id': client_id },
