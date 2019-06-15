@@ -341,6 +341,17 @@ time.prototype.add_and_return = function(minutes) {
 	//this._minute+=((minutes+this._minute)%60);
 	return new time(this._hour + (((minutes + this._minute) / 60) | 0), (minutes + this._minute) % 60);
 };
+time.prototype.sub_and_return = function(minutes) {
+	//this._hour+=( ((minutes+this._minute)/60) | 0 );
+	//this._minute+=((minutes+this._minute)%60);
+	var newminutes = this._minute - minutes;
+	var hourstosub = 0;
+	while (newminutes < 0) {
+		newminutes += 60;
+		hourstosub++;
+	}
+	return new time(this._hour - hourstosub, newminutes);
+};
 time.prototype.ifbiggerthan = function(time) {
 	// if this is greater than timerange
 	if (time.hour() < this.hour() || (time.hour() == this.hour() && time.minute() < this.minute())) {
@@ -349,9 +360,25 @@ time.prototype.ifbiggerthan = function(time) {
 		return false;
 	}
 };
+time.prototype.ifbiggerorequal = function(time) {
+	// if this is greater than timerange
+	if (time.hour() < this.hour() || (time.hour() == this.hour() && time.minute() <= this.minute())) {
+		return true;
+	} else {
+		return false;
+	}
+};
 time.prototype.ifsmallerthan = function(time) {
 	// if this is less than timerange
 	if (time.hour() > this.hour() || (time.hour() == this.hour() && time.minute() > this.minute())) {
+		return true;
+	} else {
+		return false;
+	}
+};
+time.prototype.ifsmallerorequal = function(time) {
+	// if this is less than timerange
+	if (time.hour() > this.hour() || (time.hour() == this.hour() && time.minute() >= this.minute())) {
 		return true;
 	} else {
 		return false;
@@ -1176,6 +1203,93 @@ async function cancelappointmentbyid(appointmentid) {
 		});
 	});
 }
+async function searchforawaytoswitch(businessid, customerid, apointmentdate, tobook, todelete, apointmentlenght) {
+	var appointments = await returnallappointmentsbybusiness(businessid);
+	var tobeafectedapointmentid = 0;
+	var newtobook;
+	var ifcanbeswitched = appointments.some(function(oneappointment) {
+		if (moment(oneappointment.time.date).format('YYYY/MM/DD') === moment(oneDate).format('YYYY/MM/DD')) {
+			var tmptime = new time_range(
+				new time(oneappointment.time.start._hour, oneappointment.time.start._minute),
+				new time(oneappointment.time.end._hour, oneappointment.time.end._minute)
+			);
+			var conflectresult = findtimerangeinconflect(tmptime, tobook);
+			switch (conflectresult) {
+				case 0:
+					// code block
+					break;
+				case 1:
+					newtobook = new time_range(tmptime._start.sub_and_return(apointmentlenght), tmptime._start);
+					if (booked(businessid, apointmentdate, newtobook)) {
+						tobeafectedapointmentid = oneappointment_id;
+						return true;
+					}
+					break;
+				case 2:
+					newtobook = new time_range(tmptime._end, tmptime._end.add_and_return(apointmentlenght));
+					if (booked(businessid, apointmentdate, newtobook)) {
+						tobeafectedapointmentid = oneappointment_id;
+						return true;
+					}
+					break;
+				case 3:
+					newtobook = new time_range(tmptime._start.sub_and_return(apointmentlenght), tmptime._start);
+					if (booked(businessid, apointmentdate, newtobook)) {
+						tobeafectedapointmentid = oneappointment_id;
+						return true;
+					} else {
+						newtobook = new time_range(tmptime._end, tmptime._end.add_and_return(apointmentlenght));
+						if (booked(businessid, apointmentdate, newtobook)) {
+							tobeafectedapointmentid = oneappointment_id;
+							return true;
+						}
+					}
+
+					break;
+				default:
+				// code block
+			}
+		}
+	});
+	if (!ifcanbeswitched) {
+		booked(businessid, apointmentdate, todelete);
+		return 0;
+	}
+	return [ tobeafectedapointmentid, newtobook ];
+}
+//0=not in coflect //1=conflect from the left //2=conflectfrom the right //3=conflect from both sides
+async function findtimerangeinconflect(timerange, timerange_to_book) {
+	if (
+		timerange_to_book._start.ifsmallerthan(timerange._start) &&
+		timerange_to_book._end.ifbiggerthan(timerange._start) &&
+		timerange_to_book._end.ifsmallerorequal(timerange._end)
+	)
+		return 1;
+	else if (
+		timerange_to_book._end.ifbiggerthan(timerange._end) &&
+		timerange_to_book._start.ifsmallerthan(timerange._end)
+	) {
+		if (timerange_to_book._start.ifsmallerthan(timerange._start)) return 3;
+		else return 2;
+	} else return 0;
+}
+async function updatethisapointmenttonewtimerange(appointmentid, timerange_to_book) {
+	const update = {
+		$set : {
+			start : {
+				_hour   : timerange_to_book._start._hour,
+				_minute : timerange_to_book._start._minute
+			},
+			end   : {
+				_hour   : timerange_to_book._end._hour,
+				_minute : timerange_to_book._end._minute
+			}
+		}
+	};
+	const newappointment = await Appointment.findByIdAndUpdate(appointmentid, update, { new: true });
+	if (!isEmpty(newappointment)) return true;
+	return false;
+}
 
 /***********************************************************************************/
 
@@ -1485,7 +1599,7 @@ module.exports = {
 	},
 	shiftappointmentifpossible      : async (businessid, appointmentid) => {
 		const appointment = await Appointment.findById(appointmentid);
-
+		var customerid = appointment.client_id;
 		var apointmentdate = appointment.time.date;
 		var apointmentstart = appointment.start;
 		var apointmentend = appointment.end;
@@ -1504,25 +1618,20 @@ module.exports = {
 
 		deleted(businessid, apointmentdate, todelete);
 		if (booked(businessid, apointmentdate, tobook)) {
-			const update = {
-				$set : {
-					start : {
-						_hour   : tobookstart._hour,
-						_minute : tobookstart._minute
-					},
-					end   : {
-						_hour   : tobookend._hour,
-						_minute : tobookend._minute
-					}
-				}
-			};
-			const newappointment = await Appointment.findByIdAndUpdate(appointmentid, update, { new: true });
-			if (!isEmpty(newappointment)) return true;
+			updatethisapointmenttonewtimerange(appointmentid, tobook);
+			return [ true ];
 		} else {
-			if (booked(businessid, apointmentdate, todelete)) {
-				return { error: 'failed and in rebooking' };
-			}
+			var result = searchforawaytoswitch(
+				businessid,
+				customerid,
+				apointmentdate,
+				tobook,
+				todelete,
+				apointmentlenght
+			);
+			if (result === 0) return [ false, false ];
+			updatethisapointmenttonewtimerange(appointmentid, result[1]);
+			return [ false, true, result[0], result[1] ];
 		}
-		return false;
 	}
 };
