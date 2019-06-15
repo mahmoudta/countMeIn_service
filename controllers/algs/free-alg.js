@@ -60,13 +60,17 @@ class BinarySearchTree
     // it moves over the tree to find the location 
     // to insert a node with a given data  
     insertNode(node, newNode) 
-    { 
+    {  
         // if the data is less than the node 
         // data move left of the tree  
         if( (newNode.data.end().hour()<node.data.start().hour()) || ( (newNode.data.end().hour()==node.data.start().hour()) && (newNode.data.end().minute()>=node.data.start().minute()) ) ) 
         { 
+            if( (newNode.data.end().hour()==node.data.start().hour()) && (newNode.data.end().minute()==node.data.start().minute()) ){
+                node.data._start._hour=newNode.data.start().hour();
+                node.data._start._minute=newNode.data.start().minute();
+            }
             // if left is null insert node here 
-            if(node.left === null) {
+            else if(node.left === null) {
                 node.left = newNode; 
             }
             else{
@@ -80,8 +84,12 @@ class BinarySearchTree
         // data move right of the tree  
         else
         { 
+            if( (newNode.data.start().hour()==node.data.end().hour()) && (newNode.data.start().minute()==node.data.end().minute()) ){
+                node.data._end._hour=newNode.data.end().hour();
+                node.data._end._minute=newNode.data.end().minute();
+            }
             // if right is null insert node here 
-            if(node.right === null) {
+            else if(node.right === null) {
                 node.right = newNode; 
             }
             else{
@@ -95,8 +103,10 @@ class BinarySearchTree
     // removeNode with a given data 
     remove(data) 
     { 
+         
         // root is re-initialized with 
         // root of a modified tree. 
+        //console.log(data)
         this.root = this.removeNode(this.root, data); 
         this.length--;
         return true;
@@ -108,7 +118,7 @@ class BinarySearchTree
     // data and removes it 
     removeNode(node, key) 
     { 
-            
+        
          // if the root is null then tree is  
          // empty 
         if(node === null) {
@@ -149,7 +159,7 @@ class BinarySearchTree
         } 
         // if data to be delete is lesser than  
         // roots data then move to left subtree
-        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()>=node.data.start().minute()) ) ) 
+        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()<=node.data.start().minute()) ) ) 
         { 
             node.left = this.removeNode(node.left, key); 
             return node; 
@@ -157,7 +167,7 @@ class BinarySearchTree
     
         // if data to be delete is greater than  
         // roots data then move to right subtree 
-        else if( (key.start().hour()<node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) 
+        else if( (key.start().hour()>node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) 
         { 
             
             node.right = this.removeNode(node.right, key); 
@@ -236,13 +246,13 @@ class BinarySearchTree
         } 
         // if data is less than node's data 
         // move left 
-        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()>=node.data.start().minute()) ) ){
+        else if( (key.end().hour()<node.data.start().hour()) || ( (key.end().hour()==node.data.start().hour()) && (key.end().minute()<=node.data.start().minute()) ) ){
             return this.search(node.left, data); 
         }
     
         // if data is greater than node's data 
         // move right 
-        else if( (key.start().hour()<node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) {
+        else if( (key.start().hour()>node.data.end().hour()) || ( (key.start().hour()==node.data.end().hour()) && (key.start().minute()>=node.data.end().minute()) ) ) {
             return this.search(node.right, data); 
         }
             
@@ -281,13 +291,19 @@ class BinarySearchTree
     }
     //book
     book(timerange_to_book){
+        
+        //console.log("\nbook this\n");   
+        //console.log(timerange_to_book);   
         var checker=0
         var free=[];
         var lefttimerange;
         var righttimerange;
         free=this.arrayofopjects();
+        //console.log("free",free)
         free.forEach(timerange => {
+            
             if(this.ifinthetimerange(timerange,timerange_to_book)){
+                
                 this.remove(timerange);
                 lefttimerange=new time_range(timerange.start(),timerange_to_book.start());
                 righttimerange=new time_range(timerange_to_book.end(),timerange.end());
@@ -389,14 +405,29 @@ time_range.prototype.tominutes = function () {
     temp=((this._end.hour()-this._start.hour())*60)+(this._end.minute()-this._start.minute());
     return temp;
 };
-time_range.prototype.slice = function (length,minutes_between_appointment) {
+time_range.prototype.slice = function (length,minutes_between_appointment,minsevicetime,valuefornospaces) {
     var tmp=[];
     var sum=length+minutes_between_appointment;
-    var i=0;
     var minutes=this.tominutes();
-    for(i=0; sum*(i+1)<=minutes;i++){
-        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)) )  );
+    
+    var remainintimerange=0;
+    remainintimerange=minutes%sum;
+    var timerangecount=Math.floor(minutes/sum);
+    var i=0;
+    for(i=0;i<timerangecount;i++){
+        tmp.push( new time_range( this._start.add_and_return(sum*i),this._start.add_and_return(sum*(i+1)),this._value)  );
     }
+    
+    if(!isEmpty(tmp)){
+    tmp[0]._value+=valuefornospaces;
+
+    if(remainintimerange<minsevicetime){
+
+        if(remainintimerange>minutes_between_appointment)
+        tmp.pop();
+        }
+    }
+
     return tmp;
 };
 
@@ -404,13 +435,47 @@ function Day(date, free) {
 	this.Date = date,
     this.Free=free
 };
-Day.prototype.slice = function (length,minutes_between_appointment) {
+Day.prototype.slice = function (length,minutes_between_appointment,minsevicetime,valuefornospaces) {
     var tmp=[];
     
     this.Free.forEach(timerange => {
-        tmp=tmp.concat(timerange.slice(length,minutes_between_appointment));
+        tmp=tmp.concat(timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces));
     });
+    this.Free=[];
+    //to do (check date)
     this.Free=tmp;
+};
+Day.prototype.slicewithnospace = function (length,minutes_between_appointment,minsevicetime,valuefornospaces) {
+    var tmp=[];
+    this.Free.forEach(timerange => {
+        var tmptimerange=[];
+        tmptimerange=timerange.slice(length,minutes_between_appointment,minsevicetime,valuefornospaces);
+        tmp=tmp.concat([tmptimerange[0]]);
+    });
+
+    this.Free=[];
+    this.Free=tmp;
+};
+
+Day.prototype.removeduplicates = function  () {
+    var uniquefreetime = [];
+    //console.log(util.inspect(this.Free, {depth: null}));
+    this.Free.forEach(function(onetimerange) {
+        if(!isEmpty(uniquefreetime)){
+            var foundindex = uniquefreetime.findIndex(element => ( (element._start._hour==onetimerange._start._hour) && (element._start._minute==onetimerange._start._minute) && (element._end._hour==onetimerange._end._hour) && (element._end._minute==onetimerange._end._minute) ) );
+            if(foundindex!=-1){
+                if(uniquefreetime[foundindex]._value<onetimerange._value){
+                    uniquefreetime[foundindex]._value=onetimerange._value;
+                }
+            }else{
+                uniquefreetime.push(onetimerange);
+            }
+
+        }else{uniquefreetime.push(onetimerange);}
+        //timeranges.push( new time_range(new time(onetimerange._start._hour,onetimerange._start._minute) , new time(onetimerange._end._hour,onetimerange._end._minute) ) );
+    });
+    this.Free=uniquefreetime;
+     
 };
  Day.prototype.mergewithcustomerandsave = async function  (customerappointment) {
     this.Free= await mergewithcostumer(this.Free,customerappointment,this.Date)
@@ -458,7 +523,6 @@ async function creatifempty(businessid,workinghours,date_from,date_until){
             from2=new time(element.break.until.getHours(),element.break.until.getMinutes());
             until2=new time(element.until.getHours(),element.until.getMinutes());
             free.push( new time_range(from2 , until2 ) ); 
-
             }
 
         });
@@ -471,13 +535,42 @@ return false;
 
 
 }
+async function findtotalminutes(businessid){ 
+    var totalminutes=0;
+    const business = await Business.findOne({_id:businessid});
+    business.working_hours.forEach(function(element) {
+        if(element.opened){
+            if(!(element.break.isBreak)){
+                var from=new time(element.from.getHours(),element.from.getMinutes());
+                var until=new time(element.until.getHours(),element.until.getMinutes());
+                var tmptimerange= new time_range(from , until ); 
+                totalminutes+=tmptimerange.tominutes();
+            }else{
+                from1=new time(element.from.getHours(),element.from.getMinutes());
+                until1=new time(element.break.from.getHours(),element.break.from.getMinutes());
+                var tmptimerange1= new time_range(from1 , until1 ); 
+                totalminutes+=tmptimerange1.tominutes();
+                from2=new time(element.break.until.getHours(),element.break.until.getMinutes());
+                until2=new time(element.until.getHours(),element.until.getMinutes());
+                var tmptimerange2= new time_range(from2 , until2 ); 
+                totalminutes+=tmptimerange2.tominutes();
+
+            }
+        }
+
+    });
+        return totalminutes;
+                
+                
+ } 
+
 async function creatbusinessifempty(businessid){ 
     //creatbusinessifempty
     const free=await FreeTime.findOne({business_id: businessid});
     //console.log(free);
         if(!isEmpty(free)) return free;
-                    //console.log("business empty");
-        const newfree = await FreeTime.create({ business_id: businessid });
+        var totalminutes= await findtotalminutes(businessid);
+        const newfree = await FreeTime.create({ business_id: businessid,totalworkingminuts: totalminutes});
 
         if(isEmpty(newfree)) return null;
 
@@ -491,10 +584,10 @@ async function creatbusinessifempty(businessid){
     var or =curfree.dates.find(o => moment(o.day).format("YYYY/MM/DD")=== oneDate);
     var id=curfree._id;
     if(isEmpty(or)){
-        await FreeTime.findById(id, function(err, FreeTime) {
+        await FreeTime.findById(id, function(err, freeTime) {
             if (err) throw err;
-            FreeTime.dates.push({ "day" : oneDate, "freeTime" : free })
-            FreeTime.save(function(err) {
+            freeTime.dates.push({ "day" : oneDate, "freeTime" : free })
+            freeTime.save(function(err) {
                 if (err) throw err;     
                 //FreeTime updated successfully
             });
@@ -503,7 +596,7 @@ async function creatbusinessifempty(businessid){
     return id;
  }
  //choice=0 return the busness freetime slice it to slices /choice=1 choice=0 return the busness_freetime&costomer_freetime and slice it to slices/choice=2 only find free time of busness and return
- async function returnfreetime(id,services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness){ 
+ async function returnfreetime(id,fromsmart=true,services_length,minutes_between_appointment,number_of_days_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces=0){ 
      if(id===false)
      return false
     var days=[];
@@ -541,6 +634,7 @@ async function creatbusinessifempty(businessid){
         days.push(new Day(thedate,timeranges));
     });
     var tmpday;
+    var tmpfree;
             var counter=0;
             var correcter=0;
             var tmpcorrector;
@@ -550,12 +644,29 @@ async function creatbusinessifempty(businessid){
             do{
                 if (days === undefined || days.length == 0) {break;}
                 tmpday=days.shift();
-                day.totree(tmpday.Free);
+                tmpfree=tmpday.Free;
+                //to undo
+            //    if( moment(tmpday.Date).format("YYYY/MM/DD") == moment().format("YYYY/MM/DD") ){
+            //         var today = new Date()
+            //         var tmptime;
+            //         if(fromsmart===false)
+            //             tmptime =new time(today.getHours(),today.getMinutes()) 
+            //         else
+            //             tmptime =new time( today.getHours()+1 , Math.round(today.getMinutes()) )
+
+            //         tmpfree=await mergetimerangelists(tmpfree,[new time_range( tmptime , new time(24,0) )],0,1 )
+
+            //    }
+            //    else if( moment(tmpday.Date).format("YYYY/MM/DD") < moment().format("YYYY/MM/DD") ){
+            //     tmpfree=[];
+            //    }
+            //just remove above to block previuse dates
+                day.totree(tmpfree);
                 posibletobook.totree(day.timerangesthatfit(services_length,minutes_between_appointment));
                 ///call slicer at posibletobook
                 counter+=posibletobook.getlength();
-                if (counter>=appontments_number_to_return) {
-                    correcter=counter-appontments_number_to_return
+                if (counter>=number_of_days_to_return) {
+                    correcter=counter-number_of_days_to_return
                     //tmpcorrector=posibletobook.arrayofstrings();
                     tmpcorrector=posibletobook.arrayofopjects();
                     for (; 0 < correcter; correcter--) { 
@@ -564,13 +675,14 @@ async function creatbusinessifempty(businessid){
                     tmpday.Free=tmpcorrector;
                     
                     if(choice==1||choice==3){
+                       // console.log(util.inspect(tmpday, {depth: null}));
                         await tmpday.mergewithcustomerandsave(customerappointment);
                         if( (checkifcustomerhavebusness) && (!isEmpty(customersbusness)) ){
                         await tmpday.mergewithcustomerandsave(customersbusnessappointment);
                         }
                     }
                     if(choice==0||choice==1)
-                    tmpday.slice(services_length,minutes_between_appointment);
+                    tmpday.slice(services_length,minutes_between_appointment,minsevicetime,valuefornospaces);
                     daysfree.push(tmpday);
                     break;
                 }
@@ -582,9 +694,9 @@ async function creatbusinessifempty(businessid){
                  }
                 }
                 if(choice==0||choice==1)
-                tmpday.slice(services_length,minutes_between_appointment);
+                tmpday.slice(services_length,minutes_between_appointment,minsevicetime,valuefornospaces);
                 daysfree.push(tmpday)
-            }while(counter<appontments_number_to_return);
+            }while(counter<number_of_days_to_return);
 
 return(daysfree);
 
@@ -631,22 +743,29 @@ async function mergetimerangelists(timerangelist1,timerangelist2,mergevalue,choi
 return result;
 } 
 async function returnallappointmentsbycustomer(customerid){ 
-    const appointments = await Appointment.find({client_id: customerid})
+    const appointments = await Appointment.find({client_id: customerid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'passed']}})
     return appointments;
 
  }
  async function returnallappointmentsbybusiness(businessid){ 
-    const appointments = await Appointment.find({business_id: businessid})
+    const appointments = await Appointment.find({business_id: businessid,status:{$in:[ 'ready', 'inProgress', 'done', 'pendingClient', 'passed']}})
     return appointments;
 
  }
  async function mergewithcostumer(Free,appointments,oneDate){ 
+    //  console.log("merge this\n")
+    //  console.log(await returnfreeondate(appointments,oneDate))
+    //  console.log("with this\n")
+    //  console.log(Free)
+    //  console.log("=\n")
+    //  console.log(await mergetimerangelists(Free, await returnfreeondate(appointments,oneDate),0,1))
     return await mergetimerangelists(Free, await returnfreeondate(appointments,oneDate),0,1);
 
 
  }
 async function returnfreeondate(appointments,oneDate){ 
     var free=[];
+    
     //console.log(oneDate)
     //console.log(util.inspect(appointments, {depth: null}));
     var appointmentsondate = appointments.filter(function(element) {
@@ -655,11 +774,11 @@ async function returnfreeondate(appointments,oneDate){
         return false;
         
      });
-
+     
      var day= new BinarySearchTree();
     day.totree([ new time_range(new time(0,0) , new time(24,0) ) ]);
     if(!isEmpty(appointmentsondate)){
-
+    //console.log(util.inspect(appointmentsondate, {depth: null}));
      appointmentsondate.forEach(function(oneappointment) {
          var tmptime=new time_range( new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) )
          var result= day.book(tmptime) ;
@@ -667,31 +786,38 @@ async function returnfreeondate(appointments,oneDate){
         console.log("error on finding date on customer");
 
     });
-    }   
-    //console.log(util.inspect(day.arrayofopjects(), {depth: null}));
+    }  
+    if( isEmpty( day.arrayofopjects()) ) 
+    return [];
     return  day.arrayofopjects(); /* await pending */
 
  }
- async function mergewithbusnessbusnessbusyhour(businessid,freetime){ 
-
+ async function mergewithbusnessbusnessbusyhour(businessid,freetime,valueofbusnessbusyhours){ 
+    
     var rate=await calculatebusnessbusyhours(businessid);
-    //console.log(util.inspect(rate, {depth: null}));
+    var countpointment=rate.totalpointment;
+    var totalminutes= await findtotalminutes(businessid);
+    var avgappointmentpeerhour=(countpointment/(totalminutes/60))
+    //console.log(util.inspect(freetime, {depth: null}));
     freetime.forEach(function(oneday) {
         var tmpdate=moment(oneday.Date).format('dddd').toLowerCase()
         oneday.Free.forEach(function(onetimerange) {
-            var valuetoadd=0;
-            var newvalue=0;
+            var totalrate=0;
+            var timerangerateavg=0;
+            var finalvaluetoadd=0;
             var i;
             var start= onetimerange._start._hour;
 
             for (i = start; ((i <onetimerange._end._hour)||( (i==onetimerange._end._hour)&&(0<onetimerange._end._minute) )); i++) { 
-                    valuetoadd+=(rate[tmpdate][i]);
+                totalrate+=(rate[tmpdate][i]);
 
 
             }
-            if(valuetoadd!=0)
-            newvalue=( 1/ ( valuetoadd/(i-start) ) );
-            onetimerange._value+=newvalue;
+            if(totalrate!=0){
+            timerangerateavg=((totalrate/(i-start)));
+            finalvaluetoadd=(avgappointmentpeerhour/timerangerateavg)*valueofbusnessbusyhours;
+            onetimerange._value+=finalvaluetoadd;
+            }
 
         });
         
@@ -724,7 +850,8 @@ async function returnfreeondate(appointments,oneDate){
         },
         saturday:{
             0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0,17:0,18:0,19:0,20:0,21:0,22:0,23:0 
-        }
+        },
+        totalpointment:0
     }
     const appointments = await returnallappointmentsbybusiness(businessid);
     appointments.forEach(function(oneappointment) {
@@ -732,9 +859,197 @@ async function returnfreeondate(appointments,oneDate){
         var tmpdayafter=moment(tmpdaybefore).format('dddd').toLowerCase();
         var tmphour=oneappointment.time.start._hour;
         rate[tmpdayafter][tmphour]++;
+        rate.totalpointment++;
    });
     return rate;
  }
+
+ function compareValues(v1, v2) {
+    return (v1 > v2) 
+        ? -1 
+        : (v1 < v2 ? 1 : 0);
+}
+function compareTime(v1, v2) {
+    if ( (v2._hour >v1._hour) || ((v2._hour==v1._hour)&&(v2._minute>v1._minute)) )    return -1;
+    else return  1;
+    
+}
+ function compare2timerange(x,y){
+    var result = compareValues(x._value, y._value);
+        
+    return result === 0 
+        ? compareTime(x._start, y._start) 
+        : result;
+ }
+ async function mergewithpreferhours(preferhours,freetime,value){ 
+    var tomerge=[];
+    switch(preferhours) {
+        case 0:
+          tomerge.push( new time_range(new time(7,0) , new time(12,0) ) );
+          break;
+        case 1:
+          tomerge.push( new time_range(new time(12,0) , new time(17,0) ) );
+          break;
+        case 2:
+        tomerge.push( new time_range(new time(17,0) , new time(21,0) ) );
+        break;
+        default:
+          // code block
+      }
+      for(let i = 0; i < freetime.length; i++){
+        const tmmp= await mergetimerangelists(freetime[i].Free,tomerge,value)
+        freetime[i].Free=tmmp;
+     }
+    return {};
+ 
+  }
+ async function pickthehighestifsliced(freetime){
+
+    for(let i = 0; i < freetime.length; i++){
+        var tmparray=[]
+        const tmp= freetime[i].Free.sort(function (x, y) {return compare2timerange(x,y)});
+        for(let j = 0;(j<2)&&(j < tmp.length); j++){
+            tmparray.push(tmp[j]);
+        }
+        freetime[i].Free=tmparray;
+
+    }
+
+
+   return{};
+
+ }
+ async function pickthehighestifnotsliced(freetime,services_length,minutes_between_appointment,minsevicetime,valuefornospaces){ 
+    
+    for(let i = 0; i < freetime.length; i++){
+        
+        var tmparray=[]
+
+        freetime[i].slicewithnospace(services_length,minutes_between_appointment,minsevicetime,valuefornospaces);
+        freetime[i].removeduplicates();
+        const tmp= freetime[i].Free.sort(function (x, y) {return compare2timerange(x,y)});
+        for(let j = 0;(j<2)&&(j < tmp.length); j++){
+            tmparray.push(tmp[j]);
+        }
+        freetime[i].Free=tmparray;
+
+    }
+    return {}
+ }
+ async function findmintimeinservice(businessid){ 
+
+    const business = await Business.findOne({_id:businessid});
+    const min = Math.min.apply(null, business.services.map(oneservice => oneservice.time));
+        return min;
+ }
+ 
+ async function findchangesandupdate(businessid,appointments,array,days) { 
+    const freetime = await FreeTime.findOne( {business_id: businessid} );
+    const business = await Business.findOne({_id:businessid});
+    if(isEmpty(freetime))
+    return {state:'there are no freetime to update' }
+    let allDates = freetime.dates;
+   const test =  await allDates.forEach(async function(onedate,i) {
+        if( array[ days[ moment(onedate.day).format('dddd').toLowerCase() ] ] ){
+            var onedateapointments = appointments.filter(function(element) {
+                if(moment(element.time.date).format("YYYY/MM/DD")=== moment(onedate.day).format("YYYY/MM/DD"))
+                return true;
+                return false;   
+             });
+            var oneworkinghours = business.working_hours.find(function(element) {
+                if(element.opened){  
+                return element.day === moment(onedate.day).format('dddd').toLowerCase();
+                }
+                else
+                return false;
+             });
+             if(!isEmpty(oneworkinghours)){
+                var tmpfree= await updatethisdayandretturn(onedateapointments,oneworkinghours)
+                allDates[i].freeTime=tmpfree;
+                //console.log(util.inspect(await onedate, {depth: null}));
+
+             }else{
+                 await updatethisdayandretturn(onedateapointments)
+                allDates.splice(i, 1);
+             }
+
+        }
+    })
+    await test;
+    const edits = await allDates;
+    //console.log(util.inspect(edits, {depth: null}));
+
+    
+    const update = {
+        $set:{
+            dates: edits
+        }
+    }
+    const newfree = await FreeTime.findOneAndUpdate({business_id:businessid},update,{new:true});
+
+
+    //console.log(newfree);
+    // console.log(util.inspect(newfree, {depth: null}));
+    return freetime._id;
+ }
+ async function updatethisdayandretturn(onedateapointments,oneworkinghours=false){
+
+    var free=[];
+    if(oneworkinghours!==false){
+           
+                if(!(oneworkinghours.break.isBreak)){
+                    var from=new time(oneworkinghours.from.getHours(),oneworkinghours.from.getMinutes());
+                    var until=new time(oneworkinghours.until.getHours(),oneworkinghours.until.getMinutes());
+                    free.push( new time_range(from , until ) ); 
+                }else{
+                    var from1=new time(oneworkinghours.from.getHours(),oneworkinghours.from.getMinutes());
+                    var until1=new time(oneworkinghours.break.from.getHours(),oneworkinghours.break.from.getMinutes());
+                    free.push( new time_range(from1 , until1 ) ); 
+        
+                    var from2=new time(oneworkinghours.break.until.getHours(),oneworkinghours.break.until.getMinutes());
+                    var until2=new time(oneworkinghours.until.getHours(),oneworkinghours.until.getMinutes());
+                    free.push( new time_range(from2 , until2 ) ); 
+                }
+
+                 if(!isEmpty(onedateapointments)){
+                   
+                    
+                    var day= new BinarySearchTree();
+                    day.totree(free);
+                    onedateapointments.forEach(async function(oneappointment) {
+                        var chosentimerange=new time_range(new time(oneappointment.time.start._hour,oneappointment.time.start._minute) , new time(oneappointment.time.end._hour,oneappointment.time.end._minute) ) 
+                        if( !(day.book(chosentimerange)) ){
+                             await cancelappointmentbyid(oneappointment._id)
+                             //console.log("canceled apointment id = "+oneappointment._id)
+                        }
+
+                    });
+                    free=[];
+                    free=day.arrayofopjects()
+            }
+       
+    }else{
+
+        if(!isEmpty(onedateapointments)){
+            onedateapointments.forEach( function(oneappointment) {cancelappointmentbyid(oneappointment._id);} );
+            //console.log("canceled all this apointment in this day "+onedateapointments[0].day)
+        }
+    }
+    return free;
+
+}
+async function cancelappointmentbyid(appointmentid){
+
+    Appointment.findById(appointmentid, function(err, appointment) {
+        if (err) throw err;
+        appointment.status="pendingBusiness"
+        appointment.save(function(err) {
+            if (err) throw err;     
+            //appointment updated successfully
+        });
+    });
+
+}
 
 /***********************************************************************************/
 
@@ -744,21 +1059,27 @@ async function returnfreeondate(appointments,oneDate){
         module.exports = {
 
             //in 'choice' you dicede if you want  0: the next number of 'days' or 1: spiceifec 'date'
-            freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,appontments_number_to_return=7,checkifcustomerhavebusness=true)=>{
+            freeAlg: async (businessid,services,date_from,date_until,choice=0,customerid=0,number_of_days_to_return=7,checkifcustomerhavebusness=true)=>{
                 var tempfreetime=[];
-                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                const business = await Business.findOne({_id:businessid});
+
+                const servicearray = await business.services.filter(function(service) {
+                    return services.includes(service.service_id.toString())
+                    
+                 });
+                var minsevicetime =await findmintimeinservice(businessid);
                 if(isEmpty(business))
                 return({error :'invalid business'});
 
                     var services_length=0;
                     var services_cost=0;
-                    business.services.forEach(function(oneservice) {
+                    servicearray.forEach(function(oneservice) {
                         services_length+=oneservice.time;
                         services_cost+=oneservice.cost;
                     });
                     var minutes_between_appointment = business.break_time;
                     var workinghours =business.working_hours;
-                    tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness);
+                    tempfreetime = await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),false,services_length,minutes_between_appointment,number_of_days_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime);
                 //console.log(util.inspect(tempfreetime, {depth: null}));
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
@@ -818,9 +1139,9 @@ async function returnfreeondate(appointments,oneDate){
                 ///////////////////////////////////////////////
                 
                 //console.log(newfreetime);
-                return({answer : "done"});
+                return true ;
             }else{
-                return({error :'invalid Time'});
+                return false ;
             }
                 
 
@@ -846,7 +1167,7 @@ async function returnfreeondate(appointments,oneDate){
                      freetobook.forEach(function(onetimerange) {
                        timeranges.push( new time_range(new time(onetimerange._start._hour,onetimerange._start._minute) , new time(onetimerange._end._hour,onetimerange._end._minute) ) );
                      });
-                    var tobook=  new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
+                    var tobook= new time_range(new time(chosentimerange._start._hour,chosentimerange._start._minute) , new time(chosentimerange._end._hour,chosentimerange._end._minute) )
                     var day= new BinarySearchTree();
                     day.totree(timeranges);
                     result=await day.book(tobook);
@@ -885,65 +1206,96 @@ async function returnfreeondate(appointments,oneDate){
                      }
                     return result;
                 
-            },
-            smart: async (businessid,services,customerid,days_to_return=30,appontments_number_to_return=7)=>{ 
-                
+            },            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            smart: async (businessid,services,customerid,preferhours=1,checkifcustomerhavebusness=true,customerdesidedates=false,datefrom=false,dateuntil=false)=>{ 
+                var choice;
+                var exp;
+                var date_from;
+                var date_until;
+                var prevelaged=false;
                 var tempfreetime=[];
-                const business = await Business.findOne({_id:businessid,'services.service_id':{$in: services.map(elem=>{return mongoose.Types.ObjectId(elem)})}})
+                const business = await Business.findOne({_id:businessid});
+                
+                const icaraboutcustomeexperiance=business.schedule_settings.customers_exp;
+                const valuefornospaces=business.schedule_settings.continuity;
+                const valueofpreferhours=9;//business.schedule_settings.********
+                const valueofbusnessbusyhours=business.schedule_settings.distrbuted_time;
+                const days_to_return=business.schedule_settings.days_calculate_length;
+                const number_of_days_to_return=business.schedule_settings.max_appointment_response;
+
+                const servicearray = await business.services.filter(function(service) {
+                    return services.includes(service.service_id.toString())
+                    
+                 });
+
+                var minsevicetime =await findmintimeinservice(businessid);
                 if(isEmpty(business))
                 return({error :'invalid business'});
+                    if(icaraboutcustomeexperiance==true){
+                        const customerinbusness=await business.customers.find(o => customerid === (o.customer_id).toString());
+                        if(isEmpty(business))
+                            exp=customerinbusness.experiance;
+                        else
+                            exp=0;
+                    }else{exp=0;}
+                    if(exp>=10){
+                    prevelaged=true;
+                    choice=1;
+                    }else{
+                    prevelaged=false;
+                    choice=3;
+                    }
 
                     var services_length=0;
                     var services_cost=0;
-                    business.services.forEach(function(oneservice) {
+                    servicearray.forEach(function(oneservice) {
                         services_length+=oneservice.time;
                         services_cost+=oneservice.cost;
                     });
+
                     var minutes_between_appointment = business.break_time;
                     var workinghours =business.working_hours;
-
+                    if( (customerdesidedates !== false)&&(datefrom!== false)&(dateuntil !== false) ){
+                    date_from=datefrom;
+                    date_until=dateuntil;
+                    }else{
                 var tmp=new Date();
-                var date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
-                var date_until=moment(date_from).add(days_to_return, 'days').toDate();
-                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),services_length,minutes_between_appointment,appontments_number_to_return,date_from,date_until,3,customerid);
-                afteraddedrate=await mergewithbusnessbusnessbusyhour(businessid,tempfreetime);
-                //console.log(util.inspect(afteraddedrate, {depth: null}));
+                date_from=new Date(tmp.getFullYear(),tmp.getMonth(),tmp.getDate());
+                date_until=moment(date_from).add(days_to_return, 'days').toDate();
+                }
+                tempfreetime =await returnfreetime(await creatifempty(businessid,workinghours,date_from,date_until),true,services_length,minutes_between_appointment,number_of_days_to_return,date_from,date_until,choice,customerid,checkifcustomerhavebusness,minsevicetime,valuefornospaces);
+                if( !(preferhours===false) )
+                await mergewithpreferhours(preferhours,tempfreetime,valueofpreferhours);
+                
+                await mergewithbusnessbusnessbusyhour(businessid,tempfreetime,valueofbusnessbusyhours);
+                if(prevelaged==true)
+                await pickthehighestifsliced(tempfreetime);
+                else
+                await pickthehighestifnotsliced(tempfreetime,services_length,minutes_between_appointment,minsevicetime,valuefornospaces);
+                ;
                 if( (tempfreetime===false) || (isEmpty(tempfreetime)) )
                 return ({});
-                return   tempfreetime;
-                //console.log(util.inspect(tempfreetime, {depth: null}));
-                // var tmpfree=[];
-                // tmpfree.push( new time_range(new time(8,0) , new time(9,45) ) );
-                // tmpfree.push( new time_range(new time(11,0) , new time(12,0) ) );
-                // tmpfree.push( new time_range(new time(12,40) , new time(14,0) ) );
-                // tmpfree.push( new time_range(new time(14,30) , new time(15,0) ) );
-                // tmpfree.push( new time_range(new time(15,0) , new time(18,0) ) );
-                // console.log("\nfreetime :");
-                // tmpfree.forEach(function(timerange) {
-                //     console.log(timerange.string());
-                // });
-                // var free=[];
-                // free.push( new time_range(new time(9,15) , new time(12,45) ) );
-                // free.push( new time_range(new time(16,0) , new time(17,30) ) );
-                // console.log("\nprevious appoitments ,value=1");
-                // free.forEach(function(timerange) {
-                //     console.log(timerange.string());
-                // });
-                // var morning=[];
-                // morning.push( new time_range(new time(8,0) , new time(12,0) ) );
-                // console.log("\nprefered time is morning(8:00-12:00),value=2 :\n");
-                // var tmmp=[];
-                // tmmp=await mergetimerangelists(tmpfree,free,1);
-                // console.log("\nafter added previous appoitments :");
+                return  tempfreetime;
+            },
+            aftereditingbusnessworkinghours: async (businessid,array)=>{ 
+
+                var days={'sunday':0, 'monday':1, 'tuesday':2, 'wednesday':3, 'thursday':4, 'friday':5, 'saturday':6 }
+                var appointments=await returnallappointmentsbybusiness(businessid);
+                var totalminutes=await findtotalminutes(businessid);
+                //if(isEmpty(appointments))
+                //return({error :'business have no apintment'});
+                var freetimeid=await findchangesandupdate(businessid,appointments,array,days) 
+                await FreeTime.findById(freetimeid, function(err, freeTime) {
+                    if (err) throw err;
+                    freeTime.totalworkingminuts=totalminutes;
+                    freeTime.save(function(err) {
+                        if (err) throw err;     
+                        //FreeTime updated successfully
+                    });
+                });
+
+                return ({});
             
-                // tmmp.forEach(function(timerange) {
-                //     console.log(timerange.string()+" value="+timerange._value);
-                // });
-                // tmmp=await mergetimerangelists(tmmp,morning,2);
-                // console.log("\nafter added that the prefered time is morning:");
-                // tmmp.forEach(function(timerange) {
-                //     console.log(timerange.string()+" value="+timerange._value);
-                // });
                 
             }
     

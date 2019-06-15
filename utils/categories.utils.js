@@ -1,7 +1,7 @@
 const isEmpty = require('lodash/isEmpty');
 
 module.exports = {
-	getFullserviceData: async (categories, services) => {
+	getFullserviceData : async (categories, services) => {
 		// console.log('getFullserviceData');
 		// console.log(categories);
 		let finalServices = [];
@@ -14,10 +14,10 @@ module.exports = {
 					if (businessService.service_id.toString() === service._id.toString()) {
 						console.log(`title:${service.title},cost:${businessService.cost}`);
 						return finalServices.push({
-							_id: service._id,
-							title: service.title,
-							cost: businessService.cost,
-							time: businessService.time
+							_id   : service._id,
+							title : service.title,
+							cost  : businessService.cost,
+							time  : businessService.time
 						});
 					}
 				});

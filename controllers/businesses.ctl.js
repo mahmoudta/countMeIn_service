@@ -1,13 +1,29 @@
 const JWT = require('jsonwebtoken');
+const { JWT_SECRET } = require('../consts');
+
 const Businesses = require('../models/business');
 const Categories = require('../models/category');
+const Services = require('../models/service');
 const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
 const { getFullserviceData } = require('../utils/categories.utils');
+const { aftereditingbusnessworkinghours } = require('./algs/free-alg');
 const isEmpty = require('lodash/isEmpty');
-const { signInToken } = require('./users.ctl');
+
 const mongoose = require('mongoose');
 
+signInToken = (user, business_id = '') => {
+	return JWT.sign(
+		{
+			sub             : user._id,
+			isAdmin         : user.isAdmin,
+			profile         : user.profile,
+			isBusinessOwner : !isEmpty(business_id) ? true : false,
+			business_id     : business_id
+		},
+		JWT_SECRET
+	);
+};
 // const {freeTimeAlg} = require('./algs/free-alg/freeTimeAlg');
 createTime = async (time) => {
 	try {
@@ -21,7 +37,111 @@ createTime = async (time) => {
 };
 
 module.exports = {
-	createBusiness: async (req, res, next) => {
+	getBusinessesByCatagory       : async (req, res, next) => {
+		const { catagoryId } = req.params;
+		//var catagoryId = JSON.parse(req.params);
+
+		const ResultQuery = await Businesses.find(
+			{
+				'profile.category_id' : catagoryId
+			},
+			'_id'
+		);
+
+		res.status(200).json({ ResultQuery });
+	},
+
+	getAllCustomers               : async (req, res, next) => {
+		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
+		if (!business) return res.status(404).json({ error: 'business not found' });
+		const ids = await business.customers.map((customer) => {
+			return customer.customer_id;
+		});
+
+		const customers = await Users.find({ _id: { $in: ids } }, 'profile.name');
+
+		if (!customers) return res.status(404).json({ error: 'an error occurred' });
+
+		res.status(200).json({ customers });
+	},
+	getServicesByBusiness         : async (req, res, next) => {
+		const { id } = req.params;
+		const business = await Businesses.findById(id);
+		if (!business) return res.status(404).json({ error: 'business not found' });
+		const ids = await business.profile.services.map((service) => {
+			return service.service_id;
+		});
+		const category = await Categories.findById(business.profile.category_id);
+
+		const services = await category.subCats.filter((elem) => {
+			return ids.includes(elem._id.toString());
+		});
+
+		if (!services) return res.status(404).json({ error: 'an error occurred' });
+		res.status(200).json({ services });
+	},
+
+	getBusinessesByCatagory       : async (req, res, next) => {
+		const { catagoryId } = req.params;
+		//var catagoryId = JSON.parse(req.params);
+
+		const business = await Businesses.find(
+			{
+				categories : mongoose.Types.ObjectId(catagoryId)
+			},
+			'profile'
+		);
+
+		res.status(200).json({ business });
+	},
+
+	getAllBusinesses              : async (req, res, next) => {
+		const businesses = await Businesses.find({});
+		if (!businesses) return res.status(404).json({ error: 'not found' });
+		res.status(200).json({ businesses });
+	},
+
+	/* Adhamm */
+	getBusinessForView            : async (req, res, next) => {
+		console.log('business for view');
+		const id = mongoose.Types.ObjectId(req.params.id);
+		const user_id = req.user.id;
+		const business = await Businesses.findById(id)
+			.populate('services.service_id', 'title')
+			.populate('categories', 'name')
+			.lean();
+		/* Object of this user inside the Business */
+		const follower = await business.customers.find((customer) => {
+			return customer.customer_id._id.toString() === req.user._id.toString();
+		});
+
+		const followers = await business.customers.filter((customer) => {
+			return customer.isFollower === true;
+		});
+
+		business['isFollower'] = isEmpty(follower) ? false : follower.isFollower;
+		business['followers'] = followers.length;
+
+		if (!business) res.status(404).json({ error: 'business not found' });
+
+		res.status(200).json({ business });
+	},
+
+	getBusinessByOwner            : async (req, res, next) => {
+		const owner_id = req.params.owner_id;
+		const business = await Businesses.findOne({ owner_id: owner_id })
+			.populate('categories')
+			.populate('services.service_id', 'title')
+			.populate('customers.customer_id', 'profile')
+			.lean();
+		if (!business) return res.status(404).json({ error: 'Business Not Found' });
+		// const categories = await Categories.find({ _id: { $in: 'business.categories' } }).populate('services', 'title');
+		// business.categories = categories;
+
+		res.status(200).json({ business });
+	},
+
+	createBusiness                : async (req, res, next) => {
 		console.log('create Business called!!');
 		// get all params
 		const {
@@ -57,14 +177,14 @@ module.exports = {
 				const from = await createTime(element.from);
 				const until = await createTime(element.until);
 				await items.push({
-					day: element.day,
-					opened: element.opened,
-					from: from,
-					until: until,
-					break: {
-						isBreak: element.break.isBreak,
-						from: await createTime(element.break.from),
-						until: await createTime(element.break.from)
+					day    : element.day,
+					opened : element.opened,
+					from   : from,
+					until  : until,
+					break  : {
+						isBreak : element.break.isBreak ? true : false,
+						from    : await createTime(element.break.from),
+						until   : await createTime(element.break.until)
 					}
 				});
 			}
@@ -77,97 +197,43 @@ module.exports = {
 		});
 		const NewServices = await services.map((service) => {
 			return {
-				service_id: mongoose.Types.ObjectId(service.value),
-				time: Number(service.time),
-				cost: Number(service.cost)
+				service_id : mongoose.Types.ObjectId(service.value),
+				time       : Number(service.time),
+				cost       : Number(service.cost)
 			};
 		});
 		const newBusiness = new Businesses({
-			_id: new mongoose.Types.ObjectId(),
-			owner_id: mongoose.Types.ObjectId(req.user._id),
-			profile: {
-				name: name,
-				img: !isEmpty(img) ? img : '',
-				location: {
-					street: !isEmpty(street) ? street : '',
-					city: !isEmpty(city) ? city : '',
-					building: !isEmpty(building) ? Number(building) : 0,
-					postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
+			_id           : new mongoose.Types.ObjectId(),
+			owner_id      : mongoose.Types.ObjectId(req.user._id),
+			profile       : {
+				name        : name,
+				img         : !isEmpty(img) ? img : '',
+				location    : {
+					street      : !isEmpty(street) ? street : '',
+					city        : !isEmpty(city) ? city : '',
+					building    : !isEmpty(building) ? Number(building) : 0,
+					postal_code : !isEmpty(postal_code) ? Number(postal_code) : 0
 				},
-				phone: phone,
-				description: !isEmpty(description) ? description : ''
+				phone       : phone,
+				description : !isEmpty(description) ? description : ''
 			},
-			services: NewServices,
-			categories: NewCategories,
-			working_hours: await fillTime(),
-			break_time: !isEmpty(breakTime) ? breakTime : 10
+			services      : NewServices,
+			categories    : NewCategories,
+			working_hours : await fillTime(),
+			break_time    : !isEmpty(breakTime) ? breakTime : 10
 		});
 		const business = await newBusiness.save();
 		if (!business) return res.status(403).json({ error: 'some error accourd during create' });
 		const businessNew = await Businesses.findById(business._id)
 			.populate('services.service_id', 'title')
-			.populate('categories', 'name')
-			.exec();
-		// const token = signInToken(req.user, business._id);
+			.populate('categories');
+
+		const token = signInToken(req.user, business._id);
 		// business.profile.services = [];
-		res.status(200).json({ businessNew });
+		res.status(200).json({ business: businessNew, token });
 	},
 
-	getAllBusinesses: async (req, res, next) => {
-		const businesses = await Businesses.find({});
-		if (!businesses) return res.status(404).json({ error: 'not found' });
-		res.status(200).json({ businesses });
-	},
-
-	getBusinessForView: async (req, res, next) => {
-		console.log('business for view');
-		const id = mongoose.Types.ObjectId(req.params.id);
-		const business = await Businesses.findById(id).populate('services.service_id', '-parent_category');
-
-		if (!business) res.status(404).json({ error: 'business not found' });
-
-		res.status(200).json({ business });
-
-		// const business = await Businesses.aggregate([
-		// 	{ $match: { _id: id } },
-		// 	{$lookup:{
-
-		// 	}}
-		//  ]);
-
-		// const Reqbusiness = await Businesses.findById(id)
-		// 	.populate('categories', 'name')
-		// 	.populate('service', '-parent_category');
-
-		// if (!Reqbusiness) return res.status(404).json({ error: 'Business Not Found' });
-
-		// const followers = await getFollowers(Reqbusiness.customers);
-		// const isFollower = await isUserFollower(followers, req.user._id);
-
-		// const isUserFollower = await isUserFollower(followers, req.user._id);
-		// const business = {
-		// 	_id: id,
-		// 	owner_id: Reqbusiness.owner_id,
-		// 	profile: Reqbusiness.profile,
-		// 	followers: followers.length,
-		// 	isFollower: isFollower
-		// };
-
-		res.status(200).json({ business });
-	},
-
-	getBusinessByOwner: async (req, res, next) => {
-		const owner_id = req.params.owner_id;
-		const business = await Businesses.findOne({ owner_id: owner_id })
-			.populate('categories', 'name')
-			.populate('services.service_id', 'title')
-			.populate('customers.customer_id', 'profile');
-		if (!business) return res.status(404).json({ error: 'Business Not Found' });
-
-		res.status(200).json({ business });
-	},
-
-	editBusiness: async (req, res, next) => {
+	editBusiness                  : async (req, res, next) => {
 		console.log('edit Business Called!');
 		const {
 			business_id,
@@ -182,7 +248,8 @@ module.exports = {
 			img,
 			phone,
 			working,
-			services
+			services,
+			working_edits
 		} = req.body;
 		// checking if user already have a business
 		// const Qbusiness = await Businesses.findOne({ owner_id: req.user._id });
@@ -197,14 +264,14 @@ module.exports = {
 				const from = await createTime(element.from);
 				const until = await createTime(element.until);
 				await items.push({
-					day: element.day,
-					opened: element.opened,
-					from: from,
-					until: until,
-					break: {
-						isBreak: element.break.isBreak,
-						from: await createTime(element.break.from),
-						until: await createTime(element.break.from)
+					day    : element.day,
+					opened : element.opened,
+					from   : from,
+					until  : until,
+					break  : {
+						isBreak : element.break.isBreak ? true : false,
+						from    : await createTime(element.break.from),
+						until   : await createTime(element.break.until)
 					}
 				});
 			}
@@ -214,108 +281,130 @@ module.exports = {
 		/* splitting the categories and the services */
 
 		const NewCategories = await categories.map((category) => {
-			return category.value;
+			return mongoose.Types.ObjectId(category.value);
 		});
 
 		const NewServices = await services.map((service) => {
 			return {
-				service_id: service.value,
-				time: Number(service.time),
-				cost: Number(service.cost)
+				service_id : mongoose.Types.ObjectId(service.value),
+				time       : Number(service.time),
+				cost       : Number(service.cost)
 			};
 		});
 		const updateBusiness = {
-			profile: {
-				name: name,
-				img: !isEmpty(img) ? img : '',
-				location: {
-					street: !isEmpty(street) ? street : '',
-					city: !isEmpty(city) ? city : '',
-					building: !isEmpty(building) ? Number(building) : 0,
-					postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
+			profile       : {
+				name        : name,
+				img         : !isEmpty(img) ? img : '',
+				location    : {
+					street      : !isEmpty(street) ? street : '',
+					city        : !isEmpty(city) ? city : '',
+					building    : !isEmpty(building) ? Number(building) : 0,
+					postal_code : !isEmpty(postal_code) ? Number(postal_code) : 0
 				},
-				services: NewServices,
-				phone: phone,
-				description: !isEmpty(description) ? description : '',
-				category_id: NewCategories,
-				working_hours: await fillTime(),
-				break_time: !isEmpty(breakTime) ? breakTime : 10
-			}
+				phone       : phone,
+				description : !isEmpty(description) ? description : ''
+			},
+			services      : NewServices,
+			categories    : NewCategories,
+			working_hours : await fillTime(),
+			break_time    : !isEmpty(breakTime) ? breakTime : 10
 		};
 
-		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness);
+		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness, { new: true })
+			.populate('categories')
+			.populate('services.service_id', 'title')
+			.populate('customers.customer_id', 'profile');
 		if (!business) return res.status(403).json({ error: 'some error accourd during update' });
-		// business.profile.services = [];
-		return res.status(200).json({ business });
+
+		/* send the working edits array to free time tree to make a changes on the tree. */
+		console.log(working_edits);
+		aftereditingbusnessworkinghours(business._id, working_edits);
+		res.status(200).json({ business });
 	},
-	followBusiness: async (req, res, next) => {
+
+	followBusiness                : async (req, res, next) => {
 		console.log('follow business');
 		const { business_id } = req.body;
+		let business_query = {}; /* object to hold the query for business */
+		let business_update = {}; /* object to hold the updated fileds of business */
 
 		// check if business
-		const business = await Businesses.findById(business_id);
+		const business = await Businesses.findById(business_id)
+			.populate('services.service_id', 'title')
+			.populate('categories', 'name');
+
 		if (!business) return res.status(404).json({ error: 'Business Not Found' });
 
-		// check if user already following this business
+		/* Object of this user inside the Business */
+		const customer = await business.customers.find((customer) => {
+			return customer.customer_id._id.toString() === req.user._id.toString();
+		});
 
-		const customer = await getCustomer(business.customers, req.user._id);
-		let updated_business;
+		/* if customer  is empty object then we have to push this user to customers and make it follower*/
+
 		if (!isEmpty(customer)) {
-			if (customer.isFollower) return res.status(201).json({ error: 'user already follower' });
-			const update = {
-				$set: {
-					'customers.$.isFollower': true
+			if (customer.isFollower) return res.status(200).json({ business }); /* user already followe */
+			business_query = { _id: business_id, 'customers.customer_id': req.user._id };
+
+			business_update = {
+				$set : {
+					'customers.$.isFollower' : true,
+					$inc                     : { 'customers.$.experiance': 2 }
 				}
 			};
-			updated_business = await Businesses.findOneAndUpdate(
-				{ _id: business_id, 'customers.customer_id': req.user._id },
-				update
-			);
 		} else {
-			const update = {
-				$push: {
-					customers: {
-						customer_id: mongoose.Types.ObjectId(req.user._id),
-						isFollower: true
+			/* else : the user is exists in the follower list we should only update the flag to follower.*/
+			business_query = { _id: business_id };
+			business_update = {
+				$push : {
+					customers : {
+						customer_id : mongoose.Types.ObjectId(req.user._id),
+						isFollower  : true,
+						experiance  : 3
 					}
 				}
 			};
-			/* push user id to business */
-			updated_business = await Businesses.findOneAndUpdate(business_id, update);
 		}
 
-		//push the business id to users array
-		if (!updated_business) return res.status(202).json({ error: 'Some Error Occured' });
+		/* make the update to the business */
+		const new_business = await Businesses.findOneAndUpdate(business_query, business_update);
+
+		if (!new_business) return res.status(304).json({ error: 'error occourd while updating' });
+
+		/* if the update successfully done */
 		const userUpdate = {
-			$push: {
-				following: mongoose.Types.ObjectId(business_id)
+			$push : {
+				following : mongoose.Types.ObjectId(business_id)
 			}
 		};
-
 		/* push business id to business */
-		const updated_user = await Users.findByIdAndUpdate(req.user._id, userUpdate);
+		const updated_user = await Users.findOneAndUpdate({ _id: req.user._id }, userUpdate);
 
 		// if (!updated_business) return res.status(404).json({ error: 'an error occurred' });
 
 		res.status(200).json({ isFollower: true });
 	},
 
-	unfollowBusiness: async (req, res, next) => {
+	unfollowBusiness              : async (req, res, next) => {
 		const { business_id } = req.body;
 		// check if business
-		const business = await Businesses.findById(business_id);
+		const business = await Businesses.findById(business_id)
+			.populate('services.service_id', 'title')
+			.populate('categories', 'name');
+
 		if (!business) return res.status(404).json({ error: 'business Not Found' });
 
 		//unfollow
 		const update = {
-			$set: {
-				'customers.$.isFollower': false
+			$set : {
+				'customers.$.isFollower' : false,
+				$inc                     : { 'customers.$.experiance': -3 }
 			}
 		};
 
 		const userUpdate = {
-			$pull: {
-				following: business_id
+			$pull : {
+				following : mongoose.Types.ObjectId(business_id)
 			}
 		};
 		/* push user id to business */
@@ -331,7 +420,7 @@ module.exports = {
 
 		res.status(200).json({ isFollower: false });
 	},
-	getAllCustomers: async (req, res, next) => {
+	getAllCustomers               : async (req, res, next) => {
 		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
 		if (!business) return res.status(404).json({ error: 'business not found' });
 		const ids = await business.customers.map((customer) => {
@@ -344,7 +433,7 @@ module.exports = {
 
 		res.status(200).json({ customers });
 	},
-	getServicesByBusiness: async (req, res, next) => {
+	getServicesByBusiness         : async (req, res, next) => {
 		const { id } = req.params;
 		const business = await Businesses.findById(id);
 		if (!business) return res.status(404).json({ error: 'business not found' });
@@ -360,25 +449,40 @@ module.exports = {
 		if (!services) return res.status(404).json({ error: 'an error occurred' });
 		res.status(200).json({ services });
 	},
-	getBusinessesByCatagory: async (req, res, next) => {
-		const { catagoryId } = req.params;
-		//var catagoryId = JSON.parse(req.params);
+	UpdateSmartAlgorithmsSettings : async (req, res, next) => {
+		const {
+			customers_exp,
+			continuity,
+			distrbuted_time,
+			days_calculate_length,
+			max_working_days_response
+		} = req.body;
+		update = {
+			$set : {
+				schedule_settings : {
+					customers_exp             : customers_exp,
+					continuity                : continuity,
+					distrbuted_time           : distrbuted_time,
+					days_calculate_length     : days_calculate_length,
+					max_working_days_response : max_working_days_response
+				}
+			}
+		};
+		const business = await Businesses.findOneAndUpdate({ owner_id: req.user._id }, update, { new: true })
+			.populate('categories')
+			.populate('services.service_id', 'title')
+			.populate('customers.customer_id', 'profile');
 
-		const ResultQuery = await Businesses.find(
-			{
-				'profile.category_id': catagoryId
-			},
-			'_id'
-		);
+		if (!business) return res.json({ error: 'Error accourd while updating' });
 
-		res.status(200).json({ ResultQuery });
+		res.status(200).json({ business });
 	},
-	setfull: async (req, res, next) => {
+	setfull                       : async (req, res, next) => {
 		const users = await Categories.aggregate([
 			{
-				$group: {
-					_id: '$services',
-					services: { $sum: 1 }
+				$group : {
+					_id      : '$services',
+					services : { $sum: 1 }
 				}
 			}
 		]);

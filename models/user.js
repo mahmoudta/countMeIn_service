@@ -1,46 +1,60 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose'),
 	user = new mongoose.Schema({
-		_id: { type: mongoose.Schema.Types.ObjectId },
-		method: {
-			type: String,
-			enum: [ 'local', 'google' ],
-			required: true
+		_id          : { type: mongoose.Schema.Types.ObjectId },
+		method       : {
+			type     : String,
+			enum     : [ 'local', 'google' ],
+			required : true
 		},
-		isAdmin: {
-			type: Boolean,
-			default: false,
-			required: true
+		isAdmin      : {
+			type     : Boolean,
+			default  : false,
+			required : true
 		},
-		local: {
-			password: String
+		local        : {
+			password : String
 		},
-		google: {
-			id: String
+		google       : {
+			id : String
 		},
-		email: {
-			type: String,
-			lowercase: true
+		email        : {
+			type      : String,
+			lowercase : true
 		},
-		profile: {
-			name: {
-				first: {
-					type: String,
-					required: true
+		profile      : {
+			name       : {
+				first : {
+					type     : String,
+					required : true
 				},
-				last: {
-					type: String,
-					default: ' '
+				last  : {
+					type    : String,
+					default : ' '
 				}
 			},
-			imgUrl: String,
-			businessId: String
+			imgUrl     : String,
+			businessId : String
 			//phone:phone number
 		},
-		//Notifaction:[]
+		notification : [
+			{
+				Type           : String,
+				opened         : {
+					type    : Boolean,
+					default : false
+				},
+				title          : String,
+				my_business    : {
+					type    : Boolean,
+					default : false
+				},
+				appointment_id : String
+			}
+		],
 		//globalExpreince:Number
-		appointments: [ String ],
-		following: [ { type: mongoose.Schema.Types.ObjectId, ref: 'Business' } ]
+		appointments : [ String ],
+		following    : [ { type: mongoose.Schema.Types.ObjectId, ref: 'Business' } ]
 	});
 
 user.pre('save', async function(next) {
