@@ -84,18 +84,17 @@ module.exports = {
 	test                     : async (req, res, next) => {
 		//const date = new Date(2019, 5, 14);
 		//console.log(date);
-		var momentdate = moment().add(1, 'days').format('l');
-		var date = new Date(momentdate);
-		console.log(date);
-		var vvv = await FreeTime.updateMany(
-			{
-				// $match : { 'dates.day': { $lt: date } }
-			},
-			{ $pull: { dates: { day: { $lt: date } } } }
-		);
-
+		// var momentdate = moment().add(1, 'days').format('l');
+		// var date = new Date(momentdate);
+		// console.log(date);
+		// var vvv = await FreeTime.updateMany(
+		// 	{
+		// 		// $match : { 'dates.day': { $lt: date } }
+		// 	},
+		// 	{ $pull: { dates: { day: { $lt: date } } } }
+		// );
 		//const test1 = await aftereditingbusnessworkinghours('5cedfa110a209a0eddbb2bbb', array);
-		if (vvv) res.status(200).json({ vvv });
+		//if (vvv) res.status(200).json({ vvv });
 	},
 	booktest                 : async (req, res, next) => {
 		// console.log('book Test Here');

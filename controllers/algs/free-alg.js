@@ -1509,14 +1509,18 @@ module.exports = {
 		var prevelaged = false;
 		var tempfreetime = [];
 		const business = await Business.findOne({ _id: businessid });
+		const experiance_rule_exp = [ 0, 50, 100, 200, 400, 800 ];
 
 		const icaraboutcustomeexperiance = business.schedule_settings.customers_exp;
+		const experiance_rule = business.schedule_settings.experiance_rule;
 		const valuefornospaces = business.schedule_settings.continuity;
-		const valueofpreferhours = 9; //business.schedule_settings.********
+		const valueofpreferhours = 9;
+		const customer_prefered_period = business.schedule_settings.customer_prefered_period;
 		const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 		const days_to_return = business.schedule_settings.days_calculate_length;
 		const number_of_days_to_return = business.schedule_settings.max_appointment_response;
-
+		console.log(experiance_rule);
+		console.log(customer_prefered_period);
 		const servicearray = await business.services.filter(function(service) {
 			return services.includes(service.service_id.toString());
 		});
@@ -1525,7 +1529,7 @@ module.exports = {
 		if (isEmpty(business)) return { error: 'invalid business' };
 		if (icaraboutcustomeexperiance == true) {
 			const customerinbusness = await business.customers.find((o) => customerid === o.customer_id.toString());
-			if (isEmpty(business)) exp = customerinbusness.experiance;
+			if (!isEmpty(customerinbusness)) exp = customerinbusness.experiance;
 			else exp = 0;
 		} else {
 			exp = 0;
