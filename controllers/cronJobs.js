@@ -25,7 +25,5 @@ setInterval(async function() {
 		}
 	);
 
-	console.log(appointments);
-
-	const users = Businesses.updateMany({ _id: { $in: appointments } });
+	// const users = Businesses.updateMany({ _id: { $in: appointments } });
 }, 1 * 60 * 60 * 1000); // 1 hour

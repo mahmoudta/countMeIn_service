@@ -348,9 +348,9 @@ module.exports = {
 
 			business_update = {
 				$set : {
-					'customers.$.isFollower' : true,
-					$inc                     : { 'customers.$.experiance': 2 }
-				}
+					'customers.$.isFollower' : true
+				},
+				$inc : { 'customers.$.experiance': 2 }
 			};
 		} else {
 			/* else : the user is exists in the follower list we should only update the flag to follower.*/
@@ -397,9 +397,9 @@ module.exports = {
 		//unfollow
 		const update = {
 			$set : {
-				'customers.$.isFollower' : false,
-				$inc                     : { 'customers.$.experiance': -3 }
-			}
+				'customers.$.isFollower' : false
+			},
+			$inc : { 'customers.$.experiance': -3 }
 		};
 
 		const userUpdate = {
