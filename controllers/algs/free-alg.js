@@ -1597,13 +1597,13 @@ module.exports = {
 
 		return {};
 	},
-	shiftappointmentifpossible      : async (businessid, appointmentid) => {
+	shiftappointmentifpossible      : async (businessid, appointmentid, checkin) => {
 		const appointment = await Appointment.findById(appointmentid);
 		var customerid = appointment.client_id;
 		var apointmentdate = appointment.time.date;
 		var apointmentstart = appointment.start;
 		var apointmentend = appointment.end;
-		var checkindate = appointment.time.check_in;
+		var checkindate = checkin;
 		var checkinminute = moment(checkindate).minutes();
 		var checkinhours = moment(checkindate).hours();
 		var todelete = new time_range(
@@ -1618,10 +1618,10 @@ module.exports = {
 
 		deleted(businessid, apointmentdate, todelete);
 		if (booked(businessid, apointmentdate, tobook)) {
-			updatethisapointmenttonewtimerange(appointmentid, tobook);
+			await updatethisapointmenttonewtimerange(appointmentid, tobook);
 			return { ok: true };
 		} else {
-			var result = searchforawaytoswitch(
+			var result = await searchforawaytoswitch(
 				businessid,
 				customerid,
 				apointmentdate,
@@ -1630,7 +1630,7 @@ module.exports = {
 				apointmentlenght
 			);
 			if (result === 0) return { ok: false, fixed: false };
-			updatethisapointmenttonewtimerange(appointmentid, result[1]);
+			await updatethisapointmenttonewtimerange(appointmentid, result[1]);
 			return { ok: false, fixed: true, afectedappointmentid: result[0], appointmentnewtimerange: result[1] };
 		}
 	}
