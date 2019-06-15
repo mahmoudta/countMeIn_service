@@ -1207,8 +1207,8 @@ async function searchforawaytoswitch(businessid, customerid, apointmentdate, tob
 	var appointments = await returnallappointmentsbybusiness(businessid);
 	var tobeafectedapointmentid = 0;
 	var newtobook;
-	var ifcanbeswitched = appointments.some(function(oneappointment) {
-		if (moment(oneappointment.time.date).format('YYYY/MM/DD') === moment(oneDate).format('YYYY/MM/DD')) {
+	var ifcanbeswitched = appointments.some(async function(oneappointment) {
+		if (moment(oneappointment.time.date).format('YYYY/MM/DD') === moment().format('YYYY/MM/DD')) {
 			var tmptime = new time_range(
 				new time(oneappointment.time.start._hour, oneappointment.time.start._minute),
 				new time(oneappointment.time.end._hour, oneappointment.time.end._minute)
@@ -1220,26 +1220,26 @@ async function searchforawaytoswitch(businessid, customerid, apointmentdate, tob
 					break;
 				case 1:
 					newtobook = new time_range(tmptime._start.sub_and_return(apointmentlenght), tmptime._start);
-					if (booked(businessid, apointmentdate, newtobook)) {
+					if (await bookFunction(businessid, apointmentdate, newtobook)) {
 						tobeafectedapointmentid = oneappointment_id;
 						return true;
 					}
 					break;
 				case 2:
 					newtobook = new time_range(tmptime._end, tmptime._end.add_and_return(apointmentlenght));
-					if (booked(businessid, apointmentdate, newtobook)) {
+					if (await bookFunction(businessid, apointmentdate, newtobook)) {
 						tobeafectedapointmentid = oneappointment_id;
 						return true;
 					}
 					break;
 				case 3:
 					newtobook = new time_range(tmptime._start.sub_and_return(apointmentlenght), tmptime._start);
-					if (booked(businessid, apointmentdate, newtobook)) {
+					if (await bookFunction(businessid, apointmentdate, newtobook)) {
 						tobeafectedapointmentid = oneappointment_id;
 						return true;
 					} else {
 						newtobook = new time_range(tmptime._end, tmptime._end.add_and_return(apointmentlenght));
-						if (booked(businessid, apointmentdate, newtobook)) {
+						if (await bookFunction(businessid, apointmentdate, newtobook)) {
 							tobeafectedapointmentid = oneappointment_id;
 							return true;
 						}
@@ -1252,7 +1252,7 @@ async function searchforawaytoswitch(businessid, customerid, apointmentdate, tob
 		}
 	});
 	if (!ifcanbeswitched) {
-		booked(businessid, apointmentdate, todelete);
+		await bookFunction(businessid, apointmentdate, todelete);
 		return 0;
 	}
 	return [ tobeafectedapointmentid, newtobook ];
@@ -1289,6 +1289,114 @@ async function updatethisapointmenttonewtimerange(appointmentid, timerange_to_bo
 	const newappointment = await Appointment.findOneAndUpdate({ _id: appointmentid }, update, { new: true });
 	if (!isEmpty(newappointment)) return true;
 	return false;
+}
+async function bookFunction(businessid, chosendate, chosentimerange) {
+	var resulte;
+	var days = [];
+	var tmpfree = [];
+	var freetobook;
+	var timeranges = [];
+	const freetime = await FreeTime.findOne({ business_id: businessid });
+	if (isEmpty(freetime)) return { error: 'invalid business' };
+
+	var daysinmongo = freetime.dates.find(
+		(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
+	);
+	var dateid = daysinmongo._id;
+	var id = freetime._id;
+	if (isEmpty(daysinmongo)) return { error: 'invalid Date' };
+	else {
+		//console.l]]]]og(daysinmongo);
+		freetobook = daysinmongo.freeTime;
+		timeranges = [];
+		freetobook.forEach(function(onetimerange) {
+			timeranges.push(
+				new time_range(
+					new time(onetimerange._start._hour, onetimerange._start._minute),
+					new time(onetimerange._end._hour, onetimerange._end._minute)
+				)
+			);
+		});
+	}
+	days.push(new Day(chosendate, timeranges));
+	//console.log(`before: ${chosentimerange}`)
+	var tobook = new time_range(
+		new time(chosentimerange._start._hour, chosentimerange._start._minute),
+		new time(chosentimerange._end._hour, chosentimerange._end._minute)
+	);
+	//console.log("after"+tobook)
+	var day = new BinarySearchTree();
+	tmpfree = days.shift();
+	day.totree(tmpfree.Free);
+	try {
+		resulte = day.book(tobook);
+	} catch (error) {
+		console.log('invalid Time');
+		return { error: 'invalid Time' };
+	}
+	if (resulte) {
+		var newfreetime = day.arrayofopjects();
+
+		await FreeTime.findById(id, function(err, freeTime) {
+			if (err) throw err;
+			var foundIndex = freeTime.dates.findIndex(
+				(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
+			);
+			freeTime.dates[foundIndex].freeTime = newfreetime;
+			freeTime.save(function(err) {
+				if (err) throw err;
+				//FreeTime updated successfully
+			});
+		});
+
+		///////////////////////////////////////////////
+
+		//console.log(newfreetime);
+		return true;
+	} else {
+		return false;
+	}
+}
+async function deletedFunction(businessid, chosendate, chosentimerange) {
+	const freetime = await FreeTime.findOne({ business_id: businessid });
+	if (isEmpty(freetime)) {
+		return { error: 'invalid business' };
+	}
+	var id = freetime._id;
+	var daysinmongo = freetime.dates.find(
+		(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
+	);
+	var freetobook = daysinmongo.freeTime;
+	timeranges = [];
+	freetobook.forEach(function(onetimerange) {
+		timeranges.push(
+			new time_range(
+				new time(onetimerange._start._hour, onetimerange._start._minute),
+				new time(onetimerange._end._hour, onetimerange._end._minute)
+			)
+		);
+	});
+	var tobook = new time_range(
+		new time(chosentimerange._start._hour, chosentimerange._start._minute),
+		new time(chosentimerange._end._hour, chosentimerange._end._minute)
+	);
+	var day = new BinarySearchTree();
+	day.totree(timeranges);
+	result = await day.insert(tobook);
+	if (result) {
+		await FreeTime.findById(id, function(err, freeTime) {
+			if (err) throw err;
+			var foundIndex = freeTime.dates.findIndex(
+				(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
+			);
+			freeTime.dates[foundIndex].freeTime.push(tobook);
+			freeTime.save(function(err) {
+				if (err) throw err;
+				//FreeTime updated successfully
+			});
+		});
+	}
+	return result;
 }
 
 /***********************************************************************************/
@@ -1341,72 +1449,7 @@ module.exports = {
 	},
 	//to use after you book
 	booked                          : async (businessid, chosendate, chosentimerange) => {
-		//console.log("booked");
-		var resulte;
-		var days = [];
-		var tmpfree = [];
-		var freetobook;
-		var timeranges = [];
-		const freetime = await FreeTime.findOne({ business_id: businessid });
-		if (isEmpty(freetime)) return { error: 'invalid business' };
-
-		var daysinmongo = freetime.dates.find(
-			(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
-		);
-		var dateid = daysinmongo._id;
-		var id = freetime._id;
-		if (isEmpty(daysinmongo)) return { error: 'invalid Date' };
-		else {
-			//console.l]]]]og(daysinmongo);
-			freetobook = daysinmongo.freeTime;
-			timeranges = [];
-			freetobook.forEach(function(onetimerange) {
-				timeranges.push(
-					new time_range(
-						new time(onetimerange._start._hour, onetimerange._start._minute),
-						new time(onetimerange._end._hour, onetimerange._end._minute)
-					)
-				);
-			});
-		}
-		days.push(new Day(chosendate, timeranges));
-		//console.log(`before: ${chosentimerange}`)
-		var tobook = new time_range(
-			new time(chosentimerange._start._hour, chosentimerange._start._minute),
-			new time(chosentimerange._end._hour, chosentimerange._end._minute)
-		);
-		//console.log("after"+tobook)
-		var day = new BinarySearchTree();
-		tmpfree = days.shift();
-		day.totree(tmpfree.Free);
-		try {
-			resulte = day.book(tobook);
-		} catch (error) {
-			console.log('invalid Time');
-			return { error: 'invalid Time' };
-		}
-		if (resulte) {
-			var newfreetime = day.arrayofopjects();
-
-			await FreeTime.findById(id, function(err, freeTime) {
-				if (err) throw err;
-				var foundIndex = freeTime.dates.findIndex(
-					(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
-				);
-				freeTime.dates[foundIndex].freeTime = newfreetime;
-				freeTime.save(function(err) {
-					if (err) throw err;
-					//FreeTime updated successfully
-				});
-			});
-
-			///////////////////////////////////////////////
-
-			//console.log(newfreetime);
-			return true;
-		} else {
-			return false;
-		}
+		return await bookFunction(businessid, chosendate, chosentimerange);
 	},
 	ifcanbook                       : async (businessid, chosendate, chosentimerange) => {
 		var freeid;
@@ -1447,45 +1490,7 @@ module.exports = {
 		}
 	},
 	deleted                         : async (businessid, chosendate, chosentimerange) => {
-		const freetime = await FreeTime.findOne({ business_id: businessid });
-		if (isEmpty(freetime)) {
-			return { error: 'invalid business' };
-		}
-		var id = freetime._id;
-		var daysinmongo = freetime.dates.find(
-			(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
-		);
-		var freetobook = daysinmongo.freeTime;
-		timeranges = [];
-		freetobook.forEach(function(onetimerange) {
-			timeranges.push(
-				new time_range(
-					new time(onetimerange._start._hour, onetimerange._start._minute),
-					new time(onetimerange._end._hour, onetimerange._end._minute)
-				)
-			);
-		});
-		var tobook = new time_range(
-			new time(chosentimerange._start._hour, chosentimerange._start._minute),
-			new time(chosentimerange._end._hour, chosentimerange._end._minute)
-		);
-		var day = new BinarySearchTree();
-		day.totree(timeranges);
-		result = await day.insert(tobook);
-		if (result) {
-			await FreeTime.findById(id, function(err, freeTime) {
-				if (err) throw err;
-				var foundIndex = freeTime.dates.findIndex(
-					(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
-				);
-				freeTime.dates[foundIndex].freeTime.push(tobook);
-				freeTime.save(function(err) {
-					if (err) throw err;
-					//FreeTime updated successfully
-				});
-			});
-		}
-		return result;
+		return await deletedFunction(businessid, chosendate, chosentimerange);
 	}, /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	smart                           : async (
 		businessid,
@@ -1601,14 +1606,14 @@ module.exports = {
 		const appointment = await Appointment.findById(appointmentid);
 		var customerid = appointment.client_id;
 		var apointmentdate = appointment.time.date;
-		var apointmentstart = appointment.start;
-		var apointmentend = appointment.end;
+		var apointmentstart = appointment.time.start;
+		var apointmentend = appointment.time.end;
 		var checkindate = checkin;
 		var checkinminute = moment(checkindate).minutes();
 		var checkinhours = moment(checkindate).hours();
 		var todelete = new time_range(
 			new time(apointmentstart._hour, apointmentstart._minute),
-			new time(aapointmentend._hour, apointmentend._minute)
+			new time(apointmentend._hour, apointmentend._minute)
 		);
 		var apointmentlenght = todelete.tominutes();
 		var tobookstart = new time(checkinhours, checkinminute);
@@ -1616,10 +1621,10 @@ module.exports = {
 
 		var tobook = new time_range(tobookstart, tobookend);
 
-		deleted(businessid, apointmentdate, todelete);
-		if (booked(businessid, apointmentdate, tobook)) {
-			await updatethisapointmenttonewtimerange(appointmentid, tobook);
-			return { ok: true };
+		await deletedFunction(businessid, apointmentdate, todelete);
+		if (await bookFunction(businessid, apointmentdate, tobook)) {
+			//await updatethisapointmenttonewtimerange(appointmentid, tobook);
+			return { ok: true, appointmentnewtimerange: tobook };
 		} else {
 			var result = await searchforawaytoswitch(
 				businessid,
@@ -1630,7 +1635,7 @@ module.exports = {
 				apointmentlenght
 			);
 			if (result === 0) return { ok: false, fixed: false };
-			await updatethisapointmenttonewtimerange(appointmentid, result[1]);
+			//await updatethisapointmenttonewtimerange(appointmentid, result[1]);
 			return { ok: false, fixed: true, affectedappointmentid: result[0], appointmentnewtimerange: result[1] };
 		}
 	}
