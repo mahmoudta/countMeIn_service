@@ -1631,7 +1631,7 @@ module.exports = {
 			);
 			if (result === 0) return { ok: false, fixed: false };
 			await updatethisapointmenttonewtimerange(appointmentid, result[1]);
-			return { ok: false, fixed: true, afectedappointmentid: result[0], appointmentnewtimerange: result[1] };
+			return { ok: false, fixed: true, affectedappointmentid: result[0], appointmentnewtimerange: result[1] };
 		}
 	}
 };
