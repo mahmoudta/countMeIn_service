@@ -1286,7 +1286,7 @@ async function updatethisapointmenttonewtimerange(appointmentid, timerange_to_bo
 			}
 		}
 	};
-	const newappointment = await Appointment.findByIdAndUpdate(appointmentid, update, { new: true });
+	const newappointment = await Appointment.findOneAndUpdate({ _id: appointmentid }, update, { new: true });
 	if (!isEmpty(newappointment)) return true;
 	return false;
 }
