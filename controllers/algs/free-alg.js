@@ -1514,13 +1514,11 @@ module.exports = {
 		const icaraboutcustomeexperiance = business.schedule_settings.customers_exp;
 		const experiance_rule = business.schedule_settings.experiance_rule;
 		const valuefornospaces = business.schedule_settings.continuity;
-		const valueofpreferhours = 9;
-		const customer_prefered_period = business.schedule_settings.customer_prefered_period;
+		const valueofpreferhours = business.schedule_settings.customer_prefered_period;
 		const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 		const days_to_return = business.schedule_settings.days_calculate_length;
 		const number_of_days_to_return = business.schedule_settings.max_appointment_response;
-		console.log(experiance_rule);
-		console.log(customer_prefered_period);
+
 		const servicearray = await business.services.filter(function(service) {
 			return services.includes(service.service_id.toString());
 		});
@@ -1534,7 +1532,7 @@ module.exports = {
 		} else {
 			exp = 0;
 		}
-		if (exp >= 10) {
+		if (exp >= experiance_rule_exp[experiance_rule]) {
 			prevelaged = true;
 			choice = 1;
 		} else {
