@@ -346,6 +346,17 @@ module.exports = {
 
 		res.status(200).json({ success: 'review saved successffuly' });
 	},
+	getReviewByBusinessId         : async (req, res, next) => {
+		const reviews = await Appointments.find({ business_id: req.params.business_id, status: 'done' })
+			.populate('review')
+			.populate('client_id', 'profile')
+			.populate('services', 'title')
+			.sort({ 'time.check_out': -1, 'time.start._hour': -1, 'time.start.minute': -1 });
+
+		if (!reviews) return res.json({ error: 'some error found during fetching' });
+
+		res.status(200).json({ reviews });
+	},
 	// createReviews                 : async (req, res, next) => {
 	// 	const appointments = await Appointments.find({}).populate('review');
 
