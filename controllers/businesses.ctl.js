@@ -455,7 +455,9 @@ module.exports = {
 			continuity,
 			distrbuted_time,
 			days_calculate_length,
-			max_working_days_response
+			max_working_days_response,
+			customer_prefered_period,
+			experiance_rule
 		} = req.body;
 		update = {
 			$set : {
@@ -464,7 +466,9 @@ module.exports = {
 					continuity                : continuity,
 					distrbuted_time           : distrbuted_time,
 					days_calculate_length     : days_calculate_length,
-					max_working_days_response : max_working_days_response
+					max_working_days_response : max_working_days_response,
+					experiance_rule           : experiance_rule,
+					customer_prefered_period  : customer_prefered_period
 				}
 			}
 		};

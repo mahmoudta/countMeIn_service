@@ -87,6 +87,18 @@ var mongoose = require('mongoose'),
 				default : 7,
 				min     : 1,
 				max     : 30
+			},
+			experiance_rule           : {
+				type    : Number,
+				default : 1,
+				min     : 1,
+				max     : 5
+			},
+			customer_prefered_period  : {
+				type    : Number,
+				default : 6,
+				min     : 1,
+				max     : 9
 			}
 		},
 		profile           : {
