@@ -1,13 +1,14 @@
-const JWT = require("jsonwebtoken");
-const Appointments = require("../models/appointment");
-const Businesses = require("../models/business");
-const Categories = require("../models/category");
-const Users = require("../models/user");
+const JWT = require('jsonwebtoken');
+const Appointments = require('../models/appointment');
+const Businesses = require('../models/business');
+const Categories = require('../models/category');
+const Users = require('../models/user');
+const Review = require('../models/review');
 
-const { JWT_SECRET } = require("../consts");
+const { JWT_SECRET } = require('../consts');
 // const { freeTimeAlg } = require('./algs/free-alg');
 
-const { booked, deleted } = require('./algs/free-alg');
+const { booked, deleted, shiftappointmentifpossible } = require('./algs/free-alg');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
@@ -166,7 +167,8 @@ module.exports = {
 		})
 			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 })
 			.populate('client_id', 'profile')
-			.populate('services', 'title');
+			.populate('services', 'title')
+			.populate('review', 'business_review');
 
 		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
@@ -202,14 +204,38 @@ module.exports = {
 		let expUpdate = {};
 		switch (action) {
 			case 'in':
+				query = { $set: { status: 'inProgress', 'time.check_in': new Date(time) } };
+
 				if (isLate.late) {
 					expUpdate = {
-						$set : {
-							$inc : { 'customers.$.experiance': -Number(isLate.minutes / 5) }
-						}
+						$inc : { 'customers.$.experiance': -Number(isLate.minutes / 5) }
 					};
+				} else if (isEmpty(isLate.late)) {
+					const alg = await shiftappointmentifpossible(business_id, appointment_id, new Date(time));
+
+					if (alg.ok === true || (alg.ok === false && alg.fixed === true)) {
+						/* alg : {
+						ok:{true - shifted with no problems , false-check fixed} 
+					} 	fixed :{false: no changes will happened, true:{affectedappointmentid: ,}}
+						*/
+						if (!isEmpty(alg.appointmentnewtimerange)) {
+							query = {
+								$set : {
+									status          : 'inProgress',
+									'time.check_in' : new Date(time),
+									'time.start'    : {
+										_hour   : alg.appointmentnewtimerange._start._hour,
+										_minute : alg.appointmentnewtimerange._start._minute
+									},
+									'time.end'      : {
+										_hour   : alg.appointmentnewtimerange.end._hour,
+										_minute : alg.appointmentnewtimerange.end._minute
+									}
+								}
+							};
+						}
+					}
 				}
-				query = { $set: { status: 'inProgress', 'time.check_in': new Date(time) } };
 				break;
 			case 'out':
 				query = { $set: { status: 'done', 'time.check_out': new Date(time) } };
@@ -279,6 +305,78 @@ module.exports = {
 		}).then((statistics) => {
 			res.status(200).json({ statistics });
 		});
+	},
+	setBusinessReview             : async (req, res, next) => {
+		const { communication, responsiveness, overall, time_respect, feedback, appointment_id } = req.body;
+		let avg = (communication + responsiveness + overall + time_respect) / 4;
+		let exp = -1;
+
+		let update = {
+			$set : {
+				business_review : {
+					isRated        : true,
+					feedback       : feedback,
+					communication,
+					responsiveness,
+					overall,
+					time_respect,
+					avg_rated      : avg,
+					created_time   : new Date()
+				}
+			}
+		};
+		const review = await Review.findOneAndUpdate({ appointment_id: appointment_id }, update, {
+			new             : true,
+			business_review : 1,
+			appointment_id  : 1
+		}).populate('appointment_id');
+		if (!review) return res.json({ error: 'error accourd' });
+		if (avg > 3) {
+			exp = avg;
+		}
+		const business = await Businesses.findOneAndUpdate(
+			{
+				_id                     : review.appointment_id.business_id,
+				'customers.customer_id' : review.appointment_id.client_id
+			},
+			{
+				$inc : { 'customers.$.experiance': exp }
+			}
+		);
+
+		res.status(200).json({ success: 'review saved successffuly' });
+	},
+	getReviewByBusinessId         : async (req, res, next) => {
+		const reviews = await Appointments.find({ business_id: req.params.business_id, status: 'done' })
+			.populate('review')
+			.populate('client_id', 'profile')
+			.populate('services', 'title')
+			.sort({ 'time.check_out': -1, 'time.start._hour': -1, 'time.start.minute': -1 });
+
+		if (!reviews) return res.json({ error: 'some error found during fetching' });
+
+		res.status(200).json({ reviews });
+	},
+	// createReviews                 : async (req, res, next) => {
+	// 	const appointments = await Appointments.find({}).populate('review');
+
+	// 	res.json({ appointments });
+	// }
+
+	createReviews                 : async (req, res, next) => {
+		console.log('inside the reviews');
+		const appointments = await Appointments.find({ status: 'done' });
+
+		const elem = await appointments.map((appoitnemnt) => {
+			let id = appoitnemnt._id;
+			return new Review({
+				_id            : new mongoose.Types.ObjectId(),
+				appointment_id : mongoose.Types.ObjectId(id)
+			});
+		});
+		const result = await Review.insertMany(elem);
+
+		if (result) res.json({ done: 'done' });
 	}
 
 	// BusinessStatisticsHeader      : async (req, res, next) => {
@@ -333,29 +431,28 @@ module.exports = {
 	// }
 };
 
-const getAppointmentData = async appointments => {
-  var data = [];
-  for (let appointment of appointments) {
-    const user = await Users.findById(appointment.client_id, "profile.name");
-    // const business = await Businesses.findById(appointment.business_id);
+const getAppointmentData = async (appointments) => {
+	var data = [];
+	for (let appointment of appointments) {
+		const user = await Users.findById(appointment.client_id, 'profile.name');
+		// const business = await Businesses.findById(appointment.business_id);
 
-    const Nservices = await Categories.find({
-      "services._id": { $in: appointment.services }
-    });
-    const services = await getServices(Nservices, appointment.services);
-    await data.push({
-      _id: appointment._id,
-      business_id: appointment.business_id,
-      client: user,
-      time: {
-        date: appointment.time.date,
-        start: appointment.time.start,
-        end: appointment.time.end
-      },
-      services: services,
-      status: appointment.status
-    });
-  }
-  return await data;
-
+		const Nservices = await Categories.find({
+			'services._id' : { $in: appointment.services }
+		});
+		const services = await getServices(Nservices, appointment.services);
+		await data.push({
+			_id         : appointment._id,
+			business_id : appointment.business_id,
+			client      : user,
+			time        : {
+				date  : appointment.time.date,
+				start : appointment.time.start,
+				end   : appointment.time.end
+			},
+			services    : services,
+			status      : appointment.status
+		});
+	}
+	return await data;
 };
