@@ -1496,11 +1496,11 @@ module.exports = {
 		businessid,
 		services,
 		customerid,
-		preferhours = 1,
-		checkifcustomerhavebusness = true,
+		preferhours = false,
 		customerdesidedates = false,
 		datefrom = false,
-		dateuntil = false
+		dateuntil = false,
+		checkifcustomerhavebusness = true
 	) => {
 		var choice;
 		var exp;
@@ -1549,7 +1549,7 @@ module.exports = {
 
 		var minutes_between_appointment = business.break_time;
 		var workinghours = business.working_hours;
-		if (customerdesidedates !== false && (datefrom !== false) & (dateuntil !== false)) {
+		if (customerdesidedates === true && datefrom !== false && dateuntil !== false) {
 			date_from = datefrom;
 			date_until = dateuntil;
 		} else {
