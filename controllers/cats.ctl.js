@@ -78,7 +78,7 @@ module.exports = {
 		// check if service related to business ,
 		// if yes => we cant DELETE IT
 		const { id } = req.params;
-		const business = await Businesses.findOne({ 'profile.purposes': { $elemMatch: { purpose_id: id } } });
+		const business = await Businesses.findOne({});
 
 		if (business)
 			return res.status(404).json({ error: 'you can not delete this Service, some businesses already using it' });

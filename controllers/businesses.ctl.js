@@ -51,6 +51,20 @@ module.exports = {
 
 		res.status(200).json({ ResultQuery });
 	},
+	getBusinessesByCatagoryArray: async (req, res, next) => {
+		console.log(req.body);
+		const { catagoryIdArray } = req.body;
+		const ResultQuery = ["empty"];
+		catagoryIdArray.forEach(async (value, i) => {
+			ResultQuery = await Businesses.find(
+				{
+					'profile.category_id': value
+				},
+				'_id'
+			);
+		})
+		res.status(200).json({ ResultQuery });
+	},
 
 	getAllCustomers               : async (req, res, next) => {
 		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');

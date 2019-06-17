@@ -33,9 +33,10 @@ const mongoose = require('mongoose'),
 					default : ''
 				}
 			},
+
 			imgUrl     : String,
-			businessId : String
-			//phone:phone number
+			businessId : String,
+			phone      : String
 		},
 		notification : [
 			{
@@ -53,6 +54,7 @@ const mongoose = require('mongoose'),
 			}
 		],
 		//globalExpreince:Number
+
 		appointments : [ String ],
 		following    : [ { type: mongoose.Schema.Types.ObjectId, ref: 'Business' } ]
 	});
@@ -79,22 +81,22 @@ user.methods.isValidPassword = async function(newPassword) {
 	}
 };
 
-user.path('profile.name.first').set((first) => {
-	// const newFirst = first.toString().lowercase()
-	const newFirst = first.toLowerCase().charAt(0).toUpperCase() + first.slice(1);
-	console.log(`toLowerCase : ${newFirst}`);
-	// let sVal = String(val).toLowerCase();
-	return newFirst;
-});
+// user.path('profile.name.first').set((first) => {
+// 	// const newFirst = first.toString().lowercase()
+// 	const newFirst = first.toLowerCase().charAt(0).toUpperCase() + first.slice(1);
+// 	console.log(`toLowerCase : ${newFirst}`);
+// 	// let sVal = String(val).toLowerCase();
+// 	return newFirst;
+// });
 
-user.path('profile.name.last').set((last) => {
-	if (last) {
-		const newLast = last.lowercase().charAt(0).toUpperCase() + last.slice(1);
-		console.log(`toLowerCase : ${newLast}`);
-		// let sVal = String(val).toLowerCase();
-		return newLast;
-	}
-});
+// user.path('profile.name.last').set((last) => {
+// 	if (last) {
+// 		const newLast = last.lowercase().charAt(0).toUpperCase() + last.slice(1);
+// 		console.log(`toLowerCase : ${newLast}`);
+// 		// let sVal = String(val).toLowerCase();
+// 		return newLast;
+// 	}
+// });
 
 var User = mongoose.model('User', user);
 

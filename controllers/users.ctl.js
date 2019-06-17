@@ -33,7 +33,20 @@ module.exports = {
 	signUp                   : async (req, res, next) => {
 		console.log('signUp Called!!');
 
-		const { email, password, first_name, last_name } = req.value.body;
+		const { email, password, first_name, last_name, imgUrl_, phone_ } = req.value.body;
+		console.log(
+			'email',
+			email,
+			'password',
+			password,
+			'first',
+			first_name,
+			'last',
+			last_name,
+			'img ',
+			imgUrl_,
+			phone_
+		);
 		const user = await Users.findOne({ email });
 		if (user) {
 			return res.status(403).json({ message: 'user already exist' });
@@ -45,11 +58,14 @@ module.exports = {
 			local   : {
 				password : password
 			},
+
 			profile : {
-				name : {
+				name   : {
 					first : first_name,
 					last  : last_name
-				}
+				},
+				imgUrl : imgUrl_,
+				phone  : phone_
 			}
 		});
 		await newUser.save();
@@ -136,8 +152,9 @@ module.exports = {
 			let thisdate = appointment.time.date;
 			let services = appointment.services;
 			let time = shour.toString() + ':' + sminute.toString();
-			ResArray = [ appointment.business_id, appointment._id, i + 1, BusinessName, time, thisdate, services ];
-			console.log(time);
+
+			ResArray = [ appointment.business_id._id, appointment._id, i + 1, BusinessName, time, thisdate, services ];
+
 			//	ResArray.push(BusinessProfile.profile.name);
 			//	console.log(ResArray);
 			//console.log({ BusinessProfile });
