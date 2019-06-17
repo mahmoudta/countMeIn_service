@@ -32,7 +32,8 @@ var mongoose = require('mongoose'),
 				default : 'ready'
 			}
 		},
-		{ toJSON: { virtuals: true } }
+		{ toJSON: { virtuals: true } },
+		{ toObject: { virtuals: true } }
 	);
 
 appointment.virtual('review', {

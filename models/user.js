@@ -30,7 +30,7 @@ const mongoose = require('mongoose'),
 				},
 				last  : {
 					type    : String,
-					default : ' '
+					default : ''
 				}
 			},
 			imgUrl     : String,
