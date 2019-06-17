@@ -34,19 +34,6 @@ module.exports = {
 		console.log('signUp Called!!');
 
 		const { email, password, first_name, last_name, imgUrl_, phone_ } = req.value.body;
-		console.log(
-			'email',
-			email,
-			'password',
-			password,
-			'first',
-			first_name,
-			'last',
-			last_name,
-			'img ',
-			imgUrl_,
-			phone_
-		);
 		const user = await Users.findOne({ email });
 		if (user) {
 			return res.status(403).json({ message: 'user already exist' });
