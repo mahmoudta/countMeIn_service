@@ -9,21 +9,21 @@ const moment = require('moment');
 mongoose.Promise = global.Promise;
 setInterval(async function() {
 	//var yestrday = moment().subtract(1, 'days').startOf('day').toDate();
-	let today = moment(moment().format('L')).toDate();
+	let today = new Date(moment().format('YYYY/MM/DD'));
 
 	let time = new Date();
 	/* change apppointment status to passed */
 
 	const appointments = await Appointments.updateMany(
 		{ 'time.date': new Date(today), 'time.end._hour': { $lt: Number(time.getHours()) }, status: 'ready' },
-		{ $set: { status: 'passed' } },
-		{
-			multi       : true,
-			client_id   : 1,
-			business_id : 1,
-			_id         : 1,
-			new         : true
-		}
+		{ $set: { status: 'passed' } }
+		// {
+		// 	multi       : true,
+		// 	client_id   : 1,
+		// 	business_id : 1,
+		// 	_id         : 1,
+		// 	new         : true
+		// }
 	);
 
 	// const users = Businesses.updateMany({ _id: { $in: appointments } });

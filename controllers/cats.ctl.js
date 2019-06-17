@@ -78,15 +78,22 @@ module.exports = {
 		// check if service related to business ,
 		// if yes => we cant DELETE IT
 		const { id } = req.params;
-		const business = await Businesses.findOne({});
+		const business = await Businesses.findOne({ 'services.service_id': id }, 'owner_id');
 
 		if (business)
-			return res.status(404).json({ error: 'you can not delete this Service, some businesses already using it' });
+			return res.status(400).json({ error: 'you can not delete this Service, some businesses already using it' });
 
-		//Else ( Not Related) => DELETE
-		const service = await Categories.updateOne({}, { $pull: { subCats: { _id: id } } });
-		if (!service) return res.status(404).json({ error: 'An Error Occurred' });
+		// Else ( Not Related) => DELETE
 
-		res.status(200).json({ success: ` service has been deleted` });
+		const service = await Services.findOneAndDelete({ _id: id });
+		if (!service) return res.status(404).json({ error: 'An Error Occurred while deleteing' });
+
+		const category = await Categories.findOneAndUpdate(
+			{ _id: service.parent_category },
+			{ $pull: { services: id } },
+			{ $new: true, useFindAndModify: false }
+		).populate('services', '-parent_category');
+
+		res.status(200).json({ category });
 	}
 };

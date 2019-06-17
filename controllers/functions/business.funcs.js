@@ -63,9 +63,5 @@ module.exports.profileViewIncerement = (business_id) => {
 		update = { $inc: { profile_views: 1 } },
 		options = { upsert: true, new: true, setDefaultsOnInsert: true };
 
-	Insights.findOneAndUpdate(query, update, options).exec().then((res) => {
-		console.log(res);
-	});
-
-	// console.log(date);
+	Insights.findOneAndUpdate(query, update, options).exec();
 };

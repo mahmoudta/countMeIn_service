@@ -5,11 +5,11 @@ var consts = require('./consts'),
 var Businesses = require('./models/business'),
 	Users = require('./models/user'),
 	FreeTime = require('./models/freeTime');
-	Appointments = require('./models/appointment');
+Appointments = require('./models/appointment');
 options = {
-	autoReconnect: true,
-	useNewUrlParser: true,
-	useCreateIndex: true
+	autoReconnect   : true,
+	useNewUrlParser : true,
+	useCreateIndex  : true
 };
 mongoose.Promise = global.Promise;
 mongoose.connect(consts.MLAB, options).then(
