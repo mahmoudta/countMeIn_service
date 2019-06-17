@@ -122,6 +122,10 @@ var mongoose = require('mongoose'),
 				city        : String,
 				building    : Number,
 				postal_code : Number
+			},
+			views       : {
+				type    : Number,
+				default : 0
 			}
 		} /*end of profile*/,
 		style_id          : String /* id for style document*/,
@@ -152,6 +156,21 @@ business.methods.createTime = async function(time) {
 		throw new Error(error);
 	}
 };
+
+business.post('find', async function(doc, next) {
+	console.log(this);
+	// if (this.method != 'local') {
+	// 	next();
+	// }
+	// try {
+	// 	const salt = await bcrypt.genSalt(10);
+	// 	const passwordHash = await bcrypt.hash(this.local.password, salt);
+	// 	this.local.password = passwordHash;
+	// 	next();
+	// } catch (error) {
+	// 	next(error);
+	// }
+});
 
 var Business = mongoose.model('Business', business);
 

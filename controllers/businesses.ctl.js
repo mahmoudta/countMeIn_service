@@ -9,6 +9,7 @@ const { getFollowers, isUserFollower, getCustomer } = require('../utils/business
 const { getFullserviceData } = require('../utils/categories.utils');
 const { aftereditingbusnessworkinghours } = require('./algs/free-alg');
 const isEmpty = require('lodash/isEmpty');
+const { getbusinessAvgRatingByDateRange, rateIncrement, profileViewIncerement } = require('./functions/business.funcs');
 
 const mongoose = require('mongoose');
 
@@ -48,6 +49,20 @@ module.exports = {
 			'_id'
 		);
 
+		res.status(200).json({ ResultQuery });
+	},
+	getBusinessesByCatagoryArray: async (req, res, next) => {
+		console.log(req.body);
+		const { catagoryIdArray } = req.body;
+		const ResultQuery = ["empty"];
+		catagoryIdArray.forEach(async (value, i) => {
+			ResultQuery = await Businesses.find(
+				{
+					'profile.category_id': value
+				},
+				'_id'
+			);
+		})
 		res.status(200).json({ ResultQuery });
 	},
 
@@ -110,6 +125,9 @@ module.exports = {
 			.populate('services.service_id', 'title')
 			.populate('categories', 'name')
 			.lean();
+
+		if (!business) res.status(404).json({ error: 'business not found' });
+
 		/* Object of this user inside the Business */
 		const follower = await business.customers.find((customer) => {
 			return customer.customer_id._id.toString() === req.user._id.toString();
@@ -119,10 +137,12 @@ module.exports = {
 			return customer.isFollower === true;
 		});
 
+		/* this function called to count the number of views on the page per day */
+		if (business.owner_id.toString() !== user_id.toString()) {
+			profileViewIncerement(business._id);
+		}
 		business['isFollower'] = isEmpty(follower) ? false : follower.isFollower;
 		business['followers'] = followers.length;
-
-		if (!business) res.status(404).json({ error: 'business not found' });
 
 		res.status(200).json({ business });
 	},
@@ -482,14 +502,18 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 	setfull                       : async (req, res, next) => {
-		const users = await Categories.aggregate([
-			{
-				$group : {
-					_id      : '$services',
-					services : { $sum: 1 }
-				}
-			}
-		]);
-		res.json({ users });
+		const test = rateIncrement('5cedfa110a209a0eddbb2bbb');
+		res.json(test);
+		// const ressponse = await getbusinessAvgRatingByDateRange('5cedfa110a209a0eddbb2bbb');
+		// res.json({ ressponse });
+		// const users = await Categories.aggregate([
+		// 	{
+		// 		$group : {
+		// 			_id      : '$services',
+		// 			services : { $sum: 1 }
+		// 		}
+		// 	}
+		// ]);
+		// res.json({ users });
 	}
 };

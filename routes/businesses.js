@@ -6,6 +6,7 @@ const passport = require('passport');
 const passportConf = require('../passport');
 const passportJWT = passport.authenticate('jwt', { session: false });
 
+router.route('/getAllBusinesses').get(businessCtl.getAllBusinesses);
 router.route('/').post(passportJWT, businessCtl.createBusiness).get(passportJWT, businessCtl.getAllBusinesses);
 router.route('/getAllCustomers').get(passportJWT, businessCtl.getAllCustomers);
 router.route('/:id').get(passportJWT, businessCtl.getBusinessForView);

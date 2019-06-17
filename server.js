@@ -26,6 +26,8 @@ app.use('/category', require('./routes/categories'));
 app.use('/appointments', require('./routes/appointments'));
 app.use('/business', require('./routes/businesses'));
 app.use('/algorithms', require('./routes/algorithms'));
+app.use('/sms', require('./routes/sms'));
+
 
 /* start the server */
 const port = process.env.PORT || 8080;
