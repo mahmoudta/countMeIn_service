@@ -19,6 +19,7 @@ router
 	.route('/getTodayUpcomingAppointments/:business_id')
 	.get(passportJWT, appointmentCtl.getTodayUpcomingAppointments);
 router.route('/setBusinessReview').put(passportJWT, appointmentCtl.setBusinessReview);
+router.route('/setCustomerReview').put(passportJWT, appointmentCtl.setCustomerReview);
 router.route('/appointmentCheck').put(appointmentCtl.appointmentCheck);
 router.route('/newnewnew/reviews').get(appointmentCtl.createReviews);
 router.route('/getReviewByBusinessId/:business_id').get(passportJWT, appointmentCtl.getReviewByBusinessId);
