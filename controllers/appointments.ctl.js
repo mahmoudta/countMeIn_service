@@ -13,6 +13,7 @@ const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const isEmpty = require('lodash/isEmpty');
+const { createReview } = require('./functions/business.funcs');
 
 module.exports = {
 	setAppointment                : async (req, res, next) => {
@@ -238,6 +239,7 @@ module.exports = {
 				}
 				break;
 			case 'out':
+				await createReview(appointment_id);
 				query = { $set: { status: 'done', 'time.check_out': new Date(time) } };
 				break;
 		}

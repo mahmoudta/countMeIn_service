@@ -1,5 +1,7 @@
-const Appointments = require('../../models/appointment');
+const mongoose = require('mongoose');
 const Reviews = require('../../models/review');
+
+const Appointments = require('../../models/appointment');
 const Insights = require('../../models/insight');
 const isEmpty = require('lodash.isempty');
 const moment = require('moment');
@@ -64,4 +66,11 @@ module.exports.profileViewIncerement = (business_id) => {
 		options = { upsert: true, new: true, setDefaultsOnInsert: true };
 
 	Insights.findOneAndUpdate(query, update, options).exec();
+};
+
+module.exports.createReview = async (appointment_id) => {
+	return await new Reviews({
+		_id            : new mongoose.Types.ObjectId(),
+		appointment_id : mongoose.Types.ObjectId(appointment_id)
+	}).save();
 };
