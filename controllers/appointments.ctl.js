@@ -9,6 +9,7 @@ const { JWT_SECRET } = require('../consts');
 // const { freeTimeAlg } = require('./algs/free-alg');
 
 const { booked, deleted, shiftappointmentifpossible } = require('./algs/free-alg');
+const { sendNotify, getCustomerNumberByAppointment } = require('../utils/sms.utils')
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
@@ -239,6 +240,7 @@ module.exports = {
 				break;
 			case 'out':
 				query = { $set: { status: 'done', 'time.check_out': new Date(time) } };
+				sendNotify(appointment_id);
 				break;
 		}
 
@@ -257,9 +259,8 @@ module.exports = {
 		res.status(200).json({ appointment });
 	},
 	setCustomerReview: async (req, res, next) => {
-		const { comm, resp, Qos, Vom, feedback, appointment_id, rec } = req.body;
+		const { comm, resp, Qos, Vom, feedback, appointment_id, rec } = await req.body;
 		var avg = (comm + resp + Qos + Vom) / 4;
-		console.log("avg", avg)
 		let update = {
 			$set: {
 				customer_review: {
@@ -407,7 +408,15 @@ module.exports = {
 		const result = await Review.insertMany(elem);
 
 		if (result) res.json({ done: 'done' });
-	}
+	},
+
+	getIsRated: async (req, res, next) => {
+		const thisReview = await Review.findOne({ appointment_id: req.params.appointmentId, "customer_review.isRated": false })
+
+		if (thisReview) res.status(200).json({ success: true, thisReview });
+		res.status(202).json({ success: false })
+
+	},
 
 
 
