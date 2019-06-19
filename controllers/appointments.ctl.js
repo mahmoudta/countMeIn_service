@@ -260,13 +260,13 @@ module.exports = {
 		res.status(200).json({ appointment });
 	},
 	setCustomerReview: async (req, res, next) => {
-		const { comm, resp, Qos, Vom, feedback, appointment_id, rec } = req.body;
+		const { comm, resp, Qos, Vom, feedback, appointment_id, rec, hideName } = req.body;
 		var avg = (comm + resp + Qos + Vom) / 4;
-
 		let update = {
 			$set: {
 				customer_review: {
 					isRated: true,
+					anynomus: hideName,
 					feedback: feedback,
 					communication: comm,
 					responsiveness: resp,
