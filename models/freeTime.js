@@ -13,7 +13,11 @@ var mongoose = require('mongoose'),
 				},
 				freeTime: Array
 			}
-		]
+		],
+		totalworkingminuts: {
+			type: Number,
+			default: 0
+		}
 	});
 
 
