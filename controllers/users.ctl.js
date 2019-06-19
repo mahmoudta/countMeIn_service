@@ -121,16 +121,18 @@ module.exports = {
 	getUpcommingAppointments: async (req, res, next) => {
 		let ResArray = new Array();
 		//let services = new Array();
-
+		var today = new Date();
+		//yesterday.setDate(yesterday.getDate() - 1)
 		console.log('user', req.user._id);
 		const QueryRes = await Appointments.find({
-			client_id: req.user._id
-		})
-			.populate({
+			client_id: req.user._id,
+			'time.date': { $gte: today }
+		}).sort([['time.date', 1], ['time.start._hour', 1], ['time.start._minute', 1]]).
+			populate({
 				path: 'services',
 				populate: { path: 'services' }
 			})
-			.populate('business_id');
+			.populate('business_id')
 
 		console.log('queryQ', QueryRes);
 
@@ -141,7 +143,7 @@ module.exports = {
 			let thisdate = appointment.time.date;
 			const services = await Promise.all(
 				appointment.services.map(async (service) => {
-					return await service.title;
+					return await ({ title: service.title, _id: service._id, cost: service.cost, time: service.time })
 				})
 			);
 			let time = shour.toString() + ':' + sminute.toString();

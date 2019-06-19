@@ -1,6 +1,6 @@
 const mongoose = require('mongoose'),
 	service = new mongoose.Schema({
-		_id: { type: mongoose.Schema.Types.ObjectId },
+		_id: { type: mongoose.Schema.Types.ObjectId, ref: 'services' },
 		parent_category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
 		title: {
 			type: String,

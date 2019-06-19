@@ -7,7 +7,7 @@ const Users = require('../models/user');
 const { JWT_SECRET } = require('../consts');
 // const { freeTimeAlg } = require('./algs/free-alg');
 const { booked, deleted } = require('./algs/free-alg');
-const { getServices } = require('../utils/appointment.utils');
+const { getServices, CheckBeforeEdit } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 
 module.exports = {
@@ -37,7 +37,7 @@ module.exports = {
 						_minute: eminute
 					}
 				},
-				services: [ service ]
+				services: service
 			}
 
 			// 	business_id: businessId,
@@ -65,6 +65,90 @@ module.exports = {
 		});
 		res.status(200).json('suceess');
 	},
+
+	setAppointmentAndDelete: async (req, res, next) => {
+		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute, appointmentId } = req.body;
+		//console.log(sstart);
+
+		var newDate = new Date(date);
+		console.log(newDate);
+		const hhours = Number(ehour) - Number(shour);
+		const mminutes = Number(eminute) - Number(sminute);
+		console.log(newDate);
+
+		const newAppointment = new Appointments(
+			{
+				_id: new mongoose.Types.ObjectId(),
+				business_id: businessId,
+				client_id: costumerId,
+				time: {
+					date: newDate,
+					start: {
+						_hour: shour,
+						_minute: sminute
+					},
+					end: {
+						_hour: ehour,
+						_minute: eminute
+					}
+				},
+				services: service
+			}
+
+			// 	business_id: businessId,
+			// 	client_id: costumerId,
+			// 	time: {
+			// 		date: newDate,
+			// 		hours: hhours, //UseLess /* Date Type Contains date and time */
+			// 		minutes: mminutes
+			// 	},
+			// 	porpouses: [ service ]
+			// }
+		);
+		console.log(newDate.getHours());
+		console.log(newAppointment);
+		const appointment = await newAppointment.save();
+		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+		//res.json('success');
+		// booked(businessId, newDate, {
+		//   _start: { _hour: Number(12), _minute: Number(10) },
+		//   _end: { _hour: Number(13), _minute: Number(10) }
+		// });
+		booked(businessId, newDate, {
+			_start: newAppointment.time.start,
+			_end: newAppointment.time.end
+		});
+
+		const thisAppointment = await Appointments.findById(appointmentId);
+
+		if (thisAppointment.time.end._minute === null) {
+			thisAppointment.time.end._minute = 0;
+		}
+
+		console.log(thisAppointment.business_id);
+		console.log(thisAppointment.time.date);
+		console.log(thisAppointment.time.start);
+		console.log(thisAppointment.time.end);
+
+		const QueryRes = await Appointments.deleteOne({ _id: appointmentId }, (err) => {
+			if (err) {
+				res.send(err);
+			}
+		});
+
+		const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
+			_start: {
+				_hour: Number(thisAppointment.time.start._hour),
+				_minute: Number(thisAppointment.time.start._minute)
+			},
+			_end: {
+				_hour: Number(thisAppointment.time.end._hour),
+				_minute: Number(thisAppointment.time.end._minute)
+			}
+		});
+		res.status(200).json('suceess');
+	},
+
 	deleteAppointment: async (req, res, next) => {
 		const { appointmentId } = req.body;
 		const thisAppointment = await Appointments.findById(appointmentId);
@@ -114,7 +198,7 @@ module.exports = {
 	},
 
 	getSubCategories: async (req, res, next) => {
-		const QueryRes = await Businesses.findById(req.params.businessId, 'profile.purposes', function(err, usr) {});
+		const QueryRes = await Businesses.findById(req.params.businessId, 'profile.purposes', function (err, usr) { });
 		console.log(req.params.businessId);
 
 		//const subCategories = await Categories.findOne(category._id);
@@ -196,9 +280,109 @@ module.exports = {
 			{ new: true }
 		);
 		if (appointment) {
-			const data = await getAppointmentData([ appointment ]);
+			const data = await getAppointmentData([appointment]);
 			res.status(200).json({ appointment: data[0] });
 		}
+	},
+
+	CheckEdit: async (req, res, next) => {
+		const appointmentId = req.params.appointmentId;
+		// const businessId = "5cee375f0d1aca9031f57708";
+		// const date = "2019-07-22T21:00:00.000Z";
+		// const startMinutes = 25;
+		// const startHours = 15;
+		// const endMinutes = 50;
+		// const endHours = 15;
+		const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+		const dayNum = new Date("2019-07-22T21:00:00.000Z").getDay()
+
+
+		const currentAppoointment = await Appointments.findById(appointmentId);
+
+		//console.log("currentAppointment ", currentAppoointment);
+
+		const businessId = currentAppoointment.business_id;
+		const date = currentAppoointment.time.date;
+		const startMinutes = currentAppoointment.time.start._minute;
+		const startHours = currentAppoointment.time.start._hour;
+		const endMinutes = currentAppoointment.time.end._minute;
+		const endHours = currentAppoointment.time.end._hour;
+
+
+		//console.log(businessId, date, startHours, startMinutes, endHours, endMinutes)
+
+
+
+
+		const business = await Businesses.find({ '_id': businessId }, `break_time working_hours`);
+
+		const todaySch = business[0].working_hours.filter(word => word.day === day[dayNum]);
+		//console.log(business[0].break_time)
+
+
+
+		var tomorow = new Date();
+		tomorow.setDate(tomorow.getDate() + 1)
+
+		const appointmentAfter = await Appointments.find({
+			business_id: businessId, 'time.date': date,
+			$or: [
+				{
+					$and: [
+						{ 'time.start._hour': { '$gte': endHours } }
+						, { 'time.start._minute': { '$gte': endMinutes } }]
+				}
+				, {
+					$and: [
+						{ 'time.start._hour': { '$gt': endHours } }
+						, { 'time.start._minute': { '$gte': 0 } }]
+				}
+			]
+		}).sort([['time.start._hour', 1], ['time.start._minute', 1]]).limit(1)
+
+
+		const appointmentBefore = await Appointments.find({
+			business_id: businessId, 'time.date': date,
+			$or: [
+				{
+					$and: [
+						{ 'time.end._hour': { '$lte': startHours } }
+						, { 'time.end._minute': { '$lte': startMinutes } }]
+				}
+				, {
+					$and: [
+						{ 'time.end._hour': { '$lt': startHours } }
+						, { 'time.end._minute': { '$lte': 0 } }]
+				}
+			]
+		}).sort([['time.start._hour', -1], ['time.start._minute', -1]]).limit(1)
+		//console.log(appointment[0].time.start._minute)
+		var TimeAfter = null;
+		var TimeBefore = null;
+		//console.log(appointment[0].time.start._hour)
+		if (!appointmentAfter[0]) {
+			//todaySch.from
+			//console.log(todaySch[0].from.getHours())
+			TimeAfter = (((todaySch[0].until.getHours() * 60) + todaySch[0].until.getMinutes()) - (startHours * 60 + startMinutes))
+		} else {
+			//console.log((startHours * 60 + startMinutes))
+			TimeAfter = (((appointmentAfter[0].time.start._hour * 60) + appointmentAfter[0].time.start._minute) - (startHours * 60 + startMinutes))
+		}
+
+		if (!appointmentBefore[0]) {
+			//todaySch.from
+			//console.log(todaySch[0].from.getHours(), todaySch[0].from.getMinutes());
+
+			TimeBefore = (((endHours * 60) + endMinutes) - (todaySch[0].from.getHours() * 60 + todaySch[0].from.getMinutes()))
+		} else {
+			//console.log((startHours * 60) + startMinutes);
+			TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
+		}
+		const currentAppointmentTime = (((endHours * 60) + endMinutes) - ((startHours * 60) + startMinutes))
+		TimeTotal = TimeAfter + TimeBefore - currentAppointmentTime;
+
+		//console.log("appoint", currentAppointmentTime)
+		res.json({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter })
 	}
 
 	// getBusinessAppointmentsByDate: async (req, res, next) => {
@@ -213,6 +397,8 @@ module.exports = {
 	// 	return res.json({ data });
 	// }
 };
+
+
 
 const getAppointmentData = async (appointments) => {
 	var data = [];

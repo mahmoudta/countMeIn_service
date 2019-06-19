@@ -718,20 +718,23 @@ module.exports = {
 	},
 	getServicesByBusiness: async (req, res, next) => {
 		const { id } = req.params;
-		const business = await Businesses.findById(id);
+		const business = await Businesses.findById(id).populate(
+			{
+				path: 'services.service_id',
+				populate: { path: 'services' }
+			}
+		)
+		console.log(business)
 		if (!business) return res.status(404).json({ error: 'business not found' });
-		const ids = await business.profile.services.map((service) => {
+		const ids = await business.services.map((service) => {
 			return service.service_id;
-		});
-		const category = await Categories.findById(business.profile.category_id);
+		})
 
-		const services = await category.subCats.filter((elem) => {
-			return ids.includes(elem._id.toString());
-		});
 
-		if (!services) return res.status(404).json({ error: 'an error occurred' });
-		res.status(200).json({ services });
+		//if (!services) return res.status(404).json({ error: 'an error occurred' });
+		res.status(200).json({ ids });
 	},
+
 	setfull: async (req, res, next) => {
 		const users = await Categories.aggregate([
 			{
@@ -742,5 +745,6 @@ module.exports = {
 			}
 		]);
 		res.json({ users });
-	}
+	},
+
 };

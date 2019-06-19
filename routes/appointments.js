@@ -5,7 +5,9 @@ const passportConf = require('../passport');
 const passportJWT = passport.authenticate('jwt', { session: false });
 
 //router.route('/freeTimeByPurpose/:b_id&:c_id&p_id').get(appointmentCtl.freeTimeByPurpose);
+router.route('/CheckEdit/:appointmentId').get(appointmentCtl.CheckEdit);
 router.route('/setAppointment').post(passportJWT, appointmentCtl.setAppointment);
+router.route('/setAppointmentAndDelete').post(passportJWT, appointmentCtl.setAppointmentAndDelete);
 router.route('/deleteAppointment').post(appointmentCtl.deleteAppointment);
 router.route('/getClientsAppointments/:clientId').get(appointmentCtl.getClientsAppointments);
 router.route('/getBusinessAppointments/:businessId').get(appointmentCtl.getBusinessAppointments);
