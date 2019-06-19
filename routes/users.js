@@ -18,6 +18,5 @@ router.route('/databasetest').get(userCtl.databasetest);
 router.route('/getbusinesses').get(userCtl.getAllBusinesses);
 router.route('/getUpcommingAppointments').get(passportJWT, userCtl.getUpcommingAppointments);
 router.route('/getFallowedBusinesses').get(passportJWT, userCtl.getFallowedBusinesses);
-
-router.route('/appendNotification').post(passportJWT, userCtl.appendNotification);
+//router.route('/appendNotification').post(passportJWT, userCtl.appendNotification);
 module.exports = router;
