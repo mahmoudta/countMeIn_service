@@ -91,7 +91,7 @@ module.exports = {
 		const category = await Categories.findOneAndUpdate(
 			{ _id: service.parent_category },
 			{ $pull: { services: id } },
-			{ $new: true, useFindAndModify: false }
+			{ new: true, useFindAndModify: false }
 		).populate('services', '-parent_category');
 
 		res.status(200).json({ category });

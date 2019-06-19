@@ -320,25 +320,30 @@ module.exports = {
 			};
 		});
 		const updateBusiness = {
-			profile       : {
-				name        : name,
-				img         : !isEmpty(img) ? img : '',
-				location    : {
+			$set          : {
+				'profile.name'        : name,
+				'profile.img'         : !isEmpty(img) ? img : '',
+				'profile.location'    : {
 					street      : !isEmpty(street) ? street : '',
 					city        : !isEmpty(city) ? city : '',
 					building    : !isEmpty(building) ? Number(building) : 0,
 					postal_code : !isEmpty(postal_code) ? Number(postal_code) : 0
 				},
-				phone       : phone,
-				description : !isEmpty(description) ? description : ''
+				'profile.phone'       : phone,
+				'profile.description' : !isEmpty(description) ? description : ''
 			},
+
 			services      : NewServices,
 			categories    : NewCategories,
 			working_hours : await fillTime(),
 			break_time    : !isEmpty(breakTime) ? breakTime : 10
 		};
 
-		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness, { new: true })
+		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness, {
+			setDefaultsOnInsert : true,
+			new                 : true,
+			useFindAndModify    : false
+		})
 			.populate('categories')
 			.populate('services.service_id', 'title')
 			.populate('customers.customer_id', 'profile');
@@ -576,28 +581,47 @@ module.exports = {
 				}
 			},
 			{ $unwind: '$services' },
-
 			{
-				$group : {
-					_id      : {
-						date        : '$date',
-						business_id : '$business_id'
-					},
-
-					services : { $push: '$services' },
-					count    : { $sum: 1 }
+				$addFields : {
+					businessService : '$services'
 				}
 			},
 			{
-				$project : {
-					_id         : 0,
-					business_id : '$_id.business_id',
-					date        : '$_id.date',
-					totalCost   : { $sum: '$services.cost' },
-					totalTime   : { $sum: '$services.time' },
-					count       : '$count'
+				$lookup : {
+					from         : 'services',
+					localField   : 'services.service_id',
+					foreignField : '_id',
+					as           : 'services'
+				}
+			},
+			{ $unwind: '$services' },
+			{
+				$addFields : {
+					'businessService.title' : '$services.title'
 				}
 			}
+
+			// {
+			// 	$group : {
+			// 		_id      : {
+			// 			date        : '$date',
+			// 			business_id : '$business_id'
+			// 		},
+
+			// 		services : { $push: '$services' },
+			// 		count    : { $sum: 1 }
+			// 	}
+			// },
+			// {
+			// 	$project : {
+			// 		_id         : 0,
+			// 		business_id : '$_id.business_id',
+			// 		date        : '$_id.date',
+			// 		totalCost   : { $sum: '$services.cost' },
+			// 		totalTime   : { $sum: '$services.time' },
+			// 		count       : '$count'
+			// 	}
+			// }
 
 			// }
 			// }

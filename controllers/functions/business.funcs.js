@@ -100,3 +100,70 @@ module.exports.createReview = async (appointment_id) => {
 		appointment_id : mongoose.Types.ObjectId(appointment_id)
 	}).save();
 };
+
+module.exports.servicesDayStatistics = async () => {
+	const result = await Appointments.aggregate([
+		{ $match: { status: 'done' } },
+		{ $unwind: '$services' },
+		/* stage to save the service_id before the join */
+		{
+			$addFields : {
+				mainService : '$services'
+			}
+		},
+		/* stage to join from business with the service to get the cost and the time */
+		{
+			$lookup : {
+				from         : 'businesses',
+				localField   : 'services',
+				foreignField : 'services.service_id',
+				as           : 'services'
+			}
+		},
+		/* stage to to get the join services[0]{which it a document of join and save it as a real document} */
+		{
+			$addFields : {
+				allservices : { $arrayElemAt: [ '$services', 0 ] }
+			}
+		},
+		/* the stage to filter the results and keep the wanted varibales only */
+		{
+			$project : {
+				date        : '$time.date',
+				business_id : '$business_id',
+				services    : {
+					$filter : {
+						input : '$allservices.services',
+						as    : 'item',
+						cond  : {
+							$eq : [ '$$item.service_id', '$mainService' ]
+						}
+					}
+				}
+			}
+		},
+		{ $unwind: '$services' },
+
+		{
+			$group : {
+				_id      : {
+					date        : '$date',
+					business_id : '$business_id'
+				},
+
+				services : { $push: '$services' },
+				count    : { $sum: 1 }
+			}
+		},
+		{
+			$project : {
+				_id         : 0,
+				business_id : '$_id.business_id',
+				date        : '$_id.date',
+				totalCost   : { $sum: '$services.cost' },
+				totalTime   : { $sum: '$services.time' },
+				count       : '$count'
+			}
+		}
+	]);
+};

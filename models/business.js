@@ -119,16 +119,19 @@ var mongoose = require('mongoose'),
 
 				rating      : {
 					rating_sum         : {
-						type    : Number,
-						default : 0
+						type     : Number,
+						required : true,
+						default  : 0
 					},
 					rating_count       : {
-						type    : Number,
-						default : 0
+						type     : Number,
+						required : true,
+						default  : 0
 					},
 					recommendation_sum : {
-						type    : Number,
-						default : 0
+						type     : Number,
+						required : true,
+						default  : 0
 					}
 				},
 
