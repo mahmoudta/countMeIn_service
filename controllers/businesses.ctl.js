@@ -3,13 +3,21 @@ const { JWT_SECRET } = require('../consts');
 
 const Businesses = require('../models/business');
 const Categories = require('../models/category');
+const Appointments = require('../models/appointment');
+const Reviews = require('../models/review');
 const Services = require('../models/service');
 const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
 const { getFullserviceData } = require('../utils/categories.utils');
 const { aftereditingbusnessworkinghours } = require('./algs/free-alg');
 const isEmpty = require('lodash/isEmpty');
-const { getbusinessAvgRatingByDateRange, rateIncrement, profileViewIncerement } = require('./functions/business.funcs');
+const {
+	getbusinessAvgRatingByDateRange,
+	rateIncrement,
+	profileViewIncerement,
+	unFollowClickIncerement,
+	followClickIncrement
+} = require('./functions/business.funcs');
 
 const mongoose = require('mongoose');
 
@@ -399,7 +407,7 @@ module.exports = {
 		};
 		/* push business id to business */
 		const updated_user = await Users.findOneAndUpdate({ _id: req.user._id }, userUpdate);
-
+		followClickIncrement(business_id);
 		// if (!updated_business) return res.status(404).json({ error: 'an error occurred' });
 
 		res.status(200).json({ isFollower: true });
@@ -437,7 +445,7 @@ module.exports = {
 
 		/* push business id to business */
 		const updated_user = await Users.findOneAndUpdate({ _id: req.user._id }, userUpdate);
-
+		unFollowClickIncerement(business_id);
 		res.status(200).json({ isFollower: false });
 	},
 	getAllCustomers               : async (req, res, next) => {
@@ -501,9 +509,112 @@ module.exports = {
 
 		res.status(200).json({ business });
 	},
+	getReviewsForProfilePage      : async (req, res, next) => {
+		const options = {
+			page      : req.params.page,
+			limit     : 10,
+			collation : {
+				locale : 'en'
+			},
+			sort      : { 'customer_review.created_time': -1 },
+			select    : '-business_review',
+			populate  : { path: 'appointment_id', select: 'services', populate: { path: 'services', select: 'title' } }
+		};
+		const appointments = await Appointments.find({ business_id: req.params.business_id, status: 'done' }, '_id');
+		// res.json({ reviews });
+		const reviews = await Reviews.paginate(
+			{ appointment_id: { $in: appointments }, 'customer_review.isRated': true },
+			options
+		);
+		res.json({ reviews });
+	},
 	setfull                       : async (req, res, next) => {
-		const test = rateIncrement('5cedfa110a209a0eddbb2bbb');
-		res.json(test);
+		// const test = rateIncrement('5cedfa110a209a0eddbb2bbb');
+		// res.json(test);
+		const convert = (_id) => {
+			console.log(_id);
+			return mongoose.Types.ObjectId(_id);
+		};
+		const result = await Appointments.aggregate([
+			{ $match: { status: 'done' } },
+			{ $unwind: '$services' },
+			/* stage to save the service_id before the join */
+			{
+				$addFields : {
+					mainService : '$services'
+				}
+			},
+			/* stage to join from business with the service to get the cost and the time */
+			{
+				$lookup : {
+					from         : 'businesses',
+					localField   : 'services',
+					foreignField : 'services.service_id',
+					as           : 'services'
+				}
+			},
+			/* stage to to get the join services[0]{which it a document of join and save it as a real document} */
+			{
+				$addFields : {
+					allservices : { $arrayElemAt: [ '$services', 0 ] }
+				}
+			},
+			/* the stage to filter the results and keep the wanted varibales only */
+			{
+				$project : {
+					date        : '$time.date',
+					business_id : '$business_id',
+					services    : {
+						$filter : {
+							input : '$allservices.services',
+							as    : 'item',
+							cond  : {
+								$eq : [ '$$item.service_id', '$mainService' ]
+							}
+						}
+					}
+				}
+			},
+			{ $unwind: '$services' },
+
+			{
+				$group : {
+					_id      : {
+						date        : '$date',
+						business_id : '$business_id'
+					},
+
+					services : { $push: '$services' },
+					count    : { $sum: 1 }
+				}
+			},
+			{
+				$project : {
+					_id         : 0,
+					business_id : '$_id.business_id',
+					date        : '$_id.date',
+					totalCost   : { $sum: '$services.cost' },
+					totalTime   : { $sum: '$services.time' },
+					count       : '$count'
+				}
+			}
+
+			// }
+			// }
+			// {
+			// 	$group : {
+			// 		_id      : {
+			// 			date        : '$time.date',
+			// 			business_id : '$business_id'
+			// 		},
+			// 		services : { $push: '$services' },
+			// 		count    : { $sum: 1 }
+			// 	}
+			// }
+		]);
+		// const business = await Businesses.find({}).populate('insights');
+		res.json({ result });
+
 		// const ressponse = await getbusinessAvgRatingByDateRange('5cedfa110a209a0eddbb2bbb');
 		// res.json({ ressponse });
 		// const users = await Categories.aggregate([

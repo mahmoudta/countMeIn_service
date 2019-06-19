@@ -32,11 +32,14 @@ setInterval(async function() {
 var j = schedule.scheduleJob('1 0 * * *', async function() {
 	var momentdate = moment().format('l');
 	var date = new Date(momentdate);
-	console.log(date);
-	const vvv = await FreeTime.updateMany(
-		{
-			// $match : { 'dates.day': { $lt: date } }
-		},
-		{ $pull: { dates: { day: { $lt: date } } } }
-	);
+	// console.log(date);
+	// const vvv = await FreeTime.updateMany(
+	// 	{
+	// 		// $match : { 'dates.day': { $lt: date } }
+	// 	},
+	// 	{ $pull: { dates: { day: { $lt: date } } } }
+	// );
+
+	/* Statistics Update  */
+	/* Today will get the rate of yesterday as a start point */
 });

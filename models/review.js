@@ -1,3 +1,5 @@
+const mongoosePaginate = require('mongoose-paginate-v2');
+
 var mongoose = require('mongoose'),
 	review = new mongoose.Schema({
 		_id             : { type: mongoose.Schema.Types.ObjectId },
@@ -99,7 +101,7 @@ var mongoose = require('mongoose'),
 			}
 		}
 	});
-
+review.plugin(mongoosePaginate);
 var Review = mongoose.model('Review', review);
 
 module.exports = Review;

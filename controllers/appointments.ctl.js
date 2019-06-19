@@ -13,7 +13,7 @@ const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const isEmpty = require('lodash/isEmpty');
-const { createReview } = require('./functions/business.funcs');
+const { createReview, insightsRateIncrement } = require('./functions/business.funcs');
 
 module.exports = {
 	setAppointment                : async (req, res, next) => {
@@ -55,8 +55,7 @@ module.exports = {
 			// 	porpouses: [ service ]
 			// }
 		);
-		console.log(newDate.getHours());
-		console.log(newAppointment);
+
 		const appointment = await newAppointment.save();
 		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
 		//res.json('success');
@@ -261,7 +260,7 @@ module.exports = {
 	setCustomerReview             : async (req, res, next) => {
 		const { comm, resp, Qos, Vom, feedback, appointment_id, rec } = req.body;
 		var avg = (comm + resp + Qos + Vom) / 4;
-		console.log('avg', avg);
+
 		let update = {
 			$set : {
 				customer_review : {
@@ -283,7 +282,7 @@ module.exports = {
 			appointment_id  : 1
 		}).populate('appointment_id');
 		if (!review) return res.json({ error: 'error accourd' });
-
+		insightsRateIncrement(review.appointment_id.business_id, avg, rec);
 		res.status(200).json({ success: 'review saved successffuly' });
 	},
 

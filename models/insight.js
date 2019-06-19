@@ -23,6 +23,14 @@ var mongoose = require('mongoose'),
 		profile_views      : {
 			type    : Number,
 			default : 0
+		},
+		follow             : {
+			type    : Number,
+			default : 0
+		},
+		unfollow           : {
+			type    : Number,
+			default : 0
 		}
 	});
 

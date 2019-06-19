@@ -1,4 +1,5 @@
 const Review = require('../models/review');
+const mongoosePaginate = require('mongoose-paginate-v2');
 
 var mongoose = require('mongoose'),
 	appointment = new mongoose.Schema(
@@ -43,7 +44,7 @@ appointment.virtual('review', {
 	justOne      : true
 	// options      : { sort: { name: -1 }, limit: 5 } // Query options, see http://bit.ly/mongoose-query-options
 });
-
+appointment.plugin(mongoosePaginate);
 var Appointment = mongoose.model('Appointment', appointment);
 
 module.exports = Appointment;
