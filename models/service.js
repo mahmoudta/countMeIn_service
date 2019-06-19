@@ -25,18 +25,7 @@ const mongoose = require('mongoose'),
 			default : 0
 		}
 	});
-service.post('save', async function(category, next) {
-	/* delete all the services related to deleted category */
-	const newCategory = await Categories.findOneAndUpdate(
-		{ _id: parent_category },
-		{
-			$push : { services: saved._id }
-		},
-		{ $new: true, useFindAndModify: false }
-	).populate('services', '-parent_category');
-	// if(newCategory)
-	// await Categories.updateOne({ parent_category: category._id });
-});
+
 var Service = mongoose.model('Service', service);
 
 module.exports = Service;

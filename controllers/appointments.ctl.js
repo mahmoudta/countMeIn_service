@@ -14,6 +14,7 @@ const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const isEmpty = require('lodash/isEmpty');
+const { createReview, insightsRateIncrement } = require('./functions/business.funcs');
 
 module.exports = {
 	setAppointment: async (req, res, next) => {
@@ -55,8 +56,7 @@ module.exports = {
 			// 	porpouses: [ service ]
 			// }
 		);
-		console.log(newDate.getHours());
-		console.log(newAppointment);
+
 		const appointment = await newAppointment.save();
 		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
 		//res.json('success');
@@ -239,6 +239,7 @@ module.exports = {
 				}
 				break;
 			case 'out':
+				await createReview(appointment_id);
 				query = { $set: { status: 'done', 'time.check_out': new Date(time) } };
 				sendNotify(appointment_id);
 				break;
@@ -259,8 +260,9 @@ module.exports = {
 		res.status(200).json({ appointment });
 	},
 	setCustomerReview: async (req, res, next) => {
-		const { comm, resp, Qos, Vom, feedback, appointment_id, rec } = await req.body;
+		const { comm, resp, Qos, Vom, feedback, appointment_id, rec } = req.body;
 		var avg = (comm + resp + Qos + Vom) / 4;
+
 		let update = {
 			$set: {
 				customer_review: {
@@ -282,10 +284,9 @@ module.exports = {
 			appointment_id: 1
 		}).populate('appointment_id');
 		if (!review) return res.json({ error: 'error accourd' });
-
+		insightsRateIncrement(review.appointment_id.business_id, avg, rec);
 		res.status(200).json({ success: 'review saved successffuly' });
 	},
-
 
 	BusinessStatisticsHeader: async (req, res, next) => {
 		let allData = {};
@@ -388,12 +389,19 @@ module.exports = {
 
 		res.status(200).json({ reviews });
 	},
-	// createReviews                 : async (req, res, next) => {
-	// 	const appointments = await Appointments.find({}).populate('review');
 
-	// 	res.json({ appointments });
-	// }
+	getReviewAsCustomer: async (req, res, next) => {
+		const reviews = await Appointments.find({ client_id: req.user._id, status: 'done' })
+			.populate('review', 'customer_review')
+			// .populate('client_id', 'profile')
+			.populate('business_id', 'profile')
+			.populate('services', 'title')
+			.sort({ 'time.check_out': -1, 'time.start._hour': -1, 'time.start.minute': -1 });
 
+		if (!reviews) return res.json({ error: 'some error found during fetching' });
+
+		res.status(200).json({ reviews });
+	},
 	createReviews: async (req, res, next) => {
 		console.log('inside the reviews');
 		const appointments = await Appointments.find({ status: 'done' });
@@ -417,8 +425,6 @@ module.exports = {
 		res.status(202).json({ success: false })
 
 	},
-
-
 
 	// BusinessStatisticsHeader      : async (req, res, next) => {
 	// 	let allData = {};
@@ -497,5 +503,3 @@ const getAppointmentData = async (appointments) => {
 	}
 	return await data;
 };
-
-
