@@ -421,10 +421,15 @@ time_range.prototype.slice = function(length, minutes_between_appointment, minse
 
 	if (!isEmpty(tmp)) {
 		tmp[0]._value += valuefornospaces;
-
+		var temp = tmp.pop();
 		if (remainintimerange < minsevicetime) {
-			if (remainintimerange > minutes_between_appointment) tmp.pop();
+			if (remainintimerange > minutes_between_appointment) {
+				if (remainintimerange > 3) temp._value -= valuefornospaces / 2;
+			} else {
+				temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
+			}
 		}
+		tmp.push(temp);
 	}
 
 	return tmp;
@@ -1066,13 +1071,13 @@ async function mergewithpreferhours(preferhours, freetime, value) {
 	}
 	return {};
 }
-async function pickthehighestifsliced(freetime) {
+async function pickthehighestifsliced(freetime, numberToReturnADay) {
 	for (let i = 0; i < freetime.length; i++) {
 		var tmparray = [];
 		const tmp = freetime[i].Free.sort(function(x, y) {
 			return compare2timerange(x, y);
 		});
-		for (let j = 0; j < 2 && j < tmp.length; j++) {
+		for (let j = 0; j < numberToReturnADay && j < tmp.length; j++) {
 			tmparray.push(tmp[j]);
 		}
 		freetime[i].Free = tmparray;
@@ -1498,6 +1503,7 @@ module.exports = {
 		customerid,
 		preferhours = 1,
 		checkifcustomerhavebusness = true,
+		numberToReturnADay = 2,
 		customerdesidedates = false,
 		datefrom = false,
 		dateuntil = false
@@ -1574,7 +1580,7 @@ module.exports = {
 		if (!(preferhours === false)) await mergewithpreferhours(preferhours, tempfreetime, valueofpreferhours);
 
 		await mergewithbusnessbusnessbusyhour(businessid, tempfreetime, valueofbusnessbusyhours);
-		if (prevelaged == true) await pickthehighestifsliced(tempfreetime);
+		if (prevelaged == true) await pickthehighestifsliced(tempfreetime, numberToReturnADay);
 		else
 			await pickthehighestifnotsliced(
 				tempfreetime,
