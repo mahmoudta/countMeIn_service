@@ -29,7 +29,7 @@ signInToken = (user, business_id = '') => {
 
 module.exports = {
 	signUp: async (req, res, next) => {
-		console.log('signUp Called!!');
+		console.log("signUp Called!!");
 
 		const { email, password, first_name, last_name, imgUrl_, phone_ } = req.value.body;
 		console.log("email", email, "password", password, "first", first_name, "last", last_name, "img ", imgUrl_, phone_)
@@ -60,7 +60,7 @@ module.exports = {
 	},
 
 	signIn: async (req, res, next) => {
-		console.log('signIn Called!!');
+		console.log("signIn Called!!");
 		const business = await Businesses.findOne({ owner_id: req.user._id });
 		let token;
 		if (business) {
@@ -79,19 +79,19 @@ module.exports = {
 	},
 
 	secret: async (req, res, next) => {
-		console.log('secret Called!!');
+		console.log("secret Called!!");
 		// console.log(req.user);
 		// console.log(req.user.user);
 	},
 
 	test: async (req, res, next) => {
-		console.log('Test ifcanbook Here');
+		console.log("Test ifcanbook Here");
 		var timerange = {
 			_start: { _hour: 11, _minute: 00 },
 			_end: { _hour: 18, _minute: 00 }
 		};
 		var date = await new Date(2019, 3, 28); // 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		const test1 = await ifcanbook('5ca5210fa3e1e23000ac29dd', date, timerange);
+		const test1 = await ifcanbook("5ca5210fa3e1e23000ac29dd", date, timerange);
 
 		res.status(200).json({ result: test1 });
 	},
@@ -170,7 +170,7 @@ module.exports = {
 	},
 
 	getAllBusinesses: async (req, res, next) => {
-		const businesses = await Businesses.find({}, 'profile');
+		const businesses = await Businesses.find({}, "profile");
 		res.json({ businesses });
 	}
 };
