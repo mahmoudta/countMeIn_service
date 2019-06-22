@@ -1,3 +1,4 @@
-require('./database')
-require('./server')
-require('./sms')
+require('./database');
+require('./server');
+require('./sms');
+require('./controllers/cronJobs');

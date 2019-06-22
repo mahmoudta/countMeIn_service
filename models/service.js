@@ -1,6 +1,7 @@
+const Categories = require('./category');
 const mongoose = require('mongoose'),
 	service = new mongoose.Schema({
-		_id: { type: mongoose.Schema.Types.ObjectId, ref: 'services' },
+		_id: { type: mongoose.Schema.Types.ObjectId },
 		parent_category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
 		title: {
 			type: String,
@@ -24,6 +25,7 @@ const mongoose = require('mongoose'),
 			default: 0
 		}
 	});
+
 var Service = mongoose.model('Service', service);
 
 module.exports = Service;

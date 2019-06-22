@@ -10,8 +10,8 @@ const User = require('./models/user');
 passport.use(
 	new JwtStrategy(
 		{
-			jwtFromRequest: ExtractJwt.fromHeader('authorization'),
-			secretOrKey: JWT_SECRET
+			jwtFromRequest : ExtractJwt.fromHeader('authorization'),
+			secretOrKey    : JWT_SECRET
 		},
 		async (payload, done) => {
 			try {
@@ -52,7 +52,7 @@ passport.use(
 passport.use(
 	new LocalStrategy(
 		{
-			usernameField: 'email'
+			usernameField : 'email'
 		},
 		async (email, password, done) => {
 			try {
@@ -79,25 +79,21 @@ passport.use(
 	'googleToken',
 	new GooglePlusTokenStrategy(
 		{
-			clientID: '898502471554-egsp6qj1b9fhd9v6ultp6ar722n3qg01.apps.googleusercontent.com',
-			clientSecret: 'abjfsTOUp5BaKS-G4K8lEWb7'
+			clientID     : '898502471554-egsp6qj1b9fhd9v6ultp6ar722n3qg01.apps.googleusercontent.com',
+			clientSecret : 'abjfsTOUp5BaKS-G4K8lEWb7'
 		},
 		async (accessToken, refreshToken, profile, done) => {
 			try {
-				console.log('accessToken', accessToken);
-				console.log('refreshToken', refreshToken);
-				console.log('profile', profile);
-
 				/* IF USER EXISTS */
 				const existingUser = await User.findOne({ 'google.id': profile.id });
 				if (existingUser) return done(null, existingUser);
 
 				/* IF NEW ACCOUNT */
 				const newUser = new User({
-					method: 'google',
-					email: profile.emails[0].value,
-					google: {
-						id: profile.id
+					method : 'google',
+					email  : profile.emails[0].value,
+					google : {
+						id : profile.id
 					}
 				});
 				await newUser.save();

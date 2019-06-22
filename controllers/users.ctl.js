@@ -1,6 +1,7 @@
 const JWT = require('jsonwebtoken');
 const Users = require('../models/user');
 const Businesses = require('../models/business');
+var FreeTime = require('../models/freeTime');
 const Categories = require('../models/category');
 const moment = require('moment');
 const { JWT_SECRET } = require('../consts');
@@ -8,6 +9,7 @@ const { booked } = require('./algs/free-alg');
 const { smart } = require('./algs/free-alg');
 const { ifcanbook } = require('./algs/free-alg');
 const { freeAlg } = require('./algs/free-alg');
+const { aftereditingbusnessworkinghours } = require('./algs/free-alg');
 const { zeroPad } = require('../utils/appointment.utils');
 const isEmpty = require('lodash.isempty');
 const mongoose = require('mongoose');
@@ -29,10 +31,9 @@ signInToken = (user, business_id = '') => {
 
 module.exports = {
 	signUp: async (req, res, next) => {
-		console.log("signUp Called!!");
+		console.log('signUp Called!!');
 
 		const { email, password, first_name, last_name, imgUrl_, phone_ } = req.value.body;
-		console.log("email", email, "password", password, "first", first_name, "last", last_name, "img ", imgUrl_, phone_)
 		const user = await Users.findOne({ email });
 		if (user) {
 			return res.status(403).json({ message: 'user already exist' });
@@ -44,6 +45,7 @@ module.exports = {
 			local: {
 				password: password
 			},
+
 			profile: {
 				name: {
 					first: first_name,
@@ -51,7 +53,6 @@ module.exports = {
 				},
 				imgUrl: imgUrl_,
 				phone: phone_
-
 			}
 		});
 		await newUser.save();
@@ -60,7 +61,7 @@ module.exports = {
 	},
 
 	signIn: async (req, res, next) => {
-		console.log("signIn Called!!");
+		console.log('signIn Called!!');
 		const business = await Businesses.findOne({ owner_id: req.user._id });
 		let token;
 		if (business) {
@@ -68,7 +69,6 @@ module.exports = {
 		} else {
 			token = signInToken(req.user);
 		}
-
 		// const isowner = business ? true : false;
 		res.status(200).json({ token });
 	},
@@ -79,43 +79,41 @@ module.exports = {
 	},
 
 	secret: async (req, res, next) => {
-		console.log("secret Called!!");
+		console.log('secret Called!!');
 		// console.log(req.user);
 		// console.log(req.user.user);
 	},
 
 	test: async (req, res, next) => {
-		console.log("Test ifcanbook Here");
-		var timerange = {
-			_start: { _hour: 11, _minute: 00 },
-			_end: { _hour: 18, _minute: 00 }
-		};
-		var date = await new Date(2019, 3, 28); // 2019/04/14 => "2019-04-13T21:00:00.000Z" ,months start from 0 so (april = month[3] )
-		const test1 = await ifcanbook("5ca5210fa3e1e23000ac29dd", date, timerange);
-
-		res.status(200).json({ result: test1 });
+		//const date = new Date(2019, 5, 14);
+		//console.log(date);
+		// var momentdate = moment().add(1, 'days').format('l');
+		// var date = new Date(momentdate);
+		// console.log(date);
+		// var vvv = await FreeTime.updateMany(
+		// 	{
+		// 		// $match : { 'dates.day': { $lt: date } }
+		// 	},
+		// 	{ $pull: { dates: { day: { $lt: date } } } }
+		// );
+		//const test1 = await aftereditingbusnessworkinghours('5cedfa110a209a0eddbb2bbb', array);
+		//if (vvv) res.status(200).json({ vvv });
 	},
 	booktest: async (req, res, next) => {
 		// console.log('book Test Here');
 		const test1 = await smart(
 			'5cedfa110a209a0eddbb2bbb',
-			['5cedf5403e3dad305192241d'],
-			'5cedf44d0a209a0eddbb2bb7', 1
+			['5cedf5813e3dad305192241e'],
+			'5cedf3d20a209a0eddbb2bb2',
+			1
 		);
 		res.status(200).json({ test1 });
 	},
 	databasetest: async (req, res, next) => {
 		console.log('database Test Here');
-		var date1 = await new Date(2019, 4, 20);
-		var date2 = await new Date(2019, 5, 27);
-		const test1 = await freeAlg(
-			'5cedfa110a209a0eddbb2bbb',
-			['5cedf5403e3dad305192241d'],
-			date1,
-			date2,
-			1,
-			'5cedf44d0a209a0eddbb2bb7'
-		);
+		var date1 = await new Date(2019, 5, 12);
+		var date2 = await new Date(2019, 5, 12);
+		const test1 = await freeAlg('5cedfa110a209a0eddbb2bbb', ['5cedf5813e3dad305192241e'], date1, date2);
 		res.status(200).json({ test1 });
 	},
 	getUpcommingAppointments: async (req, res, next) => {
@@ -137,7 +135,18 @@ module.exports = {
 		console.log('queryQ', QueryRes);
 
 		var promise = QueryRes.map(async (appointment, i) => {
-			const BusinessName = appointment.business_id.profile.name;
+			const BusinessProfile = await Businesses.findById(appointment.business_id);
+			// let ServiceNames = appointment.services.map(async serviceTemp => {
+			//   console.log(serviceTemp);
+			//   const SingleName = await Categories.findById({ serviceTemp });
+			//   console.log("catname");
+			//   console.log(SingleName);
+
+			//   return SingleName;
+			// });
+			// ServiceNames = await Promise.all(innerPromise);
+			// console.log("ServiceName", ServiceNames);
+			const BusinessName = BusinessProfile.profile.name;
 			let shour = appointment.time.start._hour;
 			let sminute = zeroPad(appointment.time.start._minute, 2);
 			let ehour = appointment.time.end._hour;
@@ -156,22 +165,39 @@ module.exports = {
 			//console.log({ BusinessProfile });
 			return ResArray;
 		});
-		console.log('res', ResArray);
 		const FinalArray = await Promise.all(promise);
-		console.log('Final'.FinalArray);
+
 		res.json(FinalArray);
 	},
-
 	getFallowedBusinesses: async (req, res, next) => {
-		console.log(req.user._id);
 		const businesses = await Users.findOne({ _id: req.user._id }).populate('following', 'profile');
-		console.log(businesses.following);
 		res.json({ following: businesses.following });
 	},
 
 	getAllBusinesses: async (req, res, next) => {
-		const businesses = await Businesses.find({}, "profile");
+		const businesses = await Businesses.find({}, 'profile');
 		res.json({ businesses });
+	},
+
+	appendNotification: async (req, res, next) => {
+		const { title, type, my_business, appointment_id, status } = req.body;
+
+		if (!isEmpty(appointment_id)) {
+			const isAlreadyHere = await Users.find({
+				'notification.appointment_id': appointment_id,
+				'notification.status': status
+			});
+			if (isAlreadyHere) return res.status(200).json({ notifications: isAlreadyHere });
+		}
+		let update = {
+			$push: {
+				notification: { title, Type: type, my_business, appointment_id }
+			}
+		};
+		const user = await Users.findOneAndUpdate({ _id: req.user._id }, update, { new: true });
+		if (!user) return res.json({ error: 'error accourd' });
+
+		res.status(200).json({ notifications: user.notification });
 	}
 };
 
