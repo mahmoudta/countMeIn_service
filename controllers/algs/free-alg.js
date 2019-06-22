@@ -1317,7 +1317,7 @@ async function smartFunction(
 	const valueofpreferhours = business.schedule_settings.customer_prefered_period;
 	const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 	const days_to_return = business.schedule_settings.days_calculate_length;
-	const number_of_days_to_return = business.schedule_settings.max_appointment_response;
+	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
 
 	const servicearray = await business.services.filter(function(service) {
 		return services.includes(service.service_id.toString());
