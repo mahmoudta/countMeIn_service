@@ -140,13 +140,15 @@ module.exports = {
 			const BusinessName = appointment.business_id.profile.name;
 			let shour = appointment.time.start._hour;
 			let sminute = zeroPad(appointment.time.start._minute, 2);
+			let ehour = appointment.time.end._hour;
+			let eminute = zeroPad(appointment.time.end._minute, 2);
 			let thisdate = appointment.time.date;
 			const services = await Promise.all(
 				appointment.services.map(async (service) => {
 					return await ({ title: service.title, _id: service._id, cost: service.cost, time: service.time })
 				})
 			);
-			let time = shour.toString() + ':' + sminute.toString();
+			let time = shour.toString() + ':' + sminute.toString() + '-' + ehour.toString() + ':' + eminute.toString();
 			ResArray = [appointment.business_id._id, appointment._id, i + 1, BusinessName, time, thisdate, services];
 
 			//	ResArray.push(BusinessProfile.profile.name);

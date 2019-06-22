@@ -294,7 +294,6 @@ module.exports = {
 		// const endMinutes = 50;
 		// const endHours = 15;
 		const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-		const dayNum = new Date("2019-07-22T21:00:00.000Z").getDay()
 
 
 		const currentAppoointment = await Appointments.findById(appointmentId);
@@ -303,6 +302,8 @@ module.exports = {
 
 		const businessId = currentAppoointment.business_id;
 		const date = currentAppoointment.time.date;
+		const dayNum = new Date(date).getDay()
+		console.log("date", date)
 		const startMinutes = currentAppoointment.time.start._minute;
 		const startHours = currentAppoointment.time.start._hour;
 		const endMinutes = currentAppoointment.time.end._minute;
@@ -317,12 +318,32 @@ module.exports = {
 		const business = await Businesses.find({ '_id': businessId }, `break_time working_hours`);
 
 		const todaySch = business[0].working_hours.filter(word => word.day === day[dayNum]);
-		//console.log(business[0].break_time)
+
+		console.log(todaySch)
+		var breakTimeBefore = null;
+		var breakTimeAfter = null;
+		if (todaySch[0].break.isBreak) {
+			//break
+			console.log("found BREAK")
+			if (todaySch[0].break.until.getHours() < startHours && todaySch[0].break.until.getMinutes() < startMinutes) {
+				breakTimeBefore = todaySch[0].break;
+			} if (todaySch[0].break.from.getHours() > endHours && todaySch[0].break.from.getMinutes() > endMinutes) {
+				breakTimeAfter = todaySch[0].break;
+			}
+
+		}
 
 
 
-		var tomorow = new Date();
-		tomorow.setDate(tomorow.getDate() + 1)
+		var today = new Date();
+		var todayFlag = 0;
+		console.log("today", today)
+		//today.setHours(tomorow.getHours() + 1)
+		if (today.getDate() == date.getDate() && today.getFullYear() == date.getFullYear() && today.getDay() == date.getDay()) {
+			todayFlag = 1;
+		}
+
+
 
 		const appointmentAfter = await Appointments.find({
 			business_id: businessId, 'time.date': date,
@@ -361,28 +382,91 @@ module.exports = {
 		var TimeBefore = null;
 		//console.log(appointment[0].time.start._hour)
 		if (!appointmentAfter[0]) {
+			if (breakTimeAfter != null) {
+				console.log("!!BreakAfter True AppointmentAfter False", breakTimeAfter)
+				TimeAfter = (((breakTimeAfter.from.getHours() * 60) + breakTimeAfter.from.getMinutes()) - (startHours * 60 + startMinutes))
+			} else {
+				console.log("BreakAfter False appointmmentAfter False todaySch!!")
+				TimeAfter = (((todaySch[0].until.getHours() * 60) + todaySch[0].until.getMinutes()) - (startHours * 60 + startMinutes))
+			}
 			//todaySch.from
 			//console.log(todaySch[0].from.getHours())
-			TimeAfter = (((todaySch[0].until.getHours() * 60) + todaySch[0].until.getMinutes()) - (startHours * 60 + startMinutes))
 		} else {
-			//console.log((startHours * 60 + startMinutes))
-			TimeAfter = (((appointmentAfter[0].time.start._hour * 60) + appointmentAfter[0].time.start._minute) - (startHours * 60 + startMinutes))
+			if (breakTimeAfter != null) {
+				console.log("BreakAfter true appointmmentafter true")
+				if (breakTimeAfter.until.getHours() <= appointmentAfter[0].time.start._hour && breakTimeAfter.until.getMinutes() <= appointmentAfter[0].time.start._minute) {
+					//there is a break between appointmentAfter and current
+					console.log("!!BreakAfter < appointmmentafter")
+					TimeAfter = (((breakTimeAfter.from.getHours() * 60) + breakTimeAfter.from.getMinutes()) - (startHours * 60 + startMinutes))
+				}
+			} else {
+				console.log("BreakAfter !< appointmmentafter!!")
+
+				TimeAfter = (((appointmentAfter[0].time.start._hour * 60) + appointmentAfter[0].time.start._minute) - (startHours * 60 + startMinutes))
+			}
 		}
 
 		if (!appointmentBefore[0]) {
-			//todaySch.from
-			//console.log(todaySch[0].from.getHours(), todaySch[0].from.getMinutes());
+			if (breakTimeBefore != null) {
+				console.log("!!BreakBefore True AppointmentAfter False")
 
-			TimeBefore = (((endHours * 60) + endMinutes) - (todaySch[0].from.getHours() * 60 + todaySch[0].from.getMinutes()))
+				if (todayFlag && today.getHours() >= breakTimeBefore.until.getHours() && today.getMinutes() >= breakTimeBefore.until.getMinutes()) {
+					console.log("today!! > breakTimeBefore")
+					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
+
+				} else {
+					console.log("today < breakTimeBefore!!")
+					TimeBefore = (((endHours * 60) + endMinutes) - breakTimeBefore.until.getHours() * 60 + breakTimeBefore.until.getMinutes())
+				}
+			} else {
+				if (todaySch[0].from.getHours() <= today.getHours() && todaySch[0].from.getMinutes() <= today.getMinutes() && todayFlag) {
+					console.log("today")
+					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
+				} else {
+					console.log("!!todaySch>today")
+					TimeBefore = (((endHours * 60) + endMinutes) - (todaySch[0].from.getHours() * 60 + todaySch[0].from.getMinutes()))
+
+				}
+			}
+
 		} else {
-			//console.log((startHours * 60) + startMinutes);
-			TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
+			if (breakTimeBefore != null) {
+				if (breakTimeBefore.from.getHours() >= appointmentBefore[0].time.start._hour && breakTimeBefore.from.getMinutes() >= appointmentBefore[0].time.start._minute) {
+					//there is a break between appointmentBefore and current
+					console.log("BreakBefore true")
+					if (breakTimeBefore.until.getHours() <= today.getHours() && breakTimeBefore.until.getMinutes() <= today.getMinutes() && todayFlag) {
+						console.log("breaktimeBEofre<today!! ")
+						TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
+					} else {
+						console.log("breaktimeBEofre!!>today ")
+						TimeBefore = ((startHours * 60 + startMinutes) - ((breakTimeBefore.until.getHours() * 60) + breakTimeBefore.until.getMinutes()))
+					}
+				} else {
+					console.log("appointment > ALL Breakbefore True")
+					TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
+				}
+
+			} else {
+				console.log("breakBefore false")
+				if (appointmentBefore[0].time.end._hour <= today.getHours() && appointmentBefore[0].time.end._minute <= today.getMinutes() && todayFlag) {
+					console.log("today!! > appointmeentbefore   ")
+					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
+
+				} else {
+					console.log("appointmentBefore >ALL")
+					TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
+
+				}
+			}
+
 		}
 		const currentAppointmentTime = (((endHours * 60) + endMinutes) - ((startHours * 60) + startMinutes))
 		TimeTotal = TimeAfter + TimeBefore - currentAppointmentTime;
 
+		console.log({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, currentAppointmentTime })
 		//console.log("appoint", currentAppointmentTime)
-		res.json({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter })
+		res.json({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, oldNeededTime: currentAppointmentTime })
+
 	}
 
 	// getBusinessAppointmentsByDate: async (req, res, next) => {

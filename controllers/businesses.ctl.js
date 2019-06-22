@@ -372,22 +372,22 @@ module.exports = {
 
 		res.status(200).json({ customers });
 	},
-	getServicesByBusiness: async (req, res, next) => {
-		const { id } = req.params;
-		const business = await Businesses.findById(id);
-		if (!business) return res.status(404).json({ error: 'business not found' });
-		const ids = await business.profile.services.map((service) => {
-			return service.service_id;
-		});
-		const category = await Categories.findById(business.profile.category_id);
+	// getServicesByBusiness: async (req, res, next) => {
+	// 	const { id } = req.params;
+	// 	const business = await Businesses.findById(id);
+	// 	if (!business) return res.status(404).json({ error: 'business not found' });
+	// 	const ids = await business.profile.services.map((service) => {
+	// 		return service.service_id;
+	// 	});
+	// 	const category = await Categories.findById(business.profile.category_id);
 
-		const services = await category.subCats.filter((elem) => {
-			return ids.includes(elem._id.toString());
-		});
+	// 	const services = await category.subCats.filter((elem) => {
+	// 		return ids.includes(elem._id.toString());
+	// 	});
 
-		if (!services) return res.status(404).json({ error: 'an error occurred' });
-		res.status(200).json({ services });
-	},
+	// 	if (!services) return res.status(404).json({ error: 'an error occurred' });
+	// 	res.status(200).json({ services });
+	// },
 	getBusinessesByCatagory: async (req, res, next) => {
 		const { catagoryId } = req.params;
 		//var catagoryId = JSON.parse(req.params);
