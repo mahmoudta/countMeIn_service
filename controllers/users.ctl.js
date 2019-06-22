@@ -105,7 +105,7 @@ module.exports = {
 			'5cedfa110a209a0eddbb2bbb',
 			['5cedf5813e3dad305192241e'],
 			'5cedf3d20a209a0eddbb2bb2',
-			1
+			0
 		);
 		res.status(200).json({ test1 });
 	},
