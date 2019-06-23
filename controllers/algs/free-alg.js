@@ -453,7 +453,7 @@ Day.prototype.slicewithnospace = function(length, minutes_between_appointment, m
 	this.Free.forEach((timerange) => {
 		var tmptimerange = [];
 		tmptimerange = timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces);
-		tmp = tmp.concat([ tmptimerange[0] ]);
+		if (!isEmpty(tmptimerange)) tmp = tmp.concat([ tmptimerange[0] ]);
 	});
 
 	this.Free = [];
