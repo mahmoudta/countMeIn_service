@@ -1049,19 +1049,7 @@ function compare2timerange(x, y) {
 }
 async function mergewithpreferhours(preferhours, freetime, value) {
 	var tomerge = [];
-	switch (preferhours) {
-		case 0:
-			tomerge.push(new time_range(new time(7, 0), new time(12, 0)));
-			break;
-		case 1:
-			tomerge.push(new time_range(new time(12, 0), new time(17, 0)));
-			break;
-		case 2:
-			tomerge.push(new time_range(new time(17, 0), new time(21, 0)));
-			break;
-		default:
-		// code block
-	}
+	tomerge.push(preferhours);
 	for (let i = 0; i < freetime.length; i++) {
 		const tmmp = await mergetimerangelists(freetime[i].Free, tomerge, value);
 		freetime[i].Free = tmmp;
@@ -1322,6 +1310,9 @@ async function smartFunction(
 	const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 	const days_to_return = business.schedule_settings.days_calculate_length;
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
+	//const morningbefor = business.schedule_settings.morning;
+	//const afternoonbefor = business.schedule_settings.afternoon;
+	//const eveningbefor = business.schedule_settings.evening;
 
 	const servicearray = await business.services.filter(function(service) {
 		return services.includes(service.service_id.toString());
@@ -1377,8 +1368,23 @@ async function smartFunction(
 		timerange,
 		searchafterorbefor
 	);
-	if (!(preferhours === false)) await mergewithpreferhours(preferhours, tempfreetime, valueofpreferhours);
-
+	var preferhoursrange;
+	if (preferhours !== false && preferhours <= 2 && preferhours >= 0) {
+		switch (preferhours) {
+			case 0:
+				preferhoursrange = new time_range(new time(7, 0), new time(12, 0));
+				break;
+			case 1:
+				preferhoursrange = new time_range(new time(12, 0), new time(17, 0));
+				break;
+			case 2:
+				preferhoursrange = new time_range(new time(17, 0), new time(21, 0));
+				break;
+			default:
+			// code block
+		}
+		await mergewithpreferhours(preferhoursrange, tempfreetime, valueofpreferhours);
+	}
 	await mergewithbusnessbusnessbusyhour(businessid, tempfreetime, valueofbusnessbusyhours);
 	if (prevelaged == true) await pickthehighestifsliced(tempfreetime, numberToReturnADay);
 	else
