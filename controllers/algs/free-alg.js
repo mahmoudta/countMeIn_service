@@ -1048,8 +1048,7 @@ function compare2timerange(x, y) {
 	return result === 0 ? compareTime(x._start, y._start) : result;
 }
 async function mergewithpreferhours(preferhours, freetime, value) {
-	var tomerge = [];
-	tomerge.push(preferhours);
+	var tomerge = [ preferhours ];
 	for (let i = 0; i < freetime.length; i++) {
 		const tmmp = await mergetimerangelists(freetime[i].Free, tomerge, value);
 		freetime[i].Free = tmmp;
