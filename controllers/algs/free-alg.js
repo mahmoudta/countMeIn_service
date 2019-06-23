@@ -426,11 +426,15 @@ time_range.prototype.slice = function(length, minutes_between_appointment, minse
 			if (remainintimerange > minutes_between_appointment) {
 				if (remainintimerange > 3) temp._value -= valuefornospaces / 2;
 			} else {
-				temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
+				if (remainintimerange >= 3)
+					temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
 			}
 		}
 		tmp.push(temp);
 	}
+
+	if (remainintimerange > 0)
+		tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
 
 	return tmp;
 };
@@ -453,7 +457,10 @@ Day.prototype.slicewithnospace = function(length, minutes_between_appointment, m
 	this.Free.forEach((timerange) => {
 		var tmptimerange = [];
 		tmptimerange = timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces);
-		tmp = tmp.concat([ tmptimerange[0] ]);
+		if (!isEmpty(tmptimerange)) {
+			tmp = tmp.concat([ tmptimerange[0] ]);
+			if (tmptimerange.length > 1) tmp = tmp.concat([ tmptimerange[tmptimerange.length - 1] ]);
+		}
 	});
 
 	this.Free = [];
@@ -661,21 +668,17 @@ async function returnfreetime(
 		tmpday = days.shift();
 		tmpfree = tmpday.Free;
 		//to undo
-		//    if( moment(tmpday.Date).format("YYYY/MM/DD") == moment().format("YYYY/MM/DD") ){
-		//         var today = new Date()
-		//         var tmptime;
-		//         if(fromsmart===false)
-		//             tmptime =new time(today.getHours(),today.getMinutes())
-		//         else
-		//             tmptime =new time( today.getHours()+1 , Math.round(today.getMinutes()) )
+		if (moment(tmpday.Date).format('YYYY/MM/DD') == moment().format('YYYY/MM/DD')) {
+			var today = new Date();
+			var tmptime;
+			if (fromsmart === false) tmptime = new time(today.getHours(), today.getMinutes());
+			else tmptime = new time(today.getHours() + 1, Math.round(today.getMinutes()));
 
-		//         tmpfree=await mergetimerangelists(tmpfree,[new time_range( tmptime , new time(24,0) )],0,1 )
-
-		//    }
-		//    else if( moment(tmpday.Date).format("YYYY/MM/DD") < moment().format("YYYY/MM/DD") ){
-		//     tmpfree=[];
-		//    }
-		//just remove above to block previuse dates
+			tmpfree = await mergetimerangelists(tmpfree, [ new time_range(tmptime, new time(24, 0)) ], 0, 1);
+		} else if (moment(tmpday.Date).format('YYYY/MM/DD') < moment().format('YYYY/MM/DD')) {
+			tmpfree = [];
+		}
+		//
 		if (!(timerange === false)) {
 			switch (searchafterorbefor) {
 				case 0:
@@ -1045,20 +1048,7 @@ function compare2timerange(x, y) {
 	return result === 0 ? compareTime(x._start, y._start) : result;
 }
 async function mergewithpreferhours(preferhours, freetime, value) {
-	var tomerge = [];
-	switch (preferhours) {
-		case 0:
-			tomerge.push(new time_range(new time(7, 0), new time(12, 0)));
-			break;
-		case 1:
-			tomerge.push(new time_range(new time(12, 0), new time(17, 0)));
-			break;
-		case 2:
-			tomerge.push(new time_range(new time(17, 0), new time(21, 0)));
-			break;
-		default:
-		// code block
-	}
+	var tomerge = [ preferhours ];
 	for (let i = 0; i < freetime.length; i++) {
 		const tmmp = await mergetimerangelists(freetime[i].Free, tomerge, value);
 		freetime[i].Free = tmmp;
@@ -1084,7 +1074,8 @@ async function pickthehighestifnotsliced(
 	services_length,
 	minutes_between_appointment,
 	minsevicetime,
-	valuefornospaces
+	valuefornospaces,
+	numberToReturnADay
 ) {
 	for (let i = 0; i < freetime.length; i++) {
 		var tmparray = [];
@@ -1094,7 +1085,7 @@ async function pickthehighestifnotsliced(
 		const tmp = freetime[i].Free.sort(function(x, y) {
 			return compare2timerange(x, y);
 		});
-		for (let j = 0; j < 2 && j < tmp.length; j++) {
+		for (let j = 0; j < numberToReturnADay + 2 && j < tmp.length; j++) {
 			tmparray.push(tmp[j]);
 		}
 		freetime[i].Free = tmparray;
@@ -1318,6 +1309,9 @@ async function smartFunction(
 	const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 	const days_to_return = business.schedule_settings.days_calculate_length;
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
+	//const morningbefor = business.schedule_settings.morning;
+	//const afternoonbefor = business.schedule_settings.afternoon;
+	//const eveningbefor = business.schedule_settings.evening;
 
 	const servicearray = await business.services.filter(function(service) {
 		return services.includes(service.service_id.toString());
@@ -1373,8 +1367,23 @@ async function smartFunction(
 		timerange,
 		searchafterorbefor
 	);
-	if (!(preferhours === false)) await mergewithpreferhours(preferhours, tempfreetime, valueofpreferhours);
-
+	var preferhoursrange;
+	if (preferhours !== false && preferhours <= 2 && preferhours >= 0) {
+		switch (preferhours) {
+			case 0:
+				preferhoursrange = new time_range(new time(7, 0), new time(12, 0));
+				break;
+			case 1:
+				preferhoursrange = new time_range(new time(12, 0), new time(17, 0));
+				break;
+			case 2:
+				preferhoursrange = new time_range(new time(17, 0), new time(21, 0));
+				break;
+			default:
+			// code block
+		}
+		await mergewithpreferhours(preferhoursrange, tempfreetime, valueofpreferhours);
+	}
 	await mergewithbusnessbusnessbusyhour(businessid, tempfreetime, valueofbusnessbusyhours);
 	if (prevelaged == true) await pickthehighestifsliced(tempfreetime, numberToReturnADay);
 	else
@@ -1383,7 +1392,8 @@ async function smartFunction(
 			services_length,
 			minutes_between_appointment,
 			minsevicetime,
-			valuefornospaces
+			valuefornospaces,
+			numberToReturnADay
 		);
 	if (tempfreetime === false || isEmpty(tempfreetime)) return {};
 	return tempfreetime;
