@@ -426,11 +426,15 @@ time_range.prototype.slice = function(length, minutes_between_appointment, minse
 			if (remainintimerange > minutes_between_appointment) {
 				if (remainintimerange > 3) temp._value -= valuefornospaces / 2;
 			} else {
-				temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
+				if (remainintimerange >= 3)
+					temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
 			}
 		}
 		tmp.push(temp);
 	}
+
+	if (remainintimerange > 0)
+		tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
 
 	return tmp;
 };
@@ -453,7 +457,10 @@ Day.prototype.slicewithnospace = function(length, minutes_between_appointment, m
 	this.Free.forEach((timerange) => {
 		var tmptimerange = [];
 		tmptimerange = timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces);
-		if (!isEmpty(tmptimerange)) tmp = tmp.concat([ tmptimerange[0] ]);
+		if (!isEmpty(tmptimerange)) {
+			tmp = tmp.concat([ tmptimerange[0] ]);
+			if (tmptimerange.length > 1) tmp = tmp.concat([ tmptimerange[tmptimerange.length - 1] ]);
+		}
 	});
 
 	this.Free = [];
@@ -661,21 +668,17 @@ async function returnfreetime(
 		tmpday = days.shift();
 		tmpfree = tmpday.Free;
 		//to undo
-		//    if( moment(tmpday.Date).format("YYYY/MM/DD") == moment().format("YYYY/MM/DD") ){
-		//         var today = new Date()
-		//         var tmptime;
-		//         if(fromsmart===false)
-		//             tmptime =new time(today.getHours(),today.getMinutes())
-		//         else
-		//             tmptime =new time( today.getHours()+1 , Math.round(today.getMinutes()) )
+		if (moment(tmpday.Date).format('YYYY/MM/DD') == moment().format('YYYY/MM/DD')) {
+			var today = new Date();
+			var tmptime;
+			if (fromsmart === false) tmptime = new time(today.getHours(), today.getMinutes());
+			else tmptime = new time(today.getHours() + 1, Math.round(today.getMinutes()));
 
-		//         tmpfree=await mergetimerangelists(tmpfree,[new time_range( tmptime , new time(24,0) )],0,1 )
-
-		//    }
-		//    else if( moment(tmpday.Date).format("YYYY/MM/DD") < moment().format("YYYY/MM/DD") ){
-		//     tmpfree=[];
-		//    }
-		//just remove above to block previuse dates
+			tmpfree = await mergetimerangelists(tmpfree, [ new time_range(tmptime, new time(24, 0)) ], 0, 1);
+		} else if (moment(tmpday.Date).format('YYYY/MM/DD') < moment().format('YYYY/MM/DD')) {
+			tmpfree = [];
+		}
+		//
 		if (!(timerange === false)) {
 			switch (searchafterorbefor) {
 				case 0:
@@ -1084,7 +1087,8 @@ async function pickthehighestifnotsliced(
 	services_length,
 	minutes_between_appointment,
 	minsevicetime,
-	valuefornospaces
+	valuefornospaces,
+	numberToReturnADay
 ) {
 	for (let i = 0; i < freetime.length; i++) {
 		var tmparray = [];
@@ -1094,7 +1098,7 @@ async function pickthehighestifnotsliced(
 		const tmp = freetime[i].Free.sort(function(x, y) {
 			return compare2timerange(x, y);
 		});
-		for (let j = 0; j < 2 && j < tmp.length; j++) {
+		for (let j = 0; j < numberToReturnADay + 2 && j < tmp.length; j++) {
 			tmparray.push(tmp[j]);
 		}
 		freetime[i].Free = tmparray;
@@ -1383,7 +1387,8 @@ async function smartFunction(
 			services_length,
 			minutes_between_appointment,
 			minsevicetime,
-			valuefornospaces
+			valuefornospaces,
+			numberToReturnADay
 		);
 	if (tempfreetime === false || isEmpty(tempfreetime)) return {};
 	return tempfreetime;
