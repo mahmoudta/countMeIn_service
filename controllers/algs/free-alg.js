@@ -3,6 +3,7 @@ let app = new express();
 var FreeTime = require('../../models/freeTime');
 var Business = require('../../models/business');
 var Appointment = require('../../models/appointment');
+var User = require('../../models/user');
 const util = require('util');
 var inherits = require('util').inherits;
 const mongoose = require('mongoose');
@@ -1290,7 +1291,7 @@ async function smartFunction(
 	customerid,
 	preferhours,
 	checkifcustomerhavebusness,
-	numberToReturnADay,
+	toreturnadaybycustomer,
 	customerdesidedates,
 	datefrom,
 	dateuntil,
@@ -1317,6 +1318,10 @@ async function smartFunction(
 	//const morningbefor = business.schedule_settings.morning;
 	//const afternoonbefor = business.schedule_settings.afternoon;
 	//const eveningbefor = business.schedule_settings.evening;
+	const toreturnadaybybusiness = 2; //const toreturnadaybybusiness = business.schedule_settings.toreturnaday;
+	var numberToReturnADay;
+	if (toreturnadaybybusiness < toreturnadaybycustomer) numberToReturnADay = toreturnadaybycustomer;
+	else numberToReturnADay = toreturnadaybybusiness;
 
 	const servicearray = await business.services.filter(function(service) {
 		return services.includes(service.service_id.toString());
@@ -1570,7 +1575,7 @@ module.exports = {
 		chosentimerange,
 		checkifcustomerhavebusness = true,
 		returnsuggest = false,
-		cusomerid = false
+		customerid = false
 	) => {
 		var bookresult = await bookFunction(businessid, chosendate, chosentimerange);
 		if (checkifcustomerhavebusness && bookresult) {
@@ -1579,28 +1584,69 @@ module.exports = {
 				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange);
 			}
 		}
-		//is bookresult true check if this  'businessid' is in the 'reminder list' of the 'cusomerid'
-		//if it is ture: and the 'repeat' is  'false' delete , else change the start date to current date
-		if (returnsuggest === false) return bookresult;
-		//check if there are  'reminder' with 'cusomerid' with other busness
-		//extract details
-		/* 
-		 await smartFunction(
-			businessid,
-			services,
-			customerid,
-			preferhours,//dosent mater
-			checkifcustomerhavebusness,
-			numberToReturnADay,//5
-			customerdesidedates,//true
-			datefrom,//chosendate
-			dateuntil,//chosendate
-			timerange,//chosentimerange
-			searchafterorbefor//0 is befor /1 is after
+		var userreminders;
+		if (returnsuggest) {
+			//serach on 'businessid' and 'customerid'
+			//pull this doc from reminder if 'repeat' is 'false'
+			//else change 'date_to' to 'date.now +days'
+			userreminders = await User.findOne({ _id: customerid }).reminders;
+			var index = userreminders.findIndex((o) => o.business_id == businessid);
+			if (index > -1) {
+				if (userreminders[index].repeat) {
+					var tmp = new Date();
+					var date_from = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate());
+					var date_until = moment(date_from).add(userreminders[index].days, 'days').toDate();
+					userreminders[index].date_to = date_until;
+				} else userreminders.splice(index, 1);
+
+				const update = {
+					$set : {
+						reminders : userreminders
+					}
+				};
+				await User.findOneAndUpdate({ _id: customerid }, update, { new: true });
+			}
+		} else {
+			return bookresult;
+		}
+		//
+		var tostartsmarton = userreminders.find(
+			(o) => moment(o.date_to).format('YYYY/MM/DD') < moment().add(1, 'days').format('YYYY/MM/DD')
 		);
-		
-		
-		*/
+		if (isEmpty(tostartsmarton)) return [ bookresult, false ];
+
+		return [
+			bookresult,
+			true,
+			await smartFunction(
+				tostartsmarton.business_id,
+				tostartsmarton.services,
+				customerid,
+				false,
+				true,
+				5,
+				true,
+				tostartsmarton.date_to,
+				tostartsmarton.date_to,
+				chosentimerange,
+				0,
+				false
+			),
+			await smartFunction(
+				tostartsmarton.business_id,
+				tostartsmarton.services,
+				customerid,
+				false,
+				true,
+				5,
+				true,
+				tostartsmarton.date_to,
+				tostartsmarton.date_to,
+				chosentimerange,
+				1,
+				false
+			)
+		];
 	},
 	ifcanbook                       : async (
 		businessid,
@@ -1634,51 +1680,20 @@ module.exports = {
 		searchafterorbefor = 1,
 		numberToReturnADay = 2
 	) => {
-		if (timerange === false)
-			return await smartFunction(
-				businessid,
-				services,
-				customerid,
-				preferhours,
-				checkifcustomerhavebusness,
-				numberToReturnADay,
-				customerdesidedates,
-				datefrom,
-				dateuntil,
-				timerange,
-				searchafterorbefor,
-				timerangefromedit
-			);
-		return [
-			await smartFunction(
-				businessid,
-				services,
-				customerid,
-				preferhours,
-				checkifcustomerhavebusness,
-				numberToReturnADay,
-				customerdesidedates,
-				datefrom,
-				dateuntil,
-				timerange,
-				0,
-				timerangefromedit
-			),
-			await smartFunction(
-				businessid,
-				services,
-				customerid,
-				preferhours,
-				checkifcustomerhavebusness,
-				numberToReturnADay,
-				customerdesidedates,
-				datefrom,
-				dateuntil,
-				timerange,
-				1,
-				timerangefromedit
-			)
-		];
+		return await smartFunction(
+			businessid,
+			services,
+			customerid,
+			preferhours,
+			checkifcustomerhavebusness,
+			numberToReturnADay,
+			customerdesidedates,
+			datefrom,
+			dateuntil,
+			timerange,
+			searchafterorbefor,
+			timerangefromedit
+		);
 	},
 	aftereditingbusnessworkinghours : async (businessid, array) => {
 		var days = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
