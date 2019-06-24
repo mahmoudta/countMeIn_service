@@ -1,4 +1,6 @@
 const isEmpty = require("lodash/isEmpty");
+const Appointments = require('../models/appointment');
+
 
 module.exports = {
   getServices: async (categories, services_ids) => {
@@ -17,5 +19,8 @@ module.exports = {
   zeroPad: (num, places) => {
     var zero = places - num.toString().length + 1;
     return Array(+(zero > 0 && zero)).join("0") + num;
-  }
+  },
+
+
+
 };
