@@ -1,65 +1,78 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose'),
 	user = new mongoose.Schema({
-		_id          : { type: mongoose.Schema.Types.ObjectId },
-		method       : {
-			type     : String,
-			enum     : [ 'local', 'google' ],
-			required : true
+		_id: { type: mongoose.Schema.Types.ObjectId },
+		method: {
+			type: String,
+			enum: ['local', 'google'],
+			required: true
 		},
-		isAdmin      : {
-			type     : Boolean,
-			default  : false,
-			required : true
+		isAdmin: {
+			type: Boolean,
+			default: false,
+			required: true
 		},
-		local        : {
-			password : String
+		local: {
+			password: String
 		},
-		google       : {
-			id : String
+		google: {
+			id: String
 		},
-		email        : {
-			type      : String,
-			lowercase : true
+		email: {
+			type: String,
+			lowercase: true
 		},
-		profile      : {
-			name       : {
-				first : {
-					type     : String,
-					required : true
+		profile: {
+			name: {
+				first: {
+					type: String,
+					required: true
 				},
-				last  : {
-					type    : String,
-					default : ''
+				last: {
+					type: String,
+					default: ''
 				}
 			},
 
-			imgUrl     : String,
-			businessId : String,
-			phone      : String
+			imgUrl: String,
+			businessId: String,
+			phone: String
 		},
-		notification : [
+		notification: [
 			{
-				Type           : String,
-				opened         : {
-					type    : Boolean,
-					default : false
+				Type: String,
+				opened: {
+					type: Boolean,
+					default: false
 				},
-				title          : String,
-				my_business    : {
-					type    : Boolean,
-					default : false
+				title: String,
+				my_business: {
+					type: Boolean,
+					default: false
 				},
-				appointment_id : String
+				appointment_id: String
+			}
+		],
+		reminders: [
+			{
+				business_id: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: 'Business',
+					unique: true
+				},
+				services: [{ type: mongoose.Schema.Types.ObjectId }],
+				days: Number,
+				date_to: Date,
+				repeat: Boolean,
 			}
 		],
 		//globalExpreince:Number
 
-		appointments : [ String ],
-		following    : [ { type: mongoose.Schema.Types.ObjectId, ref: 'Business' } ]
+		appointments: [String],
+		following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Business' }]
 	});
 
-user.pre('save', async function(next) {
+user.pre('save', async function (next) {
 	if (this.method != 'local') {
 		next();
 	}
@@ -73,7 +86,7 @@ user.pre('save', async function(next) {
 	}
 });
 
-user.methods.isValidPassword = async function(newPassword) {
+user.methods.isValidPassword = async function (newPassword) {
 	try {
 		return await bcrypt.compare(newPassword, this.local.password);
 	} catch (error) {

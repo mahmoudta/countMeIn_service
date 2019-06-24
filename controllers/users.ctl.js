@@ -1,6 +1,7 @@
 const JWT = require('jsonwebtoken');
-const Users = require('../models/user');
 const Businesses = require('../models/business');
+const Users = require('../models/user');
+
 var FreeTime = require('../models/freeTime');
 const Categories = require('../models/category');
 const moment = require('moment');
@@ -179,6 +180,36 @@ module.exports = {
 		res.json({ businesses });
 	},
 
+	setReminder: async (req, res, next) => {
+		const { businessId, customerId, services, days, repeat } = req.body;
+		//var todayDate = new Date();
+		const newDate = moment(moment(new Date()).format('l')).add(days, 'days');
+		//var dateTo = new Date(todayDate);
+		// console.log(todayDate)
+		console.log(services)
+
+		var theservices = services.map((service, i) => {
+			return mongoose.Types.ObjectId(service)
+		})
+		//var dateTo = Date.setDay(Date)
+		let thebusiness_id = mongoose.Types.ObjectId(businessId)
+		let thecustomer_id = mongoose.Types.ObjectId(customerId)
+		let update = {
+			$push: {
+				reminders: { business_id: thebusiness_id, services: theservices, days: days, date_to: newDate, repeat: repeat }
+			}
+		};
+		const user = await Users.findOneAndUpdate({ _id: thecustomer_id, 'reminders.business_id': { $ne: businessId } }, update, { new: true, upsert: true }, (err) => {
+			if (err) return res.json({ error: 'error accoured' })
+		});
+
+
+		res.json({ result: "Success" })
+
+
+
+	},
+
 	appendNotification: async (req, res, next) => {
 		const { title, type, my_business, appointment_id, status } = req.body;
 
@@ -200,7 +231,11 @@ module.exports = {
 		res.status(200).json({ notifications: user.notification });
 	}
 };
-
+Date.prototype.addDays = function (days) {
+	var date = new Date(this.valueOf());
+	date.setDate(date.getDate() + days);
+	return date;
+}
 // exports.signIn = (req, res) => {
 // 	Users.findOne({ 'profile.email': req.body.email, 'profile.password': req.body.password }, (err, User) => {
 // 		if (err) {

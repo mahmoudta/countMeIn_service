@@ -537,19 +537,18 @@ module.exports = {
 			// 	},
 			// 	porpouses: [ service ]
 			// }
+
+			//
 		);
 
-		const appointment = await newAppointment.save();
-		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
 		//res.json('success');
 		// booked(businessId, newDate, {
 		//   _start: { _hour: Number(12), _minute: Number(10) },
 		//   _end: { _hour: Number(13), _minute: Number(10) }
 		// });
-		booked(businessId, newDate, {
-			_start: newAppointment.time.start,
-			_end: newAppointment.time.end
-		});
+		const appointment = await newAppointment.save();
+		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+
 
 		const thisAppointment = await Appointments.findById(appointmentId);
 
@@ -561,6 +560,14 @@ module.exports = {
 			if (err) {
 				res.send(err);
 			}
+			//DELETED
+			booked(businessId, newDate, {
+				_start: newAppointment.time.start,
+				_end: newAppointment.time.end
+			});
+
+
+
 		});
 
 		const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
