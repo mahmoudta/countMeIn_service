@@ -614,7 +614,9 @@ async function returnfreetime(
 	minsevicetime,
 	valuefornospaces = 0,
 	timerange = false,
-	searchafterorbefor = 1
+	searchafterorbefor = 1,
+	fromedit = false,
+	timerangefromedit = false
 ) {
 	if (id === false) return false;
 	var days = [];
@@ -693,7 +695,10 @@ async function returnfreetime(
 				// code block
 			}
 		}
+		//for nidal
 		day.totree(tmpfree);
+		if (fromedit && timerangefromedit !== false) day.remove(timerangefromedit);
+
 		posibletobook.totree(day.timerangesthatfit(services_length, minutes_between_appointment));
 		tmpday.Free = posibletobook.arrayofopjects();
 		if (choice == 1 || choice == 3) {
@@ -759,14 +764,14 @@ async function mergetimerangelists(timerangelist1, timerangelist2, mergevalue, c
 async function returnallappointmentsbycustomer(customerid) {
 	const appointments = await Appointment.find({
 		client_id : customerid,
-		status    : { $in: [ 'ready', 'inProgress', 'done', 'pendingClient', 'passed' ] }
+		status    : { $in: [ 'ready', 'inProgress', 'done' ] }
 	});
 	return appointments;
 }
 async function returnallappointmentsbybusiness(businessid) {
 	const appointments = await Appointment.find({
 		business_id : businessid,
-		status      : { $in: [ 'ready', 'inProgress', 'done', 'pendingClient', 'passed' ] }
+		status      : { $in: [ 'ready', 'inProgress', 'done' ] }
 	});
 	return appointments;
 }
@@ -1291,7 +1296,9 @@ async function smartFunction(
 	datefrom,
 	dateuntil,
 	timerange,
-	searchafterorbefor
+	searchafterorbefor,
+	fromedit,
+	timerangefromedit
 ) {
 	var choice;
 	var exp;
@@ -1365,7 +1372,9 @@ async function smartFunction(
 		minsevicetime,
 		valuefornospaces,
 		timerange,
-		searchafterorbefor
+		searchafterorbefor,
+		fromedit,
+		timerangefromedit
 	);
 	var preferhoursrange;
 	if (preferhours !== false && preferhours <= 2 && preferhours >= 0) {
@@ -1620,12 +1629,14 @@ module.exports = {
 		customerid,
 		preferhours = false,
 		checkifcustomerhavebusness = true,
-		numberToReturnADay = 2,
 		customerdesidedates = false,
 		datefrom = false,
 		dateuntil = false,
+		fromedit = false,
+		timerangefromedit = false,
 		timerange = false,
-		searchafterorbefor = 1
+		searchafterorbefor = 1,
+		numberToReturnADay = 2
 	) => {
 		return await smartFunction(
 			businessid,
@@ -1638,7 +1649,9 @@ module.exports = {
 			datefrom,
 			dateuntil,
 			timerange,
-			searchafterorbefor
+			searchafterorbefor,
+			fromedit,
+			timerangefromedit
 		);
 	},
 	aftereditingbusnessworkinghours : async (businessid, array) => {
