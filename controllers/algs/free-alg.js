@@ -1590,6 +1590,7 @@ module.exports = {
 			//pull this doc from reminder if 'repeat' is 'false'
 			//else change 'date_to' to 'date.now +days'
 			userreminders = await User.findOne({ _id: customerid }).reminders;
+			//check reminders
 			var index = userreminders.findIndex((o) => o.business_id == businessid);
 			if (index > -1) {
 				if (userreminders[index].repeat) {
