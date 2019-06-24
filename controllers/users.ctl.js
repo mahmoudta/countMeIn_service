@@ -183,28 +183,33 @@ module.exports = {
 	setReminder: async (req, res, next) => {
 		const { businessId, customerId, services, days, repeat } = req.body;
 		//var todayDate = new Date();
-		const newDate = moment(moment(new Date()).format('l')).add(days, 'days');
+		const newDate = moment(moment(new Date()).format('l')).add(Number(days), 'days');
 		//var dateTo = new Date(todayDate);
 		// console.log(todayDate)
-		console.log(services)
+		console.log(customerId)
 
 		var theservices = services.map((service, i) => {
 			return mongoose.Types.ObjectId(service)
 		})
 		//var dateTo = Date.setDay(Date)
 		let thebusiness_id = mongoose.Types.ObjectId(businessId)
-		let thecustomer_id = mongoose.Types.ObjectId(customerId)
+		//let thecustomer_id = mongoose.Types.ObjectId(customerId)
+		//console.log(thecustomer_id)
+
 		let update = {
 			$push: {
 				reminders: { business_id: thebusiness_id, services: theservices, days: days, date_to: newDate, repeat: repeat }
 			}
 		};
-		const user = await Users.findOneAndUpdate({ _id: thecustomer_id, 'reminders.business_id': { $ne: businessId } }, update, { new: true, upsert: true }, (err) => {
-			if (err) return res.json({ error: 'error accoured' })
-		});
+		const user = await Users.findOneAndUpdate({ _id: customerId, 'reminders.business_id': { $ne: thebusiness_id } }, update, {
 
+			"upsert": true
+		}
+		);
 
-		res.json({ result: "Success" })
+		//console.log(user)
+		if (isEmpty(user)) return res.status(333).json({ result: "error" });
+		res.status(200).json({ result: "aLready has reminder" })
 
 
 
