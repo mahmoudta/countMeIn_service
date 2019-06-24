@@ -457,8 +457,8 @@ module.exports = {
 		const newAppointment = new Appointments(
 			{
 				_id: new mongoose.Types.ObjectId(),
-				business_id: mongoose.Schema.Types.ObjectId(businessId),
-				client_id: mongoose.Schema.Types.ObjectId(costumerId),
+				business_id: mongoose.Types.ObjectId(businessId),
+				client_id: mongoose.Types.ObjectId(costumerId),
 				time: {
 					date: newDate,
 					start: {
@@ -470,7 +470,7 @@ module.exports = {
 						_minute: eminute
 					}
 				},
-				services: [service]
+				services: service
 			}
 
 			// 	business_id: businessId,
@@ -485,19 +485,24 @@ module.exports = {
 		);
 		console.log(newDate.getHours());
 		console.log(newAppointment);
-		const appointment = await newAppointment.save();
-		if (!appointment)
-			return res.status(403).json({ error: "an error occoured" });
+		const CanBook = booked(businessId, newDate, {
+			_start: newAppointment.time.start,
+			_end: newAppointment.time.end
+		});
+		if (CanBook) {
+			const appointment = await newAppointment.save();
+			if (!appointment)
+				return res.status(403).json({ error: "an error occoured" });
+
+			res.status(200).json("suceess");
+		}
 		//res.json('success');
 		// booked(businessId, newDate, {
 		//   _start: { _hour: Number(12), _minute: Number(10) },
 		//   _end: { _hour: Number(13), _minute: Number(10) }
 		// });
-		booked(businessId, newDate, {
-			_start: newAppointment.time.start,
-			_end: newAppointment.time.end
-		});
-		res.status(200).json("suceess");
+		res.status(304).json("alg");
+
 	},
 	setAppointmentAndDelete: async (req, res, next) => {
 		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute, appointmentId } = req.body;
