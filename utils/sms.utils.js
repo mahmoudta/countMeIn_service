@@ -27,7 +27,7 @@ module.exports = {
                 binding_type: 'sms',
                 address: phoneNumber,
             }),
-            body: `http://localhost:3000/sms/customerreview/${AppointmentId}`,
+            body: `it was great seeing you today. Would you take one minute to leave a Google review about your experience? Here is the link: http://localhost:3000/sms/customerreview/${AppointmentId}. Thanks for your help!`,
         };
         client.notify
             .services(notifySid)
