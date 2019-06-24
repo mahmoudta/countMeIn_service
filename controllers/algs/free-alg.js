@@ -1634,49 +1634,51 @@ module.exports = {
 		searchafterorbefor = 1,
 		numberToReturnADay = 2
 	) => {
-		if(timerange===false)
-		return await smartFunction(
-			businessid,
-			services,
-			customerid,
-			preferhours,
-			checkifcustomerhavebusness,
-			numberToReturnADay,
-			customerdesidedates,
-			datefrom,
-			dateuntil,
-			timerange,
-			searchafterorbefor,
-			timerangefromedit
-		);
-		return [await smartFunction(
-			businessid,
-			services,
-			customerid,
-			preferhours,
-			checkifcustomerhavebusness,
-			numberToReturnADay,
-			customerdesidedates,
-			datefrom,
-			dateuntil,
-			timerange,
-			0,
-			timerangefromedit
-		),
-		 await smartFunction(
-			businessid,
-			services,
-			customerid,
-			preferhours,
-			checkifcustomerhavebusness,
-			numberToReturnADay,
-			customerdesidedates,
-			datefrom,
-			dateuntil,
-			timerange,
-			1,
-			timerangefromedit
-		)]
+		if (timerange === false)
+			return await smartFunction(
+				businessid,
+				services,
+				customerid,
+				preferhours,
+				checkifcustomerhavebusness,
+				numberToReturnADay,
+				customerdesidedates,
+				datefrom,
+				dateuntil,
+				timerange,
+				searchafterorbefor,
+				timerangefromedit
+			);
+		return [
+			await smartFunction(
+				businessid,
+				services,
+				customerid,
+				preferhours,
+				checkifcustomerhavebusness,
+				numberToReturnADay,
+				customerdesidedates,
+				datefrom,
+				dateuntil,
+				timerange,
+				0,
+				timerangefromedit
+			),
+			await smartFunction(
+				businessid,
+				services,
+				customerid,
+				preferhours,
+				checkifcustomerhavebusness,
+				numberToReturnADay,
+				customerdesidedates,
+				datefrom,
+				dateuntil,
+				timerange,
+				1,
+				timerangefromedit
+			)
+		];
 	},
 	aftereditingbusnessworkinghours : async (businessid, array) => {
 		var days = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
