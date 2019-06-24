@@ -615,7 +615,6 @@ async function returnfreetime(
 	valuefornospaces = 0,
 	timerange = false,
 	searchafterorbefor = 1,
-	fromedit = false,
 	timerangefromedit = false
 ) {
 	if (id === false) return false;
@@ -697,7 +696,7 @@ async function returnfreetime(
 		}
 		//for nidal
 		day.totree(tmpfree);
-		if (fromedit && timerangefromedit !== false) day.remove(timerangefromedit);
+		if (timerangefromedit !== false) day.remove(timerangefromedit);
 
 		posibletobook.totree(day.timerangesthatfit(services_length, minutes_between_appointment));
 		tmpday.Free = posibletobook.arrayofopjects();
@@ -1297,7 +1296,6 @@ async function smartFunction(
 	dateuntil,
 	timerange,
 	searchafterorbefor,
-	fromedit,
 	timerangefromedit
 ) {
 	var choice;
@@ -1373,7 +1371,6 @@ async function smartFunction(
 		valuefornospaces,
 		timerange,
 		searchafterorbefor,
-		fromedit,
 		timerangefromedit
 	);
 	var preferhoursrange;
@@ -1632,12 +1629,12 @@ module.exports = {
 		customerdesidedates = false,
 		datefrom = false,
 		dateuntil = false,
-		fromedit = false,
 		timerangefromedit = false,
 		timerange = false,
 		searchafterorbefor = 1,
 		numberToReturnADay = 2
 	) => {
+		if(timerange===false)
 		return await smartFunction(
 			businessid,
 			services,
@@ -1650,9 +1647,36 @@ module.exports = {
 			dateuntil,
 			timerange,
 			searchafterorbefor,
-			fromedit,
 			timerangefromedit
 		);
+		return [await smartFunction(
+			businessid,
+			services,
+			customerid,
+			preferhours,
+			checkifcustomerhavebusness,
+			numberToReturnADay,
+			customerdesidedates,
+			datefrom,
+			dateuntil,
+			timerange,
+			0,
+			timerangefromedit
+		),
+		 await smartFunction(
+			businessid,
+			services,
+			customerid,
+			preferhours,
+			checkifcustomerhavebusness,
+			numberToReturnADay,
+			customerdesidedates,
+			datefrom,
+			dateuntil,
+			timerange,
+			1,
+			timerangefromedit
+		)]
 	},
 	aftereditingbusnessworkinghours : async (businessid, array) => {
 		var days = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
