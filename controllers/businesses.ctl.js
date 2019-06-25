@@ -464,13 +464,13 @@ module.exports = {
 		const { id } = req.params;
 		const business = await Businesses.findById(id).populate('services.service_id', 'title')
 
-		console.log("service", business)
+		//console.log("service", business)
 		if (!business) return res.status(404).json({ error: 'business not found' });
 		const ids = await business.services.map((service) => {
 			return { title: service.service_id.title, id: service.service_id._id, cost: service.cost, time: service.time };
 		})
 
-		console.log("service", ids)
+		//console.log("service", ids)
 
 		//if (!services) return res.status(404).json({ error: 'an error occurred' });
 		res.status(200).json({ ids });

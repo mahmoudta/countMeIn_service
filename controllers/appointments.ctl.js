@@ -758,11 +758,11 @@ module.exports = {
 		const currentAppoointment = await Appointments.findById(appointmentId);
 
 		//console.log("currentAppointment ", currentAppoointment);
-
+		const clientId = currentAppoointment.client_id;
 		const businessId = currentAppoointment.business_id;
 		const date = currentAppoointment.time.date;
 		const dayNum = new Date(date).getDay()
-		console.log("date", date)
+		//console.log("date", date)
 		const startMinutes = currentAppoointment.time.start._minute;
 		const startHours = currentAppoointment.time.start._hour;
 		const endMinutes = currentAppoointment.time.end._minute;
@@ -778,7 +778,7 @@ module.exports = {
 
 		const todaySch = business[0].working_hours.filter(word => word.day === day[dayNum]);
 
-		console.log(todaySch)
+		//console.log(todaySch)
 		var breakTimeBefore = null;
 		var breakTimeAfter = null;
 		if (todaySch[0].break.isBreak) {
@@ -796,7 +796,7 @@ module.exports = {
 
 		var today = new Date();
 		var todayFlag = 0;
-		console.log("today", today)
+		//console.log("today", today)
 		//today.setHours(tomorow.getHours() + 1)
 		if (today.getDate() == date.getDate() && today.getFullYear() == date.getFullYear() && today.getDay() == date.getDay()) {
 			todayFlag = 1;
@@ -804,7 +804,7 @@ module.exports = {
 
 
 
-		const appointmentAfter = await Appointments.find({
+		const appointmentAfterBusiness = await Appointments.find({
 			business_id: businessId, 'time.date': date,
 			$or: [
 				{
@@ -821,7 +821,7 @@ module.exports = {
 		}).sort([['time.start._hour', 1], ['time.start._minute', 1]]).limit(1)
 
 
-		const appointmentBefore = await Appointments.find({
+		const appointmentBeforeBusiness = await Appointments.find({
 			business_id: businessId, 'time.date': date,
 			$or: [
 				{
@@ -837,29 +837,104 @@ module.exports = {
 			]
 		}).sort([['time.start._hour', -1], ['time.start._minute', -1]]).limit(1)
 		//console.log(appointment[0].time.start._minute)
+
+
+		///Client Check
+		const appointmentBeforeClient = await Appointments.find({
+			client_id: clientId, 'time.date': date,
+			$or: [
+				{
+					$and: [
+						{ 'time.end._hour': { '$lte': startHours } }
+						, { 'time.end._minute': { '$lte': startMinutes } }]
+				}
+				, {
+					$and: [
+						{ 'time.end._hour': { '$lt': startHours } }
+						, { 'time.end._minute': { '$lte': 0 } }]
+				}
+			]
+		}).sort([['time.start._hour', -1], ['time.start._minute', -1]]).limit(1)
+
+		const appointmentAfterClient = await Appointments.find({
+			client_id: clientId, 'time.date': date,
+			$or: [
+				{
+					$and: [
+						{ 'time.start._hour': { '$gte': endHours } }
+						, { 'time.start._minute': { '$gte': endMinutes } }]
+				}
+				, {
+					$and: [
+						{ 'time.start._hour': { '$gt': endHours } }
+						, { 'time.start._minute': { '$gte': 0 } }]
+				}
+			]
+		}).sort([['time.start._hour', 1], ['time.start._minute', 1]]).limit(1)
+		//console.log("business after ", appointmentAfterBusiness, "businessBefore", appointmentBeforeBusiness)
+
+		var appointmentAfter;
+		var appointmentBefore;
+
+		if (!isEmpty(appointmentAfterBusiness) && !isEmpty(appointmentAfterClient) && !isEmpty(appointmentBeforeBusiness) && !isEmpty(appointmentBeforeClient)) {
+			const totalStartClient = appointmentAfterClient[0].time.start._hour * 60 + appointmentAfterClient[0].time.start._minute;
+			const totalStartBusiness = appointmentAfterBusiness[0].time.start._hour * 60 + appointmentAfterBusiness[0].time.start._minute;
+
+			const totalEndClient = appointmentBeforeClient[0].time.end._hour * 60 + appointmentBeforeClient[0].time.end._minute;
+			const totalEndBusiness = appointmentBeforeBusiness[0].time.end._hour * 60 + appointmentBeforeBusiness[0].time.end._minute;
+
+
+
+			if (totalStartClient > totalStartBusiness) {
+				//business wins
+				appointmentAfter = appointmentAfterBusiness;
+
+			} else {
+				appointmentAfter = appointmentAfterClient;
+			}
+			if (totalEndClient > totalEndBusiness) {
+				//business wins
+				appointmentBefore = appointmentBeforeBusiness;
+			} else {
+				appointmentBefore = appointmentBeforeClient;
+			}
+
+		} else if (!isEmpty(appointmentAfterBusiness)) {
+			appointmentAfter = appointmentAfterBusiness;
+		} else {
+			appointmentAfter = appointmentAfterClient;
+		}
+		if (!isEmpty(appointmentBeforeBusiness)) {
+			appointmentBefore = appointmentBeforeBusiness;
+		} else {
+			appointmentBefore = appointmentBeforeClient;
+		}
+
+
+		//console.log(appointmentAfter, appointmentBefore)
 		var TimeAfter = null;
 		var TimeBefore = null;
 		//console.log(appointment[0].time.start._hour)
 		if (!appointmentAfter[0]) {
 			if (breakTimeAfter != null) {
-				console.log("!!BreakAfter True AppointmentAfter False", breakTimeAfter)
+				//console.log("!!BreakAfter True AppointmentAfter False", breakTimeAfter)
 				TimeAfter = (((breakTimeAfter.from.getHours() * 60) + breakTimeAfter.from.getMinutes()) - (startHours * 60 + startMinutes))
 			} else {
-				console.log("BreakAfter False appointmmentAfter False todaySch!!")
+				//console.log("BreakAfter False appointmmentAfter False todaySch!!")
 				TimeAfter = (((todaySch[0].until.getHours() * 60) + todaySch[0].until.getMinutes()) - (startHours * 60 + startMinutes))
 			}
 			//todaySch.from
 			//console.log(todaySch[0].from.getHours())
 		} else {
 			if (breakTimeAfter != null) {
-				console.log("BreakAfter true appointmmentafter true")
+				//console.log("BreakAfter true appointmmentafter true")
 				if (breakTimeAfter.until.getHours() <= appointmentAfter[0].time.start._hour && breakTimeAfter.until.getMinutes() <= appointmentAfter[0].time.start._minute) {
 					//there is a break between appointmentAfter and current
-					console.log("!!BreakAfter < appointmmentafter")
+					//console.log("!!BreakAfter < appointmmentafter")
 					TimeAfter = (((breakTimeAfter.from.getHours() * 60) + breakTimeAfter.from.getMinutes()) - (startHours * 60 + startMinutes))
 				}
 			} else {
-				console.log("BreakAfter !< appointmmentafter!!")
+				//console.log("BreakAfter !< appointmmentafter!!")
 
 				TimeAfter = (((appointmentAfter[0].time.start._hour * 60) + appointmentAfter[0].time.start._minute) - (startHours * 60 + startMinutes))
 			}
@@ -867,22 +942,22 @@ module.exports = {
 
 		if (!appointmentBefore[0]) {
 			if (breakTimeBefore != null) {
-				console.log("!!BreakBefore True AppointmentAfter False")
+				//console.log("!!BreakBefore True AppointmentAfter False")
 
 				if (todayFlag && today.getHours() >= breakTimeBefore.until.getHours() && today.getMinutes() >= breakTimeBefore.until.getMinutes()) {
-					console.log("today!! > breakTimeBefore")
+					//console.log("today!! > breakTimeBefore")
 					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
 
 				} else {
-					console.log("today < breakTimeBefore!!")
+					//console.log("today < breakTimeBefore!!")
 					TimeBefore = (((endHours * 60) + endMinutes) - breakTimeBefore.until.getHours() * 60 + breakTimeBefore.until.getMinutes())
 				}
 			} else {
 				if (todaySch[0].from.getHours() <= today.getHours() && todaySch[0].from.getMinutes() <= today.getMinutes() && todayFlag) {
-					console.log("today")
+					//console.log("today")
 					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
 				} else {
-					console.log("!!todaySch>today")
+					//console.log("!!todaySch>today")
 					TimeBefore = (((endHours * 60) + endMinutes) - (todaySch[0].from.getHours() * 60 + todaySch[0].from.getMinutes()))
 
 				}
@@ -892,27 +967,27 @@ module.exports = {
 			if (breakTimeBefore != null) {
 				if (breakTimeBefore.from.getHours() >= appointmentBefore[0].time.start._hour && breakTimeBefore.from.getMinutes() >= appointmentBefore[0].time.start._minute) {
 					//there is a break between appointmentBefore and current
-					console.log("BreakBefore true")
+					//console.log("BreakBefore true")
 					if (breakTimeBefore.until.getHours() <= today.getHours() && breakTimeBefore.until.getMinutes() <= today.getMinutes() && todayFlag) {
-						console.log("breaktimeBEofre<today!! ")
+						//console.log("breaktimeBEofre<today!! ")
 						TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
 					} else {
-						console.log("breaktimeBEofre!!>today ")
+						//console.log("breaktimeBEofre!!>today ")
 						TimeBefore = ((startHours * 60 + startMinutes) - ((breakTimeBefore.until.getHours() * 60) + breakTimeBefore.until.getMinutes()))
 					}
 				} else {
-					console.log("appointment > ALL Breakbefore True")
+					//console.log("appointment > ALL Breakbefore True")
 					TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
 				}
 
 			} else {
-				console.log("breakBefore false")
+				//console.log("breakBefore false")
 				if (appointmentBefore[0].time.end._hour <= today.getHours() && appointmentBefore[0].time.end._minute <= today.getMinutes() && todayFlag) {
-					console.log("today!! > appointmeentbefore   ")
+					//console.log("today!! > appointmeentbefore   ")
 					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
 
 				} else {
-					console.log("appointmentBefore >ALL")
+					//console.log("appointmentBefore >ALL")
 					TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
 
 				}
@@ -922,7 +997,7 @@ module.exports = {
 		const currentAppointmentTime = (((endHours * 60) + endMinutes) - ((startHours * 60) + startMinutes))
 		TimeTotal = TimeAfter + TimeBefore - currentAppointmentTime;
 
-		console.log({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, currentAppointmentTime })
+		//console.log({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, currentAppointmentTime })
 		//console.log("appoint", currentAppointmentTime)
 		res.json({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, oldNeededTime: currentAppointmentTime })
 
