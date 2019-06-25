@@ -9,7 +9,7 @@ const moment = require('moment');
 mongoose.Promise = global.Promise;
 setInterval(async function() {
 	//var yestrday = moment().subtract(1, 'days').startOf('day').toDate();
-	let today = new Date(moment().format('YYYY/MM/DD'));
+	let today = moment(new Date()).format('l');
 
 	let time = new Date();
 	/* change apppointment status to passed */

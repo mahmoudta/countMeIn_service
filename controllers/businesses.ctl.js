@@ -1,10 +1,12 @@
 const JWT = require('jsonwebtoken');
 const { JWT_SECRET } = require('../consts');
+const moment = require('moment');
 
 const Businesses = require('../models/business');
 const Categories = require('../models/category');
 const Appointments = require('../models/appointment');
 const Reviews = require('../models/review');
+const insights = require('../models/insight');
 const Services = require('../models/service');
 const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
@@ -16,7 +18,11 @@ const {
 	rateIncrement,
 	profileViewIncerement,
 	unFollowClickIncerement,
-	followClickIncrement
+	followClickIncrement,
+	servicesDayStatistics,
+	createInsights,
+	createAppointmentsInsights,
+	createTotalFollowersCount
 } = require('./functions/business.funcs');
 
 const mongoose = require('mongoose');
@@ -490,7 +496,11 @@ module.exports = {
 			days_calculate_length,
 			max_working_days_response,
 			customer_prefered_period,
-			experiance_rule
+			experiance_rule,
+			max_days_to_return,
+			morning,
+			afternoon,
+			evening
 		} = req.body;
 		update = {
 			$set : {
@@ -501,11 +511,23 @@ module.exports = {
 					days_calculate_length     : days_calculate_length,
 					max_working_days_response : max_working_days_response,
 					experiance_rule           : experiance_rule,
-					customer_prefered_period  : customer_prefered_period
+					customer_prefered_period  : customer_prefered_period,
+					max_days_to_return        : max_days_to_return,
+					range_definition          : {
+						morning   : morning,
+						// 'morning._end'     : morning._end,
+						// 'afternoon._end'   : afternoon._end,
+						afternoon : afternoon,
+						// 'evning._end'   : evning._end,
+						evening   : evening
+					}
 				}
 			}
 		};
-		const business = await Businesses.findOneAndUpdate({ owner_id: req.user._id }, update, { new: true })
+		const business = await Businesses.findOneAndUpdate({ owner_id: req.user._id }, update, {
+			new              : true,
+			useFindAndModify : false
+		})
 			.populate('categories')
 			.populate('services.service_id', 'title')
 			.populate('customers.customer_id', 'profile');
@@ -533,15 +555,240 @@ module.exports = {
 		);
 		res.json({ reviews });
 	},
-	setfull                       : async (req, res, next) => {
-		// const test = rateIncrement('5cedfa110a209a0eddbb2bbb');
-		// res.json(test);
-		const convert = (_id) => {
-			console.log(_id);
-			return mongoose.Types.ObjectId(_id);
-		};
-		const result = await Appointments.aggregate([
-			{ $match: { status: 'done' } },
+	getStatistics                 : async (req, res, next) => {
+		const { business_id, range } = req.params;
+		let date, minDate, minPast;
+		date = new Date(moment().format('YYYY/MM/DD'));
+		let divider = 0;
+		let array = [];
+		switch (range) {
+			case '7': {
+				divider = 7;
+				minDate = moment(date).subtract(8, 'days').format('YYYY/MMM/DD');
+				minPast = moment(date).subtract(15, 'days').format('YYYY/MMM/DD');
+				break;
+			}
+			default:
+				return res.json({ error: 'invalid time range' });
+		}
+
+		const documents = await insights.aggregate([
+			{
+				$match : {
+					business_id : mongoose.Types.ObjectId(business_id),
+					date        : { $gt: new Date(minDate), $lt: date }
+				}
+			},
+			{ $sort: { date: 1 } },
+
+			{
+				$addFields : {
+					str_date    : {
+						$concat : [
+							{ $substr: [ { $add: [ 1, { $dayOfMonth: '$date' } ] }, 0, 2 ] },
+							'-',
+							{ $substr: [ { $month: '$date' }, 0, 2 ] },
+							'-',
+							{ $substr: [ { $year: '$date' }, 0, 4 ] }
+						]
+					},
+					range_total : {
+						total_time        : '$total_time',
+						total_earnings    : '$total_earnings',
+						done_appointments : '$done_appointments',
+						average_rate      : '$rating_sum',
+						profile_views     : '$profile_views'
+					}
+				}
+			},
+
+			{
+				$project : {
+					total_time        : [ '$str_date', { $ifNull: [ '$total_time', 0 ] } ],
+					total_earnings    : [ '$str_date', { $ifNull: [ '$total_earnings', 0 ] } ],
+					average_rate      : [
+						'$str_date',
+						{
+							$divide : [
+								'$rating_sum',
+								{ $cond: [ { $lt: [ '$rating_count', 1 ] }, 1, '$rating_count' ] }
+							]
+						}
+					],
+					profile_views     : [ '$str_date', '$profile_views' ],
+					done_appointments : [ '$str_date', { $ifNull: [ '$done_appointments', 0 ] } ],
+					range_total       : 1
+				}
+			},
+			{
+				$group : {
+					_id                : null,
+
+					total_time         : { $push: '$total_time' },
+					total_earnings     : { $push: '$total_earnings' },
+					average_rate       : { $push: '$average_rate' },
+					profile_views      : { $push: '$profile_views' },
+					done_appointments  : { $push: '$done_appointments' },
+					// total_range       : {},
+
+					Ftotal_time        : { $sum: '$range_total.total_time' },
+					Ftotal_earnings    : { $sum: '$range_total.total_earnings' },
+					Fdone_appointments : { $sum: '$range_total.done_appointments' },
+					Faverage_rate      : { $sum: '$range_total.average_rate' },
+					Fprofile_views     : { $sum: '$range_total.profile_views' }
+				}
+			}
+
+			// }
+			// {
+			// 	$group : {
+			// 		_id            : null,
+			// 		total_earnings : { $push: { $date: '$total_earnings' } }
+			// 	}
+			// }
+		]);
+		if (!documents) return res.status(304).json({ error: 'no data' });
+		const pastRange = await insights.aggregate([
+			{
+				$match : {
+					business_id : mongoose.Types.ObjectId(business_id),
+					date        : {
+						$gt : new Date(minPast),
+						$lt : new Date(moment(minDate).add(1, 'day').format('YYYY/MM/DD'))
+					}
+				}
+			},
+			{
+				$group : {
+					_id                : null,
+					total_time         : { $sum: '$total_time' },
+					total_earnings     : { $sum: '$total_earnings' },
+					done_appointments  : { $sum: '$done_appointments' },
+					rating_count       : { $sum: '$rating_count' },
+					rating_sum         : { $sum: '$rating_sum' },
+					recommendation_sum : { $sum: '$recommendation_sum' },
+					profile_views      : { $sum: '$profile_views' }
+				}
+			}
+		]);
+		res.status(200).json({ statistics: { current: documents[0], past: pastRange[0] } });
+	},
+	getAppointmentsStatistics     : async (req, res, next) => {
+		const business_id = mongoose.Types.ObjectId(req.params.business_id);
+		let date = new Date();
+		const documents = await insights.aggregate([
+			{
+				$match : {
+					business_id : business_id
+				}
+			},
+			{ $unwind: '$traffic' },
+			{
+				$addFields : {
+					name : '$traffic.time',
+					y    : '$traffic.count',
+					x    : {
+						$dayOfWeek : {
+							date     : '$date',
+							timezone : '+0300'
+						}
+					}
+				}
+			},
+			{
+				$group : {
+					_id : {
+						name : '$name',
+						x    : '$x'
+					},
+					y   : { $sum: '$y' }
+				}
+			},
+			{ $sort: { '_id.name': 1, '_id.x': 1 } },
+			{
+				$group : {
+					_id  : {
+						name : '$_id.name'
+					},
+					data : {
+						$push : { x: '$_id.x', y: '$y' }
+					}
+				}
+			},
+			{
+				$project : {
+					_id  : 0,
+					name : '$_id.name',
+					data : 1
+				}
+			},
+			{ $sort: { name: 1 } }
+		]);
+
+		let hour = 0;
+		let results = [];
+		while (hour < 24) {
+			let name = '';
+			if (hour < 10) {
+				name = `0${hour}`;
+			} else {
+				name = hour;
+			}
+			let data = [
+				{ x: 'Sun', y: 0 },
+				{ x: 'Mon', y: 0 },
+				{ x: 'Tue', y: 0 },
+				{ x: 'Wed', y: 0 },
+				{ x: 'Thu', y: 0 },
+				{ x: 'Fri', y: 0 },
+				{ x: 'Sat', y: 0 }
+			];
+			results.push({ name, data });
+			hour++;
+		}
+
+		const bb = await documents.forEach(async (hour) => {
+			await hour.data.forEach((day) => {
+				results[hour.name].data[day.x - 1].y = day.y;
+			});
+		});
+
+		const comparison = await insights.aggregate([
+			{
+				$match : {
+					business_id : business_id,
+					date        : {
+						$lt : new Date(moment(new Date()).format('l')),
+						$gt : new Date(moment(new Date()).subtract(8, 'days').format('l'))
+					}
+				}
+			},
+			{ $sort: { date: 1 } },
+			{
+				$project : {
+					done_appointments   : { $ifNull: [ '$done_appointments', 0 ] },
+					passed_appointments : { $ifNull: [ '$passed_appointments', 0 ] },
+					total_appointments  : { $ifNull: [ '$total_appointments', 0 ] }
+				}
+			},
+			{
+				$group : {
+					_id    : null,
+					done   : { $push: '$done_appointments' },
+					passed : { $push: '$passed_appointments' },
+					total  : { $push: '$total_appointments' }
+				}
+			}
+		]);
+
+		/* making sure that it fits all the hours and all days */
+		res.json({ appointmntsStats: await results, comparison: comparison[0] });
+	},
+	getServiceStats               : async (req, res, next) => {
+		let id = mongoose.Types.ObjectId(req.params.business_id);
+		const results = await Appointments.aggregate([
+			//TODO - ADD to pipleine to avoid double quers
+			{ $match: { status: 'done', business_id: id } },
 			{ $unwind: '$services' },
 			/* stage to save the service_id before the join */
 			{
@@ -561,15 +808,25 @@ module.exports = {
 			/* stage to to get the join services[0]{which it a document of join and save it as a real document} */
 			{
 				$addFields : {
-					allservices : { $arrayElemAt: [ '$services', 0 ] }
+					allservices      : { $arrayElemAt: [ '$services', 0 ] },
+					appointment_time : {
+						$add : [
+							{ $multiply: [ { $subtract: [ '$time.end._hour', '$time.start._hour' ] }, 60 ] },
+							{ $subtract: [ '$time.end._minute', '$time.start._minute' ] }
+						]
+					},
+					real_time        : { $subtract: [ '$time.check_out', '$time.check_in' ] }
 				}
 			},
+
 			/* the stage to filter the results and keep the wanted varibales only */
 			{
 				$project : {
-					date        : '$time.date',
-					business_id : '$business_id',
-					services    : {
+					appointment_time : { $subtract: [ '$appointment_time', '$allservices.break_time' ] },
+					real_time        : { $divide: [ '$real_time', 60 * 1000 ] },
+					// check_in   : '$time.check_in',
+					// real_time  : { $subtract: [ '$time.checkout', '$time.check_in' ] },
+					services         : {
 						$filter : {
 							input : '$allservices.services',
 							as    : 'item',
@@ -583,72 +840,84 @@ module.exports = {
 			{ $unwind: '$services' },
 			{
 				$addFields : {
-					businessService : '$services'
+					time_diff : {
+						$divide : [ { $subtract: [ '$real_time', '$appointment_time' ] }, '$appointment_time' ]
+					}
+				}
+			},
+			{
+				$group : {
+					_id          : {
+						service_id : '$services.service_id',
+						time       : '$services.time',
+						cost       : '$services.cost'
+					},
+					appointments : { $push: '$time_diff' },
+					// time         : { $add: [ '$services.time', 0 ] },
+					count        : { $sum: 1 }
 				}
 			},
 			{
 				$lookup : {
 					from         : 'services',
-					localField   : 'services.service_id',
+					localField   : '_id.service_id',
 					foreignField : '_id',
-					as           : 'services'
+					as           : 'newService'
 				}
 			},
-			{ $unwind: '$services' },
+			{ $unwind: '$newService' },
+			{
+				$project : {
+					_id    : '$_id.service_id',
+					change : { $divide: [ { $multiply: [ { $sum: '$appointments' }, '$_id.time' ] }, '$count' ] },
+					profit : { $multiply: [ '$_id.cost', '$count' ] },
+					time   : '$_id.time',
+					count  : '$count',
+					title  : '$newService.title'
+				}
+			},
+			{ $sort: { count: -1 } }
+		]);
+		res.json({ results });
+	},
+	getFollowersStats             : async (req, res, next) => {
+		await createTotalFollowersCount();
+		const id = mongoose.Types.ObjectId(req.params.business_id);
+		const results = await insights.aggregate([
+			{
+				$match : { business_id: id }
+			},
 			{
 				$addFields : {
-					'businessService.title' : '$services.title'
+					followers : { $ifNull: [ '$total_followers', 0 ] },
+					str_date  : {
+						$concat : [
+							{ $substr: [ { $add: [ 1, { $dayOfMonth: '$date' } ] }, 0, 2 ] },
+							'-',
+							{ $substr: [ { $month: '$date' }, 0, 2 ] }
+						]
+					}
 				}
-			}
-
-			// {
-			// 	$group : {
-			// 		_id      : {
-			// 			date        : '$date',
-			// 			business_id : '$business_id'
-			// 		},
-
-			// 		services : { $push: '$services' },
-			// 		count    : { $sum: 1 }
-			// 	}
-			// },
-			// {
-			// 	$project : {
-			// 		_id         : 0,
-			// 		business_id : '$_id.business_id',
-			// 		date        : '$_id.date',
-			// 		totalCost   : { $sum: '$services.cost' },
-			// 		totalTime   : { $sum: '$services.time' },
-			// 		count       : '$count'
-			// 	}
-			// }
-
-			// }
-			// }
-			// {
-			// 	$group : {
-			// 		_id      : {
-			// 			date        : '$time.date',
-			// 			business_id : '$business_id'
-			// 		},
-			// 		services : { $push: '$services' },
-			// 		count    : { $sum: 1 }
-			// 	}
-			// }
+			},
+			{
+				$project : {
+					_id       : null,
+					date      : '$date',
+					graph     : [ '$date', '$follow', '$unfollow' ],
+					follow    : { $ifNull: [ '$follow', 0 ] },
+					unfollow  : { $ifNull: [ '$unfollow', 0 ] },
+					followers : '$followers'
+				}
+			},
+			{ $sort: { date: 1 } }
 		]);
-		// const business = await Businesses.find({}).populate('insights');
-		res.json({ result });
+		res.json({ results });
+	},
 
-		// const ressponse = await getbusinessAvgRatingByDateRange('5cedfa110a209a0eddbb2bbb');
-		// res.json({ ressponse });
-		// const users = await Categories.aggregate([
-		// 	{
-		// 		$group : {
-		// 			_id      : '$services',
-		// 			services : { $sum: 1 }
-		// 		}
-		// 	}
-		// ]);
-		// res.json({ users });
+	setfull                       : async (req, res, next) => {
+		const test = await createAppointmentsInsights();
+		res.json({ test });
+		// res.json({ success: 'success' });
+		// servicesDayStatistics();
 	}
 };
