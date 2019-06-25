@@ -52,19 +52,19 @@ createTime = async (time) => {
 };
 
 module.exports = {
-	getBusinessesByCatagory       : async (req, res, next) => {
-		const { catagoryId } = req.params;
-		//var catagoryId = JSON.parse(req.params);
+	// getBusinessesByCatagory       : async (req, res, next) => {
+	// 	const { catagoryId } = req.params;
+	// 	//var catagoryId = JSON.parse(req.params);
 
-		const ResultQuery = await Businesses.find(
-			{
-				'profile.category_id' : catagoryId
-			},
-			'_id'
-		);
+	// 	const ResultQuery = await Businesses.find(
+	// 		{
+	// 			'profile.category_id' : catagoryId
+	// 		},
+	// 		'_id'
+	// 	);
 
-		res.status(200).json({ ResultQuery });
-	},
+	// 	res.status(200).json({ ResultQuery });
+	// },
 
 	getBusinessesByCatagoryArray  : async (req, res, next) => {
 		const { catagoryIdArray } = req.body;
@@ -93,23 +93,22 @@ module.exports = {
 
 		res.status(200).json({ customers });
 	},
-	getServicesByBusiness         : async (req, res, next) => {
-		const { id } = req.params;
-		const business = await Businesses.findById(id);
-		if (!business) return res.status(404).json({ error: 'business not found' });
-		const ids = await business.profile.services.map((service) => {
-			return service.service_id;
-		});
-		const category = await Categories.findById(business.profile.category_id);
+	// getServicesByBusiness: async (req, res, next) => {
+	// 	const { id } = req.params;
+	// 	const business = await Businesses.findById(id);
+	// 	if (!business) return res.status(404).json({ error: 'business not found' });
+	// 	const ids = await business.profile.services.map((service) => {
+	// 		return service.service_id;
+	// 	});
+	// 	const category = await Categories.findById(business.profile.category_id);
 
-		const services = await category.subCats.filter((elem) => {
-			return ids.includes(elem._id.toString());
-		});
+	// 	const services = await category.subCats.filter((elem) => {
+	// 		return ids.includes(elem._id.toString());
+	// 	});
 
-		if (!services) return res.status(404).json({ error: 'an error occurred' });
-		res.status(200).json({ services });
-	},
-
+	// 	if (!services) return res.status(404).json({ error: 'an error occurred' });
+	// 	res.status(200).json({ services });
+	// },
 	getBusinessesByCatagory       : async (req, res, next) => {
 		const { catagoryId } = req.params;
 		//var catagoryId = JSON.parse(req.params);
@@ -474,19 +473,23 @@ module.exports = {
 	},
 	getServicesByBusiness         : async (req, res, next) => {
 		const { id } = req.params;
-		const business = await Businesses.findById(id);
+		const business = await Businesses.findById(id).populate('services.service_id', 'title');
+
+		//console.log("service", business)
 		if (!business) return res.status(404).json({ error: 'business not found' });
-		const ids = await business.profile.services.map((service) => {
-			return service.service_id;
+		const ids = await business.services.map((service) => {
+			return {
+				title : service.service_id.title,
+				id    : service.service_id._id,
+				cost  : service.cost,
+				time  : service.time
+			};
 		});
-		const category = await Categories.findById(business.profile.category_id);
 
-		const services = await category.subCats.filter((elem) => {
-			return ids.includes(elem._id.toString());
-		});
+		//console.log("service", ids)
 
-		if (!services) return res.status(404).json({ error: 'an error occurred' });
-		res.status(200).json({ services });
+		//if (!services) return res.status(404).json({ error: 'an error occurred' });
+		res.status(200).json({ ids });
 	},
 	UpdateSmartAlgorithmsSettings : async (req, res, next) => {
 		const {
