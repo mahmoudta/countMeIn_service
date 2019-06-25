@@ -1315,8 +1315,16 @@ async function smartFunction(
 	const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 	const days_to_return = business.schedule_settings.days_calculate_length;
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
-	const range_definition = business.schedule_settings.range_definition;
-	const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
+	// const range_definition = business.schedule_settings.range_definition;
+	// const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
+	//
+	const range_definition = {
+		morning   : { start: { _hour: 7, _minute: 0 }, end: { _hour: 12, _minute: 0 } },
+		afternoon : { start: { _hour: 12, _minute: 0 }, end: { _hour: 17, _minute: 0 } },
+		evening   : { start: { _hour: 17, _minute: 0 }, end: { _hour: 23, _minute: 0 } }
+	};
+	const toreturnadaybybusiness = 2;
+	//
 	var numberToReturnADay;
 	if (toreturnadaybybusiness < toreturnadaybycustomer) numberToReturnADay = toreturnadaybycustomer;
 	else numberToReturnADay = toreturnadaybybusiness;
