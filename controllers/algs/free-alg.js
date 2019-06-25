@@ -405,7 +405,13 @@ time_range.prototype.tominutes = function() {
 	temp = (this._end.hour() - this._start.hour()) * 60 + (this._end.minute() - this._start.minute());
 	return temp;
 };
-time_range.prototype.slice = function(length, minutes_between_appointment, minsevicetime, valuefornospaces) {
+time_range.prototype.slice = function(
+	length,
+	minutes_between_appointment,
+	minsevicetime,
+	valuefornospaces,
+	fromsmart = true
+) {
 	var tmp = [];
 	var sum = length + minutes_between_appointment;
 	var minutes = this.tominutes();
@@ -433,9 +439,10 @@ time_range.prototype.slice = function(length, minutes_between_appointment, minse
 		}
 		tmp.push(temp);
 	}
-
-	if (remainintimerange > 0)
-		tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+	if (fromsmart) {
+		if (remainintimerange > 0)
+			tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+	}
 
 	return tmp;
 };
@@ -443,11 +450,13 @@ time_range.prototype.slice = function(length, minutes_between_appointment, minse
 function Day(date, free) {
 	(this.Date = date), (this.Free = free);
 }
-Day.prototype.slice = function(length, minutes_between_appointment, minsevicetime, valuefornospaces) {
+Day.prototype.slice = function(length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart = true) {
 	var tmp = [];
 
 	this.Free.forEach((timerange) => {
-		tmp = tmp.concat(timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces));
+		tmp = tmp.concat(
+			timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart)
+		);
 	});
 	this.Free = [];
 	//to do (check date)
@@ -697,7 +706,7 @@ async function returnfreetime(
 		}
 		//for nidal
 		day.totree(tmpfree);
-		if (timerangefromedit !== false) day.remove(timerangefromedit);
+		if (timerangefromedit !== false) day.insert(timerangefromedit);
 
 		posibletobook.totree(day.timerangesthatfit(services_length, minutes_between_appointment));
 		tmpday.Free = posibletobook.arrayofopjects();
@@ -708,7 +717,7 @@ async function returnfreetime(
 			}
 		}
 		if (choice == 0 || choice == 1)
-			tmpday.slice(services_length, minutes_between_appointment, minsevicetime, valuefornospaces);
+			tmpday.slice(services_length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart);
 		daysfree.push(tmpday);
 		counter++;
 	} while (counter < number_of_days_to_return);
