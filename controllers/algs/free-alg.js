@@ -1315,10 +1315,8 @@ async function smartFunction(
 	const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 	const days_to_return = business.schedule_settings.days_calculate_length;
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
-	//const morningbefor = business.schedule_settings.morning;
-	//const afternoonbefor = business.schedule_settings.afternoon;
-	//const eveningbefor = business.schedule_settings.evening;
-	const toreturnadaybybusiness = 2; //const toreturnadaybybusiness = business.schedule_settings.toreturnaday;
+	const range_definition = business.schedule_settings.range_definition;
+	const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
 	var numberToReturnADay;
 	if (toreturnadaybybusiness < toreturnadaybycustomer) numberToReturnADay = toreturnadaybycustomer;
 	else numberToReturnADay = toreturnadaybybusiness;
@@ -1382,13 +1380,22 @@ async function smartFunction(
 	if (preferhours !== false && preferhours <= 2 && preferhours >= 0) {
 		switch (preferhours) {
 			case 0:
-				preferhoursrange = new time_range(new time(7, 0), new time(12, 0));
+				preferhoursrange = new time_range(
+					new time(range_definition.morning.start._hour, range_definition.morning.start._minute),
+					new time(range_definition.morning.end._hour, range_definition.morning.end._minute)
+				);
 				break;
 			case 1:
-				preferhoursrange = new time_range(new time(12, 0), new time(17, 0));
+				preferhoursrange = new time_range(
+					new time(range_definition.afternoon.start._hour, range_definition.afternoon.start._minute),
+					new time(range_definition.afternoon.end._hour, range_definition.afternoon.end._minute)
+				);
 				break;
 			case 2:
-				preferhoursrange = new time_range(new time(17, 0), new time(21, 0));
+				preferhoursrange = new time_range(
+					new time(range_definition.evening.start._hour, range_definition.evening.start._minute),
+					new time(range_definition.evening.end._hour, range_definition.evening.end._minute)
+				);
 				break;
 			default:
 			// code block
@@ -1620,6 +1627,7 @@ module.exports = {
 		return [
 			bookresult,
 			true,
+			tostartsmarton.business_id,
 			await smartFunction(
 				tostartsmarton.business_id,
 				tostartsmarton.services,
