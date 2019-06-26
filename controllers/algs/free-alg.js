@@ -1445,7 +1445,6 @@ async function bookFunction(businessid, chosendate, chosentimerange, bookandsave
 	var daysinmongo = freetime.dates.find(
 		(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
 	);
-	var dateid = daysinmongo._id;
 	var id = freetime._id;
 	if (isEmpty(daysinmongo)) return { error: 'invalid Date' };
 	else {
@@ -1601,11 +1600,11 @@ module.exports = {
 		returnsuggest = false,
 		customerid = false
 	) => {
-		var bookresult = await bookFunction(businessid, chosendate, chosentimerange);
-		if (checkifcustomerhavebusness && bookresult) {
+		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, false);
+		if (checkifcustomerhavebusness && bookresult && customerid !== false) {
 			var customersbusness = await Business.findOne({ owner_id: customerid });
 			if (!isEmpty(customersbusness)) {
-				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange);
+				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, false);
 			}
 		}
 		var userreminders;
@@ -1682,12 +1681,7 @@ module.exports = {
 		checkifcustomerhavebusness = true
 	) => {
 		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, false);
-		if (checkifcustomerhavebusness && bookresult) {
-			var customersbusness = await Business.findOne({ owner_id: customerid });
-			if (!isEmpty(customersbusness)) {
-				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, false);
-			}
-		}
+
 		return bookresult;
 	},
 	deleted                         : async (businessid, chosendate, chosentimerange) => {
