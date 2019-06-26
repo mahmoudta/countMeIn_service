@@ -120,12 +120,15 @@ module.exports = {
 	getUpcommingAppointments: async (req, res, next) => {
 		let ResArray = new Array();
 		//let services = new Array();
-		var today = new Date();
+		//var today = moment(moment(new Date()).format('l')) //new Date();
+		var momentdate = moment().format('l');
+		var today = new Date(momentdate);
 		//yesterday.setDate(yesterday.getDate() - 1)
 		console.log('user', req.user._id);
 		const QueryRes = await Appointments.find({
 			client_id: req.user._id,
-			'time.date': { $gte: today }
+			'time.date': { $gte: today },
+			status: { $in: ['inProgress', 'ready'] }
 		}).sort([['time.date', 1], ['time.start._hour', 1], ['time.start._minute', 1]]).
 			populate({
 				path: 'services',
