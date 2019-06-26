@@ -642,7 +642,7 @@ module.exports = {
 						_minute: eminute
 					}
 				},
-				services: [service]
+				services: service
 			}
 
 		);
