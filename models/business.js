@@ -113,7 +113,7 @@ var mongoose = require('mongoose'),
 						_start : {
 							_hour   : {
 								type    : Number,
-								default : 0
+								default : 7
 							},
 							_minute : {
 								type    : Number,
@@ -123,7 +123,7 @@ var mongoose = require('mongoose'),
 						_end   : {
 							_hour   : {
 								type    : Number,
-								default : 0
+								default : 12
 							},
 							_minute : {
 								type    : Number,
@@ -135,21 +135,21 @@ var mongoose = require('mongoose'),
 						_start : {
 							_hour   : {
 								type    : Number,
-								default : 0
+								default : 12
 							},
 							_minute : {
 								type    : Number,
-								default : 0
+								default : 17
 							}
 						},
 						_end   : {
 							_hour   : {
 								type    : Number,
-								default : 0
+								default : 17
 							},
 							_minute : {
 								type    : Number,
-								default : 0
+								default : 23
 							}
 						}
 					},

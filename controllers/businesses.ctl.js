@@ -491,6 +491,53 @@ module.exports = {
 		//if (!services) return res.status(404).json({ error: 'an error occurred' });
 		res.status(200).json({ ids });
 	},
+	getBusinessStatsHeader        : async (req, res, next) => {
+		const id = mongoose.Types.ObjectId(req.params.business_id);
+		let today = moment(new Date(), 'l');
+		let lastWeekStart = moment(moment(today).subtract('8', 'days'), 'l');
+
+		const header = await insights.aggregate([
+			{
+				$match : {
+					business_id : id,
+					date        : { $gte: lastWeekStart.toDate(), $lte: today.toDate() }
+				}
+			},
+			{
+				$group : {
+					_id               : null,
+					total_time        : { $sum: '$total_time' },
+					total_earnings    : { $sum: '$total_earnings' },
+					done_appointments : { $sum: '$done_appointments' }
+				}
+			}
+		]);
+
+		let pastStart = moment(moment(today).subtract('7', 'days'), 'l');
+		let pastEnd = moment(moment(pastStart).subtract('8', 'days'), 'l');
+		const lastHeader = await insights.aggregate([
+			{
+				$match : {
+					business_id : id,
+					date        : { $gte: pastEnd.toDate(), $lte: pastStart.toDate() }
+				}
+			},
+			{
+				$group : {
+					_id                 : null,
+					l_total_time        : { $sum: '$total_time' },
+					l_total_earnings    : { $sum: '$total_earnings' },
+					l_done_appointments : { $sum: '$done_appointments' }
+				}
+			}
+		]);
+		let obj = header[0];
+		Object.keys(lastHeader[0]).forEach(function(key) {
+			obj[key] = lastHeader[0][key];
+		});
+
+		res.json({ header: obj });
+	},
 	UpdateSmartAlgorithmsSettings : async (req, res, next) => {
 		const {
 			customers_exp,

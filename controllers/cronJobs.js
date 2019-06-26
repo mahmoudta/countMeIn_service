@@ -9,13 +9,14 @@ const moment = require('moment');
 mongoose.Promise = global.Promise;
 setInterval(async function() {
 	//var yestrday = moment().subtract(1, 'days').startOf('day').toDate();
-	let today = moment(new Date()).format('l');
+	let today = moment(new Date(), 'l');
+	// let today = moment(new Date()).format('l');
 
 	let time = new Date();
 	/* change apppointment status to passed */
 
 	const appointments = await Appointments.updateMany(
-		{ 'time.date': new Date(today), 'time.end._hour': { $lt: Number(time.getHours()) }, status: 'ready' },
+		{ 'time.date': today.toDate(), 'time.end._hour': { $lt: Number(time.getHours()) }, status: 'ready' },
 		{ $set: { status: 'passed' } }
 		// {
 		// 	multi       : true,
