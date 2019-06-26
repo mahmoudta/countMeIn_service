@@ -86,19 +86,18 @@ module.exports = {
 	},
 
 	test: async (req, res, next) => {
-		//const date = new Date(2019, 5, 14);
-		//console.log(date);
-		// var momentdate = moment().add(1, 'days').format('l');
-		// var date = new Date(momentdate);
-		// console.log(date);
-		// var vvv = await FreeTime.updateMany(
-		// 	{
-		// 		// $match : { 'dates.day': { $lt: date } }
-		// 	},
-		// 	{ $pull: { dates: { day: { $lt: date } } } }
-		// );
-		//const test1 = await aftereditingbusnessworkinghours('5cedfa110a209a0eddbb2bbb', array);
-		//if (vvv) res.status(200).json({ vvv });
+		var momentdate = moment().add(3, 'days').format('l');
+		var date = new Date(momentdate);
+		console.log(date);
+		const test1 = await booked(
+			'5d12891494cae385bf1fe894',
+			date,
+			{ _start: { _hour: 5, _minute: 0 }, _end: { _hour: 5, _minute: 40 } },
+			true,
+			true,
+			'5d07d11285f0e1296140f4d5'
+		);
+		res.status(200).json({ test1 });
 	},
 	booktest: async (req, res, next) => {
 		// console.log('book Test Here');
@@ -134,7 +133,7 @@ module.exports = {
 				path: 'services',
 				populate: { path: 'services' }
 			})
-			.populate('business_id')
+			.populate('business_id');
 
 		console.log('queryQ', QueryRes);
 
@@ -158,7 +157,7 @@ module.exports = {
 			let thisdate = appointment.time.date;
 			const services = await Promise.all(
 				appointment.services.map(async (service) => {
-					return await ({ title: service.title, _id: service._id, cost: service.cost, time: service.time })
+					return await { title: service.title, _id: service._id, cost: service.cost, time: service.time };
 				})
 			);
 			let time = shour.toString() + ':' + sminute.toString() + '-' + ehour.toString() + ':' + eminute.toString();
@@ -189,33 +188,38 @@ module.exports = {
 		const newDate = moment(moment(new Date()).format('l')).add(Number(days), 'days');
 		//var dateTo = new Date(todayDate);
 		// console.log(todayDate)
-		console.log(customerId)
+		console.log(customerId);
 
 		var theservices = services.map((service, i) => {
-			return mongoose.Types.ObjectId(service)
-		})
+			return mongoose.Types.ObjectId(service);
+		});
 		//var dateTo = Date.setDay(Date)
-		let thebusiness_id = mongoose.Types.ObjectId(businessId)
+		let thebusiness_id = mongoose.Types.ObjectId(businessId);
 		//let thecustomer_id = mongoose.Types.ObjectId(customerId)
 		//console.log(thecustomer_id)
 
 		let update = {
 			$push: {
-				reminders: { business_id: thebusiness_id, services: theservices, days: days, date_to: newDate, repeat: repeat }
+				reminders: {
+					business_id: thebusiness_id,
+					services: theservices,
+					days: days,
+					date_to: newDate,
+					repeat: repeat
+				}
 			}
 		};
-		const user = await Users.findOneAndUpdate({ _id: customerId, 'reminders.business_id': { $ne: thebusiness_id } }, update, {
-
-			"upsert": true
-		}
+		const user = await Users.findOneAndUpdate(
+			{ _id: customerId, 'reminders.business_id': { $ne: thebusiness_id } },
+			update,
+			{
+				upsert: true
+			}
 		);
 
 		//console.log(user)
-		if (isEmpty(user)) return res.status(333).json({ result: "error" });
-		res.status(200).json({ result: "aLready has reminder" })
-
-
-
+		if (isEmpty(user)) return res.status(333).json({ result: 'error' });
+		res.status(200).json({ result: 'aLready has reminder' });
 	},
 
 	appendNotification: async (req, res, next) => {
@@ -243,7 +247,7 @@ Date.prototype.addDays = function (days) {
 	var date = new Date(this.valueOf());
 	date.setDate(date.getDate() + days);
 	return date;
-}
+};
 // exports.signIn = (req, res) => {
 // 	Users.findOne({ 'profile.email': req.body.email, 'profile.password': req.body.password }, (err, User) => {
 // 		if (err) {

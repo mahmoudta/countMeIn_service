@@ -405,7 +405,13 @@ time_range.prototype.tominutes = function() {
 	temp = (this._end.hour() - this._start.hour()) * 60 + (this._end.minute() - this._start.minute());
 	return temp;
 };
-time_range.prototype.slice = function(length, minutes_between_appointment, minsevicetime, valuefornospaces) {
+time_range.prototype.slice = function(
+	length,
+	minutes_between_appointment,
+	minsevicetime,
+	valuefornospaces,
+	fromsmart = true
+) {
 	var tmp = [];
 	var sum = length + minutes_between_appointment;
 	var minutes = this.tominutes();
@@ -433,9 +439,10 @@ time_range.prototype.slice = function(length, minutes_between_appointment, minse
 		}
 		tmp.push(temp);
 	}
-
-	if (remainintimerange > 0)
-		tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+	if (fromsmart) {
+		if (remainintimerange > 0)
+			tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+	}
 
 	return tmp;
 };
@@ -443,11 +450,13 @@ time_range.prototype.slice = function(length, minutes_between_appointment, minse
 function Day(date, free) {
 	(this.Date = date), (this.Free = free);
 }
-Day.prototype.slice = function(length, minutes_between_appointment, minsevicetime, valuefornospaces) {
+Day.prototype.slice = function(length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart = true) {
 	var tmp = [];
 
 	this.Free.forEach((timerange) => {
-		tmp = tmp.concat(timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces));
+		tmp = tmp.concat(
+			timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart)
+		);
 	});
 	this.Free = [];
 	//to do (check date)
@@ -697,7 +706,7 @@ async function returnfreetime(
 		}
 		//for nidal
 		day.totree(tmpfree);
-		if (timerangefromedit !== false) day.remove(timerangefromedit);
+		if (timerangefromedit !== false) day.insert(timerangefromedit);
 
 		posibletobook.totree(day.timerangesthatfit(services_length, minutes_between_appointment));
 		tmpday.Free = posibletobook.arrayofopjects();
@@ -708,7 +717,7 @@ async function returnfreetime(
 			}
 		}
 		if (choice == 0 || choice == 1)
-			tmpday.slice(services_length, minutes_between_appointment, minsevicetime, valuefornospaces);
+			tmpday.slice(services_length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart);
 		daysfree.push(tmpday);
 		counter++;
 	} while (counter < number_of_days_to_return);
@@ -1315,10 +1324,16 @@ async function smartFunction(
 	const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 	const days_to_return = business.schedule_settings.days_calculate_length;
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
-	//const morningbefor = business.schedule_settings.morning;
-	//const afternoonbefor = business.schedule_settings.afternoon;
-	//const eveningbefor = business.schedule_settings.evening;
-	const toreturnadaybybusiness = 2; //const toreturnadaybybusiness = business.schedule_settings.toreturnaday;
+	// const range_definition = business.schedule_settings.range_definition;
+	// const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
+	//
+	const range_definition = {
+		morning   : { start: { _hour: 7, _minute: 0 }, end: { _hour: 12, _minute: 0 } },
+		afternoon : { start: { _hour: 12, _minute: 0 }, end: { _hour: 17, _minute: 0 } },
+		evening   : { start: { _hour: 17, _minute: 0 }, end: { _hour: 23, _minute: 0 } }
+	};
+	const toreturnadaybybusiness = 2;
+	//
 	var numberToReturnADay;
 	if (toreturnadaybybusiness < toreturnadaybycustomer) numberToReturnADay = toreturnadaybycustomer;
 	else numberToReturnADay = toreturnadaybybusiness;
@@ -1382,13 +1397,22 @@ async function smartFunction(
 	if (preferhours !== false && preferhours <= 2 && preferhours >= 0) {
 		switch (preferhours) {
 			case 0:
-				preferhoursrange = new time_range(new time(7, 0), new time(12, 0));
+				preferhoursrange = new time_range(
+					new time(range_definition.morning.start._hour, range_definition.morning.start._minute),
+					new time(range_definition.morning.end._hour, range_definition.morning.end._minute)
+				);
 				break;
 			case 1:
-				preferhoursrange = new time_range(new time(12, 0), new time(17, 0));
+				preferhoursrange = new time_range(
+					new time(range_definition.afternoon.start._hour, range_definition.afternoon.start._minute),
+					new time(range_definition.afternoon.end._hour, range_definition.afternoon.end._minute)
+				);
 				break;
 			case 2:
-				preferhoursrange = new time_range(new time(17, 0), new time(21, 0));
+				preferhoursrange = new time_range(
+					new time(range_definition.evening.start._hour, range_definition.evening.start._minute),
+					new time(range_definition.evening.end._hour, range_definition.evening.end._minute)
+				);
 				break;
 			default:
 			// code block
@@ -1421,7 +1445,6 @@ async function bookFunction(businessid, chosendate, chosentimerange, bookandsave
 	var daysinmongo = freetime.dates.find(
 		(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
 	);
-	var dateid = daysinmongo._id;
 	var id = freetime._id;
 	if (isEmpty(daysinmongo)) return { error: 'invalid Date' };
 	else {
@@ -1577,11 +1600,11 @@ module.exports = {
 		returnsuggest = false,
 		customerid = false
 	) => {
-		var bookresult = await bookFunction(businessid, chosendate, chosentimerange);
-		if (checkifcustomerhavebusness && bookresult) {
+		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, false);
+		if (checkifcustomerhavebusness && bookresult && customerid !== false) {
 			var customersbusness = await Business.findOne({ owner_id: customerid });
 			if (!isEmpty(customersbusness)) {
-				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange);
+				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, false);
 			}
 		}
 		var userreminders;
@@ -1620,6 +1643,7 @@ module.exports = {
 		return [
 			bookresult,
 			true,
+			tostartsmarton.business_id,
 			await smartFunction(
 				tostartsmarton.business_id,
 				tostartsmarton.services,
@@ -1657,12 +1681,7 @@ module.exports = {
 		checkifcustomerhavebusness = true
 	) => {
 		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, false);
-		if (checkifcustomerhavebusness && bookresult) {
-			var customersbusness = await Business.findOne({ owner_id: customerid });
-			if (!isEmpty(customersbusness)) {
-				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, false);
-			}
-		}
+
 		return bookresult;
 	},
 	deleted                         : async (businessid, chosendate, chosentimerange) => {

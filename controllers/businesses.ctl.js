@@ -1,10 +1,12 @@
 const JWT = require('jsonwebtoken');
 const { JWT_SECRET } = require('../consts');
+const moment = require('moment');
 
 const Businesses = require('../models/business');
 const Categories = require('../models/category');
 const Appointments = require('../models/appointment');
 const Reviews = require('../models/review');
+const insights = require('../models/insight');
 const Services = require('../models/service');
 const Users = require('../models/user');
 const { getFollowers, isUserFollower, getCustomer } = require('../utils/business.utils');
@@ -16,7 +18,11 @@ const {
 	rateIncrement,
 	profileViewIncerement,
 	unFollowClickIncerement,
-	followClickIncrement
+	followClickIncrement,
+	servicesDayStatistics,
+	createInsights,
+	createAppointmentsInsights,
+	createTotalFollowersCount
 } = require('./functions/business.funcs');
 
 const mongoose = require('mongoose');
@@ -24,11 +30,11 @@ const mongoose = require('mongoose');
 signInToken = (user, business_id = '') => {
 	return JWT.sign(
 		{
-			sub: user._id,
-			isAdmin: user.isAdmin,
-			profile: user.profile,
-			isBusinessOwner: !isEmpty(business_id) ? true : false,
-			business_id: business_id
+			sub             : user._id,
+			isAdmin         : user.isAdmin,
+			profile         : user.profile,
+			isBusinessOwner : !isEmpty(business_id) ? true : false,
+			business_id     : business_id
 		},
 		JWT_SECRET
 	);
@@ -60,13 +66,13 @@ module.exports = {
 	// 	res.status(200).json({ ResultQuery });
 	// },
 
-	getBusinessesByCatagoryArray: async (req, res, next) => {
+	getBusinessesByCatagoryArray  : async (req, res, next) => {
 		const { catagoryIdArray } = req.body;
-		const ResultQuery = ['empty'];
+		const ResultQuery = [ 'empty' ];
 		catagoryIdArray.forEach(async (value, i) => {
 			ResultQuery = await Businesses.find(
 				{
-					'profile.category_id': value
+					'profile.category_id' : value
 				},
 				'_id'
 			);
@@ -74,7 +80,7 @@ module.exports = {
 		res.status(200).json({ ResultQuery });
 	},
 
-	getAllCustomers: async (req, res, next) => {
+	getAllCustomers               : async (req, res, next) => {
 		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
 		if (!business) return res.status(404).json({ error: 'business not found' });
 		const ids = await business.customers.map((customer) => {
@@ -103,13 +109,13 @@ module.exports = {
 	// 	if (!services) return res.status(404).json({ error: 'an error occurred' });
 	// 	res.status(200).json({ services });
 	// },
-	getBusinessesByCatagory: async (req, res, next) => {
+	getBusinessesByCatagory       : async (req, res, next) => {
 		const { catagoryId } = req.params;
 		//var catagoryId = JSON.parse(req.params);
 
 		const business = await Businesses.find(
 			{
-				categories: mongoose.Types.ObjectId(catagoryId)
+				categories : mongoose.Types.ObjectId(catagoryId)
 			},
 			'profile'
 		);
@@ -117,14 +123,14 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	getAllBusinesses: async (req, res, next) => {
+	getAllBusinesses              : async (req, res, next) => {
 		const businesses = await Businesses.find({});
 		if (!businesses) return res.status(404).json({ error: 'not found' });
 		res.status(200).json({ businesses });
 	},
 
 	/* Adhamm */
-	getBusinessForView: async (req, res, next) => {
+	getBusinessForView            : async (req, res, next) => {
 		console.log('business for view');
 		const id = mongoose.Types.ObjectId(req.params.id);
 		const user_id = req.user.id;
@@ -154,7 +160,7 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	getBusinessByOwner: async (req, res, next) => {
+	getBusinessByOwner            : async (req, res, next) => {
 		const owner_id = req.params.owner_id;
 		const business = await Businesses.findOne({ owner_id: owner_id })
 			.populate('categories')
@@ -168,7 +174,7 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	createBusiness: async (req, res, next) => {
+	createBusiness                : async (req, res, next) => {
 		console.log('create Business called!!');
 		// get all params
 		const {
@@ -204,14 +210,14 @@ module.exports = {
 				const from = await createTime(element.from);
 				const until = await createTime(element.until);
 				await items.push({
-					day: element.day,
-					opened: element.opened,
-					from: from,
-					until: until,
-					break: {
-						isBreak: element.break.isBreak ? true : false,
-						from: await createTime(element.break.from),
-						until: await createTime(element.break.until)
+					day    : element.day,
+					opened : element.opened,
+					from   : from,
+					until  : until,
+					break  : {
+						isBreak : element.break.isBreak ? true : false,
+						from    : await createTime(element.break.from),
+						until   : await createTime(element.break.until)
 					}
 				});
 			}
@@ -224,30 +230,30 @@ module.exports = {
 		});
 		const NewServices = await services.map((service) => {
 			return {
-				service_id: mongoose.Types.ObjectId(service.value),
-				time: Number(service.time),
-				cost: Number(service.cost)
+				service_id : mongoose.Types.ObjectId(service.value),
+				time       : Number(service.time),
+				cost       : Number(service.cost)
 			};
 		});
 		const newBusiness = new Businesses({
-			_id: new mongoose.Types.ObjectId(),
-			owner_id: mongoose.Types.ObjectId(req.user._id),
-			profile: {
-				name: name,
-				img: !isEmpty(img) ? img : '',
-				location: {
-					street: !isEmpty(street) ? street : '',
-					city: !isEmpty(city) ? city : '',
-					building: !isEmpty(building) ? Number(building) : 0,
-					postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
+			_id           : new mongoose.Types.ObjectId(),
+			owner_id      : mongoose.Types.ObjectId(req.user._id),
+			profile       : {
+				name        : name,
+				img         : !isEmpty(img) ? img : '',
+				location    : {
+					street      : !isEmpty(street) ? street : '',
+					city        : !isEmpty(city) ? city : '',
+					building    : !isEmpty(building) ? Number(building) : 0,
+					postal_code : !isEmpty(postal_code) ? Number(postal_code) : 0
 				},
-				phone: phone,
-				description: !isEmpty(description) ? description : ''
+				phone       : phone,
+				description : !isEmpty(description) ? description : ''
 			},
-			services: NewServices,
-			categories: NewCategories,
-			working_hours: await fillTime(),
-			break_time: !isEmpty(breakTime) ? breakTime : 10
+			services      : NewServices,
+			categories    : NewCategories,
+			working_hours : await fillTime(),
+			break_time    : !isEmpty(breakTime) ? breakTime : 10
 		});
 		const business = await newBusiness.save();
 		if (!business) return res.status(403).json({ error: 'some error accourd during create' });
@@ -260,7 +266,7 @@ module.exports = {
 		res.status(200).json({ business: businessNew, token });
 	},
 
-	editBusiness: async (req, res, next) => {
+	editBusiness                  : async (req, res, next) => {
 		console.log('edit Business Called!');
 		const {
 			business_id,
@@ -291,14 +297,14 @@ module.exports = {
 				const from = await createTime(element.from);
 				const until = await createTime(element.until);
 				await items.push({
-					day: element.day,
-					opened: element.opened,
-					from: from,
-					until: until,
-					break: {
-						isBreak: element.break.isBreak ? true : false,
-						from: await createTime(element.break.from),
-						until: await createTime(element.break.until)
+					day    : element.day,
+					opened : element.opened,
+					from   : from,
+					until  : until,
+					break  : {
+						isBreak : element.break.isBreak ? true : false,
+						from    : await createTime(element.break.from),
+						until   : await createTime(element.break.until)
 					}
 				});
 			}
@@ -313,31 +319,36 @@ module.exports = {
 
 		const NewServices = await services.map((service) => {
 			return {
-				service_id: mongoose.Types.ObjectId(service.value),
-				time: Number(service.time),
-				cost: Number(service.cost)
+				service_id : mongoose.Types.ObjectId(service.value),
+				time       : Number(service.time),
+				cost       : Number(service.cost)
 			};
 		});
 		const updateBusiness = {
-			profile: {
-				name: name,
-				img: !isEmpty(img) ? img : '',
-				location: {
-					street: !isEmpty(street) ? street : '',
-					city: !isEmpty(city) ? city : '',
-					building: !isEmpty(building) ? Number(building) : 0,
-					postal_code: !isEmpty(postal_code) ? Number(postal_code) : 0
+			$set          : {
+				'profile.name'        : name,
+				'profile.img'         : !isEmpty(img) ? img : '',
+				'profile.location'    : {
+					street      : !isEmpty(street) ? street : '',
+					city        : !isEmpty(city) ? city : '',
+					building    : !isEmpty(building) ? Number(building) : 0,
+					postal_code : !isEmpty(postal_code) ? Number(postal_code) : 0
 				},
-				phone: phone,
-				description: !isEmpty(description) ? description : ''
+				'profile.phone'       : phone,
+				'profile.description' : !isEmpty(description) ? description : ''
 			},
-			services: NewServices,
-			categories: NewCategories,
-			working_hours: await fillTime(),
-			break_time: !isEmpty(breakTime) ? breakTime : 10
+
+			services      : NewServices,
+			categories    : NewCategories,
+			working_hours : await fillTime(),
+			break_time    : !isEmpty(breakTime) ? breakTime : 10
 		};
 
-		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness, { new: true })
+		let business = await Businesses.findOneAndUpdate({ _id: business_id }, updateBusiness, {
+			setDefaultsOnInsert : true,
+			new                 : true,
+			useFindAndModify    : false
+		})
 			.populate('categories')
 			.populate('services.service_id', 'title')
 			.populate('customers.customer_id', 'profile');
@@ -349,7 +360,7 @@ module.exports = {
 		res.status(200).json({ business });
 	},
 
-	followBusiness: async (req, res, next) => {
+	followBusiness                : async (req, res, next) => {
 		console.log('follow business');
 		const { business_id } = req.body;
 		let business_query = {}; /* object to hold the query for business */
@@ -374,20 +385,20 @@ module.exports = {
 			business_query = { _id: business_id, 'customers.customer_id': req.user._id };
 
 			business_update = {
-				$set: {
-					'customers.$.isFollower': true
+				$set : {
+					'customers.$.isFollower' : true
 				},
-				$inc: { 'customers.$.experiance': 2 }
+				$inc : { 'customers.$.experiance': 2 }
 			};
 		} else {
 			/* else : the user is exists in the follower list we should only update the flag to follower.*/
 			business_query = { _id: business_id };
 			business_update = {
-				$push: {
-					customers: {
-						customer_id: mongoose.Types.ObjectId(req.user._id),
-						isFollower: true,
-						experiance: 3
+				$push : {
+					customers : {
+						customer_id : mongoose.Types.ObjectId(req.user._id),
+						isFollower  : true,
+						experiance  : 3
 					}
 				}
 			};
@@ -400,8 +411,8 @@ module.exports = {
 
 		/* if the update successfully done */
 		const userUpdate = {
-			$push: {
-				following: mongoose.Types.ObjectId(business_id)
+			$push : {
+				following : mongoose.Types.ObjectId(business_id)
 			}
 		};
 		/* push business id to business */
@@ -412,7 +423,7 @@ module.exports = {
 		res.status(200).json({ isFollower: true });
 	},
 
-	unfollowBusiness: async (req, res, next) => {
+	unfollowBusiness              : async (req, res, next) => {
 		const { business_id } = req.body;
 		// check if business
 		const business = await Businesses.findById(business_id)
@@ -423,15 +434,15 @@ module.exports = {
 
 		//unfollow
 		const update = {
-			$set: {
-				'customers.$.isFollower': false
+			$set : {
+				'customers.$.isFollower' : false
 			},
-			$inc: { 'customers.$.experiance': -3 }
+			$inc : { 'customers.$.experiance': -3 }
 		};
 
 		const userUpdate = {
-			$pull: {
-				following: mongoose.Types.ObjectId(business_id)
+			$pull : {
+				following : mongoose.Types.ObjectId(business_id)
 			}
 		};
 		/* push user id to business */
@@ -447,7 +458,7 @@ module.exports = {
 		unFollowClickIncerement(business_id);
 		res.status(200).json({ isFollower: false });
 	},
-	getAllCustomers: async (req, res, next) => {
+	getAllCustomers               : async (req, res, next) => {
 		const business = await Businesses.findOne({ owner_id: req.user._id }, 'customers.customer_id');
 		if (!business) return res.status(404).json({ error: 'business not found' });
 		const ids = await business.customers.map((customer) => {
@@ -460,22 +471,74 @@ module.exports = {
 
 		res.status(200).json({ customers });
 	},
-	getServicesByBusiness: async (req, res, next) => {
+	getServicesByBusiness         : async (req, res, next) => {
 		const { id } = req.params;
-		const business = await Businesses.findById(id).populate('services.service_id', 'title')
+		const business = await Businesses.findById(id).populate('services.service_id', 'title');
 
 		//console.log("service", business)
 		if (!business) return res.status(404).json({ error: 'business not found' });
 		const ids = await business.services.map((service) => {
-			return { title: service.service_id.title, id: service.service_id._id, cost: service.cost, time: service.time };
-		})
+			return {
+				title : service.service_id.title,
+				id    : service.service_id._id,
+				cost  : service.cost,
+				time  : service.time
+			};
+		});
 
 		//console.log("service", ids)
 
 		//if (!services) return res.status(404).json({ error: 'an error occurred' });
 		res.status(200).json({ ids });
 	},
-	UpdateSmartAlgorithmsSettings: async (req, res, next) => {
+	getBusinessStatsHeader        : async (req, res, next) => {
+		const id = mongoose.Types.ObjectId(req.params.business_id);
+		let today = moment(new Date(), 'l');
+		let lastWeekStart = moment(moment(today).subtract('8', 'days'), 'l');
+
+		const header = await insights.aggregate([
+			{
+				$match : {
+					business_id : id,
+					date        : { $gte: lastWeekStart.toDate(), $lte: today.toDate() }
+				}
+			},
+			{
+				$group : {
+					_id               : null,
+					total_time        : { $sum: '$total_time' },
+					total_earnings    : { $sum: '$total_earnings' },
+					done_appointments : { $sum: '$done_appointments' }
+				}
+			}
+		]);
+
+		let pastStart = moment(moment(today).subtract('7', 'days'), 'l');
+		let pastEnd = moment(moment(pastStart).subtract('8', 'days'), 'l');
+		const lastHeader = await insights.aggregate([
+			{
+				$match : {
+					business_id : id,
+					date        : { $gte: pastEnd.toDate(), $lte: pastStart.toDate() }
+				}
+			},
+			{
+				$group : {
+					_id                 : null,
+					l_total_time        : { $sum: '$total_time' },
+					l_total_earnings    : { $sum: '$total_earnings' },
+					l_done_appointments : { $sum: '$done_appointments' }
+				}
+			}
+		]);
+		let obj = header[0];
+		Object.keys(lastHeader[0]).forEach(function(key) {
+			obj[key] = lastHeader[0][key];
+		});
+
+		res.json({ header: obj });
+	},
+	UpdateSmartAlgorithmsSettings : async (req, res, next) => {
 		const {
 			customers_exp,
 			continuity,
@@ -483,22 +546,38 @@ module.exports = {
 			days_calculate_length,
 			max_working_days_response,
 			customer_prefered_period,
-			experiance_rule
+			experiance_rule,
+			max_days_to_return,
+			morning,
+			afternoon,
+			evening
 		} = req.body;
 		update = {
-			$set: {
-				schedule_settings: {
-					customers_exp: customers_exp,
-					continuity: continuity,
-					distrbuted_time: distrbuted_time,
-					days_calculate_length: days_calculate_length,
-					max_working_days_response: max_working_days_response,
-					experiance_rule: experiance_rule,
-					customer_prefered_period: customer_prefered_period
+			$set : {
+				schedule_settings : {
+					customers_exp             : customers_exp,
+					continuity                : continuity,
+					distrbuted_time           : distrbuted_time,
+					days_calculate_length     : days_calculate_length,
+					max_working_days_response : max_working_days_response,
+					experiance_rule           : experiance_rule,
+					customer_prefered_period  : customer_prefered_period,
+					max_days_to_return        : max_days_to_return,
+					range_definition          : {
+						morning   : morning,
+						// 'morning._end'     : morning._end,
+						// 'afternoon._end'   : afternoon._end,
+						afternoon : afternoon,
+						// 'evning._end'   : evning._end,
+						evening   : evening
+					}
 				}
 			}
 		};
-		const business = await Businesses.findOneAndUpdate({ owner_id: req.user._id }, update, { new: true })
+		const business = await Businesses.findOneAndUpdate({ owner_id: req.user._id }, update, {
+			new              : true,
+			useFindAndModify : false
+		})
 			.populate('categories')
 			.populate('services.service_id', 'title')
 			.populate('customers.customer_id', 'profile');
@@ -507,16 +586,16 @@ module.exports = {
 
 		res.status(200).json({ business });
 	},
-	getReviewsForProfilePage: async (req, res, next) => {
+	getReviewsForProfilePage      : async (req, res, next) => {
 		const options = {
-			page: req.params.page,
-			limit: 10,
-			collation: {
-				locale: 'en'
+			page      : req.params.page,
+			limit     : 10,
+			collation : {
+				locale : 'en'
 			},
-			sort: { 'customer_review.created_time': -1 },
-			select: '-business_review',
-			populate: { path: 'appointment_id', select: 'services', populate: { path: 'services', select: 'title' } }
+			sort      : { 'customer_review.created_time': -1 },
+			select    : '-business_review',
+			populate  : { path: 'appointment_id', select: 'services', populate: { path: 'services', select: 'title' } }
 		};
 		const appointments = await Appointments.find({ business_id: req.params.business_id, status: 'done' }, '_id');
 		// res.json({ reviews });
@@ -526,103 +605,369 @@ module.exports = {
 		);
 		res.json({ reviews });
 	},
-	setfull: async (req, res, next) => {
-		// const test = rateIncrement('5cedfa110a209a0eddbb2bbb');
-		// res.json(test);
-		const convert = (_id) => {
-			console.log(_id);
-			return mongoose.Types.ObjectId(_id);
-		};
-		const result = await Appointments.aggregate([
-			{ $match: { status: 'done' } },
+	getStatistics                 : async (req, res, next) => {
+		const { business_id, range } = req.params;
+		let date, minDate, minPast;
+		date = new Date(moment().format('YYYY/MM/DD'));
+		let divider = 0;
+		let array = [];
+		switch (range) {
+			case '7': {
+				divider = 7;
+				minDate = moment(date).subtract(8, 'days').format('YYYY/MMM/DD');
+				minPast = moment(date).subtract(15, 'days').format('YYYY/MMM/DD');
+				break;
+			}
+			default:
+				return res.json({ error: 'invalid time range' });
+		}
+
+		const documents = await insights.aggregate([
+			{
+				$match : {
+					business_id : mongoose.Types.ObjectId(business_id),
+					date        : { $gt: new Date(minDate), $lt: date }
+				}
+			},
+			{ $sort: { date: 1 } },
+
+			{
+				$addFields : {
+					str_date    : {
+						$concat : [
+							{ $substr: [ { $add: [ 1, { $dayOfMonth: '$date' } ] }, 0, 2 ] },
+							'-',
+							{ $substr: [ { $month: '$date' }, 0, 2 ] },
+							'-',
+							{ $substr: [ { $year: '$date' }, 0, 4 ] }
+						]
+					},
+					range_total : {
+						total_time        : '$total_time',
+						total_earnings    : '$total_earnings',
+						done_appointments : '$done_appointments',
+						average_rate      : '$rating_sum',
+						profile_views     : '$profile_views'
+					}
+				}
+			},
+
+			{
+				$project : {
+					total_time        : [ '$str_date', { $ifNull: [ '$total_time', 0 ] } ],
+					total_earnings    : [ '$str_date', { $ifNull: [ '$total_earnings', 0 ] } ],
+					average_rate      : [
+						'$str_date',
+						{
+							$divide : [
+								'$rating_sum',
+								{ $cond: [ { $lt: [ '$rating_count', 1 ] }, 1, '$rating_count' ] }
+							]
+						}
+					],
+					profile_views     : [ '$str_date', '$profile_views' ],
+					done_appointments : [ '$str_date', { $ifNull: [ '$done_appointments', 0 ] } ],
+					range_total       : 1
+				}
+			},
+			{
+				$group : {
+					_id                : null,
+
+					total_time         : { $push: '$total_time' },
+					total_earnings     : { $push: '$total_earnings' },
+					average_rate       : { $push: '$average_rate' },
+					profile_views      : { $push: '$profile_views' },
+					done_appointments  : { $push: '$done_appointments' },
+					// total_range       : {},
+
+					Ftotal_time        : { $sum: '$range_total.total_time' },
+					Ftotal_earnings    : { $sum: '$range_total.total_earnings' },
+					Fdone_appointments : { $sum: '$range_total.done_appointments' },
+					Faverage_rate      : { $sum: '$range_total.average_rate' },
+					Fprofile_views     : { $sum: '$range_total.profile_views' }
+				}
+			}
+
+			// }
+			// {
+			// 	$group : {
+			// 		_id            : null,
+			// 		total_earnings : { $push: { $date: '$total_earnings' } }
+			// 	}
+			// }
+		]);
+		if (!documents) return res.status(304).json({ error: 'no data' });
+		const pastRange = await insights.aggregate([
+			{
+				$match : {
+					business_id : mongoose.Types.ObjectId(business_id),
+					date        : {
+						$gt : new Date(minPast),
+						$lt : new Date(moment(minDate).add(1, 'day').format('YYYY/MM/DD'))
+					}
+				}
+			},
+			{
+				$group : {
+					_id                : null,
+					total_time         : { $sum: '$total_time' },
+					total_earnings     : { $sum: '$total_earnings' },
+					done_appointments  : { $sum: '$done_appointments' },
+					rating_count       : { $sum: '$rating_count' },
+					rating_sum         : { $sum: '$rating_sum' },
+					recommendation_sum : { $sum: '$recommendation_sum' },
+					profile_views      : { $sum: '$profile_views' }
+				}
+			}
+		]);
+		res.status(200).json({ statistics: { current: documents[0], past: pastRange[0] } });
+	},
+	getAppointmentsStatistics     : async (req, res, next) => {
+		const business_id = mongoose.Types.ObjectId(req.params.business_id);
+		let date = new Date();
+		const documents = await insights.aggregate([
+			{
+				$match : {
+					business_id : business_id
+				}
+			},
+			{ $unwind: '$traffic' },
+			{
+				$addFields : {
+					name : '$traffic.time',
+					y    : '$traffic.count',
+					x    : {
+						$dayOfWeek : {
+							date     : '$date',
+							timezone : '+0300'
+						}
+					}
+				}
+			},
+			{
+				$group : {
+					_id : {
+						name : '$name',
+						x    : '$x'
+					},
+					y   : { $sum: '$y' }
+				}
+			},
+			{ $sort: { '_id.name': 1, '_id.x': 1 } },
+			{
+				$group : {
+					_id  : {
+						name : '$_id.name'
+					},
+					data : {
+						$push : { x: '$_id.x', y: '$y' }
+					}
+				}
+			},
+			{
+				$project : {
+					_id  : 0,
+					name : '$_id.name',
+					data : 1
+				}
+			},
+			{ $sort: { name: 1 } }
+		]);
+
+		let hour = 0;
+		let results = [];
+		while (hour < 24) {
+			let name = '';
+			if (hour < 10) {
+				name = `0${hour}`;
+			} else {
+				name = hour;
+			}
+			let data = [
+				{ x: 'Sun', y: 0 },
+				{ x: 'Mon', y: 0 },
+				{ x: 'Tue', y: 0 },
+				{ x: 'Wed', y: 0 },
+				{ x: 'Thu', y: 0 },
+				{ x: 'Fri', y: 0 },
+				{ x: 'Sat', y: 0 }
+			];
+			results.push({ name, data });
+			hour++;
+		}
+
+		const bb = await documents.forEach(async (hour) => {
+			await hour.data.forEach((day) => {
+				results[hour.name].data[day.x - 1].y = day.y;
+			});
+		});
+
+		const comparison = await insights.aggregate([
+			{
+				$match : {
+					business_id : business_id,
+					date        : {
+						$lt : new Date(moment(new Date()).format('l')),
+						$gt : new Date(moment(new Date()).subtract(8, 'days').format('l'))
+					}
+				}
+			},
+			{ $sort: { date: 1 } },
+			{
+				$project : {
+					done_appointments   : { $ifNull: [ '$done_appointments', 0 ] },
+					passed_appointments : { $ifNull: [ '$passed_appointments', 0 ] },
+					total_appointments  : { $ifNull: [ '$total_appointments', 0 ] }
+				}
+			},
+			{
+				$group : {
+					_id    : null,
+					done   : { $push: '$done_appointments' },
+					passed : { $push: '$passed_appointments' },
+					total  : { $push: '$total_appointments' }
+				}
+			}
+		]);
+
+		/* making sure that it fits all the hours and all days */
+		res.json({ appointmntsStats: await results, comparison: comparison[0] });
+	},
+	getServiceStats               : async (req, res, next) => {
+		let id = mongoose.Types.ObjectId(req.params.business_id);
+		const results = await Appointments.aggregate([
+			//TODO - ADD to pipleine to avoid double quers
+			{ $match: { status: 'done', business_id: id } },
 			{ $unwind: '$services' },
 			/* stage to save the service_id before the join */
 			{
-				$addFields: {
-					mainService: '$services'
+				$addFields : {
+					mainService : '$services'
 				}
 			},
 			/* stage to join from business with the service to get the cost and the time */
 			{
-				$lookup: {
-					from: 'businesses',
-					localField: 'services',
-					foreignField: 'services.service_id',
-					as: 'services'
+				$lookup : {
+					from         : 'businesses',
+					localField   : 'services',
+					foreignField : 'services.service_id',
+					as           : 'services'
 				}
 			},
 			/* stage to to get the join services[0]{which it a document of join and save it as a real document} */
 			{
-				$addFields: {
-					allservices: { $arrayElemAt: ['$services', 0] }
+				$addFields : {
+					allservices      : { $arrayElemAt: [ '$services', 0 ] },
+					appointment_time : {
+						$add : [
+							{ $multiply: [ { $subtract: [ '$time.end._hour', '$time.start._hour' ] }, 60 ] },
+							{ $subtract: [ '$time.end._minute', '$time.start._minute' ] }
+						]
+					},
+					real_time        : { $subtract: [ '$time.check_out', '$time.check_in' ] }
 				}
 			},
+
 			/* the stage to filter the results and keep the wanted varibales only */
 			{
-				$project: {
-					date: '$time.date',
-					business_id: '$business_id',
-					services: {
-						$filter: {
-							input: '$allservices.services',
-							as: 'item',
-							cond: {
-								$eq: ['$$item.service_id', '$mainService']
+				$project : {
+					appointment_time : { $subtract: [ '$appointment_time', '$allservices.break_time' ] },
+					real_time        : { $divide: [ '$real_time', 60 * 1000 ] },
+					// check_in   : '$time.check_in',
+					// real_time  : { $subtract: [ '$time.checkout', '$time.check_in' ] },
+					services         : {
+						$filter : {
+							input : '$allservices.services',
+							as    : 'item',
+							cond  : {
+								$eq : [ '$$item.service_id', '$mainService' ]
 							}
 						}
 					}
 				}
 			},
 			{ $unwind: '$services' },
-
 			{
-				$group: {
-					_id: {
-						date: '$date',
-						business_id: '$business_id'
-					},
-
-					services: { $push: '$services' },
-					count: { $sum: 1 }
+				$addFields : {
+					time_diff : {
+						$divide : [ { $subtract: [ '$real_time', '$appointment_time' ] }, '$appointment_time' ]
+					}
 				}
 			},
 			{
-				$project: {
-					_id: 0,
-					business_id: '$_id.business_id',
-					date: '$_id.date',
-					totalCost: { $sum: '$services.cost' },
-					totalTime: { $sum: '$services.time' },
-					count: '$count'
+				$group : {
+					_id          : {
+						service_id : '$services.service_id',
+						time       : '$services.time',
+						cost       : '$services.cost'
+					},
+					appointments : { $push: '$time_diff' },
+					// time         : { $add: [ '$services.time', 0 ] },
+					count        : { $sum: 1 }
 				}
-			}
-
-			// }
-			// }
-			// {
-			// 	$group : {
-			// 		_id      : {
-			// 			date        : '$time.date',
-			// 			business_id : '$business_id'
-			// 		},
-			// 		services : { $push: '$services' },
-			// 		count    : { $sum: 1 }
-			// 	}
-			// }
+			},
+			{
+				$lookup : {
+					from         : 'services',
+					localField   : '_id.service_id',
+					foreignField : '_id',
+					as           : 'newService'
+				}
+			},
+			{ $unwind: '$newService' },
+			{
+				$project : {
+					_id    : '$_id.service_id',
+					change : { $divide: [ { $multiply: [ { $sum: '$appointments' }, '$_id.time' ] }, '$count' ] },
+					profit : { $multiply: [ '$_id.cost', '$count' ] },
+					time   : '$_id.time',
+					count  : '$count',
+					title  : '$newService.title'
+				}
+			},
+			{ $sort: { count: -1 } }
 		]);
-		// const business = await Businesses.find({}).populate('insights');
-		res.json({ result });
+		res.json({ results });
+	},
+	getFollowersStats             : async (req, res, next) => {
+		await createTotalFollowersCount();
+		const id = mongoose.Types.ObjectId(req.params.business_id);
+		const results = await insights.aggregate([
+			{
+				$match : { business_id: id }
+			},
+			{
+				$addFields : {
+					followers : { $ifNull: [ '$total_followers', 0 ] },
+					str_date  : {
+						$concat : [
+							{ $substr: [ { $add: [ 1, { $dayOfMonth: '$date' } ] }, 0, 2 ] },
+							'-',
+							{ $substr: [ { $month: '$date' }, 0, 2 ] }
+						]
+					}
+				}
+			},
+			{
+				$project : {
+					_id       : null,
+					date      : '$date',
+					graph     : [ '$date', '$follow', '$unfollow' ],
+					follow    : { $ifNull: [ '$follow', 0 ] },
+					unfollow  : { $ifNull: [ '$unfollow', 0 ] },
+					followers : '$followers'
+				}
+			},
+			{ $sort: { date: 1 } }
+		]);
+		res.json({ results });
+	},
 
-		// const ressponse = await getbusinessAvgRatingByDateRange('5cedfa110a209a0eddbb2bbb');
-		// res.json({ ressponse });
-		// const users = await Categories.aggregate([
-		// 	{
-		// 		$group : {
-		// 			_id      : '$services',
-		// 			services : { $sum: 1 }
-		// 		}
-		// 	}
-		// ]);
-		// res.json({ users });
+	setfull                       : async (req, res, next) => {
+		const test = await createAppointmentsInsights();
+		res.json({ test });
+		// res.json({ success: 'success' });
+		// servicesDayStatistics();
 	}
 };

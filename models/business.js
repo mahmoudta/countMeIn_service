@@ -90,6 +90,12 @@ var mongoose = require('mongoose'),
 					min     : 1,
 					max     : 30
 				},
+				max_days_to_return        : {
+					type    : Number,
+					default : 2,
+					min     : 1,
+					max     : 10
+				},
 				experiance_rule           : {
 					type    : Number,
 					default : 1,
@@ -101,6 +107,74 @@ var mongoose = require('mongoose'),
 					default : 6,
 					min     : 1,
 					max     : 9
+				},
+				range_definition          : {
+					morning   : {
+						_start : {
+							_hour   : {
+								type    : Number,
+								default : 7
+							},
+							_minute : {
+								type    : Number,
+								default : 0
+							}
+						},
+						_end   : {
+							_hour   : {
+								type    : Number,
+								default : 12
+							},
+							_minute : {
+								type    : Number,
+								default : 0
+							}
+						}
+					},
+					afternoon : {
+						_start : {
+							_hour   : {
+								type    : Number,
+								default : 12
+							},
+							_minute : {
+								type    : Number,
+								default : 17
+							}
+						},
+						_end   : {
+							_hour   : {
+								type    : Number,
+								default : 17
+							},
+							_minute : {
+								type    : Number,
+								default : 23
+							}
+						}
+					},
+					evening   : {
+						_start : {
+							_hour   : {
+								type    : Number,
+								default : 0
+							},
+							_minute : {
+								type    : Number,
+								default : 0
+							}
+						},
+						_end   : {
+							_hour   : {
+								type    : Number,
+								default : 0
+							},
+							_minute : {
+								type    : Number,
+								default : 0
+							}
+						}
+					}
 				}
 			},
 			profile           : {
@@ -119,16 +193,19 @@ var mongoose = require('mongoose'),
 
 				rating      : {
 					rating_sum         : {
-						type    : Number,
-						default : 0
+						type     : Number,
+						required : true,
+						default  : 0
 					},
 					rating_count       : {
-						type    : Number,
-						default : 0
+						type     : Number,
+						required : true,
+						default  : 0
 					},
 					recommendation_sum : {
-						type    : Number,
-						default : 0
+						type     : Number,
+						required : true,
+						default  : 0
 					}
 				},
 

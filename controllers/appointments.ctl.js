@@ -64,7 +64,6 @@ const { JWT_SECRET } = require('../consts');
 // 	res.status(200).json('suceess');
 // },
 
-
 // deleteAppointment: async (req, res, next) => {
 // 	const { appointmentId } = req.body;
 // 	const thisAppointment = await Appointments.findById(appointmentId);
@@ -211,7 +210,6 @@ const { JWT_SECRET } = require('../consts');
 // 	// const endHours = 15;
 // 	const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 
-
 // 	const currentAppoointment = await Appointments.findById(appointmentId);
 
 // 	//console.log("currentAppointment ", currentAppoointment);
@@ -225,11 +223,7 @@ const { JWT_SECRET } = require('../consts');
 // 	const endMinutes = currentAppoointment.time.end._minute;
 // 	const endHours = currentAppoointment.time.end._hour;
 
-
 // 	//console.log(businessId, date, startHours, startMinutes, endHours, endMinutes)
-
-
-
 
 // 	const business = await Businesses.find({ '_id': businessId }, `break_time working_hours`);
 
@@ -249,8 +243,6 @@ const { JWT_SECRET } = require('../consts');
 
 // 	}
 
-
-
 // 	var today = new Date();
 // 	var todayFlag = 0;
 // 	console.log("today", today)
@@ -258,8 +250,6 @@ const { JWT_SECRET } = require('../consts');
 // 	if (today.getDate() == date.getDate() && today.getFullYear() == date.getFullYear() && today.getDay() == date.getDay()) {
 // 		todayFlag = 1;
 // 	}
-
-
 
 // 	const appointmentAfter = await Appointments.find({
 // 		business_id: businessId, 'time.date': date,
@@ -276,7 +266,6 @@ const { JWT_SECRET } = require('../consts');
 // 			}
 // 		]
 // 	}).sort([['time.start._hour', 1], ['time.start._minute', 1]]).limit(1)
-
 
 // 	const appointmentBefore = await Appointments.find({
 // 		business_id: businessId, 'time.date': date,
@@ -398,8 +387,6 @@ const { JWT_SECRET } = require('../consts');
 // }
 // };
 
-
-
 // const getAppointmentData = async (appointments) => {
 // 	var data = [];
 // 	for (let appointment of appointments) {
@@ -426,26 +413,16 @@ const { JWT_SECRET } = require('../consts');
 // 	return await data;
 
 const { booked, deleted, shiftappointmentifpossible } = require('./algs/free-alg');
-const { sendNotify, getCustomerNumberByAppointment } = require('../utils/sms.utils')
+const { sendNotify, getCustomerNumberByAppointment } = require('../utils/sms.utils');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const isEmpty = require('lodash/isEmpty');
 const { createReview, insightsRateIncrement } = require('./functions/business.funcs');
 
-
 module.exports = {
 	setAppointment: async (req, res, next) => {
-		const {
-			businessId,
-			costumerId,
-			service,
-			date,
-			shour,
-			sminute,
-			ehour,
-			eminute
-		} = req.body;
+		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute } = req.body;
 		//console.log(sstart);
 
 		var newDate = new Date(date);
@@ -453,7 +430,6 @@ module.exports = {
 		const hhours = Number(ehour) - Number(shour);
 		const mminutes = Number(eminute) - Number(sminute);
 		console.log(newDate);
-
 
 		const newAppointment = new Appointments(
 			{
@@ -492,18 +468,16 @@ module.exports = {
 		});
 		if (CanBook) {
 			const appointment = await newAppointment.save();
-			if (!appointment)
-				return res.status(403).json({ error: "an error occoured" });
+			if (!appointment) return res.status(403).json({ error: 'an error occoured' });
 
-			res.status(200).json("suceess");
+			res.status(200).json('suceess');
 		}
 		//res.json('success');
 		// booked(businessId, newDate, {
 		//   _start: { _hour: Number(12), _minute: Number(10) },
 		//   _end: { _hour: Number(13), _minute: Number(10) }
 		// });
-		res.status(304).json("alg");
-
+		res.status(304).json('alg');
 	},
 	// setAppointmentAndDelete: async (req, res, next) => {
 	// 	const { businessId, costumerId, service, date, shour, sminute, ehour, eminute, appointmentId } = req.body;
@@ -668,14 +642,13 @@ module.exports = {
 						_minute: eminute
 					}
 				},
-				services: service
+				services: [service]
 			}
 
 		);
 
 		const appointment = await newAppointment.save();
 		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
-
 
 		const thisAppointment = await Appointments.findById(appointmentId);
 
@@ -692,9 +665,6 @@ module.exports = {
 				_start: newAppointment.time.start,
 				_end: newAppointment.time.end
 			});
-
-
-
 		});
 
 		const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
@@ -749,29 +719,22 @@ module.exports = {
 		console.log(thisAppointment.time.start);
 		console.log(thisAppointment.time.end);
 
-		const QueryRes = await Appointments.deleteOne(
-			{ _id: appointmentId },
-			err => {
-				if (err) {
-					res.send(err);
-				}
+		const QueryRes = await Appointments.deleteOne({ _id: appointmentId }, (err) => {
+			if (err) {
+				res.send(err);
 			}
-		);
+		});
 
-		const del = await deleted(
-			thisAppointment.business_id,
-			thisAppointment.time.date,
-			{
-				_start: {
-					_hour: Number(thisAppointment.time.start._hour),
-					_minute: Number(thisAppointment.time.start._minute)
-				},
-				_end: {
-					_hour: Number(thisAppointment.time.end._hour),
-					_minute: Number(thisAppointment.time.end._minute)
-				}
+		const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
+			_start: {
+				_hour: Number(thisAppointment.time.start._hour),
+				_minute: Number(thisAppointment.time.start._minute)
+			},
+			_end: {
+				_hour: Number(thisAppointment.time.end._hour),
+				_minute: Number(thisAppointment.time.end._minute)
 			}
-		);
+		});
 		console.log(del);
 		res.json({ QueryRes });
 	},
@@ -787,7 +750,7 @@ module.exports = {
 	getBusinessAppointments: async (req, res, next) => {
 		const appointments = await Appointments.find({
 			business_id: req.params.businessId
-		}).sort({ "time.date": 1 });
+		}).sort({ 'time.date': 1 });
 		res.json({ appointments });
 	},
 
@@ -831,14 +794,14 @@ module.exports = {
 		*	Utc Date()....
 		*	_start:{_hour:number,_minute:_}
 		*/
-		const elem = await booked(business_id, date, { _start, _end });
+		const elem = await booked(business_id, date, { _start, _end }, true, false, client_id);
 
 		if (elem) res.status(200).json({ appointment: addedAppointment });
 	},
 
 	getBusinessAppointmentsByDate: async (req, res, next) => {
 		const { date, business_id } = req.params;
-		var parts = date.split("-");
+		var parts = date.split('-');
 		const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
 		const appointments = await Appointments.find({
 			business_id: business_id,
@@ -854,8 +817,8 @@ module.exports = {
 		return res.json({ appointments });
 	},
 	getTodayUpcomingAppointments: async (req, res, next) => {
-		let date = moment().format('L');
-		date = moment(date).toDate();
+		let newdate = moment().format('L');
+		let date = new Date(newdate);
 
 		const appointments = await Appointments.find({
 			business_id: req.params.business_id,
@@ -873,18 +836,17 @@ module.exports = {
 		// 	let time_a = new Date(appointment.time.start._hour,appointment.time.start._minute,0,0);
 		// 	return time_a < time_b;
 		// });
-		if (!appointments)
-			return res.status(403).json({ error: "an error occoured" });
+		if (!appointments) return res.status(403).json({ error: 'an error occoured' });
 
 		return res.status(200).json({ appointments });
 	},
 	setAppointmentActive: async (req, res, next) => {
-		console.log("set apppointment active");
+		console.log('set apppointment active');
 		const appointment_id = req.params.appointment_id;
 
 		const appointment = await Appointments.findOneAndUpdate(
 			{ _id: appointment_id },
-			{ $set: { status: "inProgress" } },
+			{ $set: { status: 'inProgress' } },
 			{ new: true }
 		);
 		if (appointment) {
@@ -900,8 +862,7 @@ module.exports = {
 		// const startHours = 15;
 		// const endMinutes = 50;
 		// const endHours = 15;
-		const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-
+		const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 		const currentAppoointment = await Appointments.findById(appointmentId);
 
@@ -909,134 +870,145 @@ module.exports = {
 		const clientId = currentAppoointment.client_id;
 		const businessId = currentAppoointment.business_id;
 		const date = currentAppoointment.time.date;
-		const dayNum = new Date(date).getDay()
+		const dayNum = new Date(date).getDay();
 		//console.log("date", date)
 		const startMinutes = currentAppoointment.time.start._minute;
 		const startHours = currentAppoointment.time.start._hour;
 		const endMinutes = currentAppoointment.time.end._minute;
 		const endHours = currentAppoointment.time.end._hour;
 
-
 		//console.log(businessId, date, startHours, startMinutes, endHours, endMinutes)
 
+		const business = await Businesses.find({ _id: businessId }, `break_time working_hours`);
 
-
-
-		const business = await Businesses.find({ '_id': businessId }, `break_time working_hours`);
-
-		const todaySch = business[0].working_hours.filter(word => word.day === day[dayNum]);
+		const todaySch = business[0].working_hours.filter((word) => word.day === day[dayNum]);
 
 		//console.log(todaySch)
 		var breakTimeBefore = null;
 		var breakTimeAfter = null;
 		if (todaySch[0].break.isBreak) {
 			//break
-			console.log("found BREAK")
-			if (todaySch[0].break.until.getHours() < startHours && todaySch[0].break.until.getMinutes() < startMinutes) {
+			console.log('found BREAK');
+			if (
+				todaySch[0].break.until.getHours() < startHours &&
+				todaySch[0].break.until.getMinutes() < startMinutes
+			) {
 				breakTimeBefore = todaySch[0].break;
-			} if (todaySch[0].break.from.getHours() > endHours && todaySch[0].break.from.getMinutes() > endMinutes) {
+			}
+			if (todaySch[0].break.from.getHours() > endHours && todaySch[0].break.from.getMinutes() > endMinutes) {
 				breakTimeAfter = todaySch[0].break;
 			}
-
 		}
-
-
 
 		var today = new Date();
 		var todayFlag = 0;
 		//console.log("today", today)
 		//today.setHours(tomorow.getHours() + 1)
-		if (today.getDate() == date.getDate() && today.getFullYear() == date.getFullYear() && today.getDay() == date.getDay()) {
+		if (
+			today.getDate() == date.getDate() &&
+			today.getFullYear() == date.getFullYear() &&
+			today.getDay() == date.getDay()
+		) {
 			todayFlag = 1;
 		}
 
-
-
 		const appointmentAfterBusiness = await Appointments.find({
-			business_id: businessId, 'time.date': date,
+			business_id: businessId,
+			'time.date': date,
 			$or: [
 				{
 					$and: [
-						{ 'time.start._hour': { '$gte': endHours } }
-						, { 'time.start._minute': { '$gte': endMinutes } }]
-				}
-				, {
-					$and: [
-						{ 'time.start._hour': { '$gt': endHours } }
-						, { 'time.start._minute': { '$gte': 0 } }]
+						{ 'time.start._hour': { $gte: endHours } },
+						{ 'time.start._minute': { $gte: endMinutes } }
+					]
+				},
+				{
+					$and: [{ 'time.start._hour': { $gt: endHours } }, { 'time.start._minute': { $gte: 0 } }]
 				}
 			]
-		}).sort([['time.start._hour', 1], ['time.start._minute', 1]]).limit(1)
-
+		})
+			.sort([['time.start._hour', 1], ['time.start._minute', 1]])
+			.limit(1);
 
 		const appointmentBeforeBusiness = await Appointments.find({
-			business_id: businessId, 'time.date': date,
+			business_id: businessId,
+			'time.date': date,
 			$or: [
 				{
 					$and: [
-						{ 'time.end._hour': { '$lte': startHours } }
-						, { 'time.end._minute': { '$lte': startMinutes } }]
-				}
-				, {
-					$and: [
-						{ 'time.end._hour': { '$lt': startHours } }
-						, { 'time.end._minute': { '$lte': 0 } }]
+						{ 'time.end._hour': { $lte: startHours } },
+						{ 'time.end._minute': { $lte: startMinutes } }
+					]
+				},
+				{
+					$and: [{ 'time.end._hour': { $lt: startHours } }, { 'time.end._minute': { $lte: 0 } }]
 				}
 			]
-		}).sort([['time.start._hour', -1], ['time.start._minute', -1]]).limit(1)
+		})
+			.sort([['time.start._hour', -1], ['time.start._minute', -1]])
+			.limit(1);
 		//console.log(appointment[0].time.start._minute)
-
 
 		///Client Check
 		const appointmentBeforeClient = await Appointments.find({
-			client_id: clientId, 'time.date': date,
+			client_id: clientId,
+			'time.date': date,
 			$or: [
 				{
 					$and: [
-						{ 'time.end._hour': { '$lte': startHours } }
-						, { 'time.end._minute': { '$lte': startMinutes } }]
-				}
-				, {
-					$and: [
-						{ 'time.end._hour': { '$lt': startHours } }
-						, { 'time.end._minute': { '$lte': 0 } }]
+						{ 'time.end._hour': { $lte: startHours } },
+						{ 'time.end._minute': { $lte: startMinutes } }
+					]
+				},
+				{
+					$and: [{ 'time.end._hour': { $lt: startHours } }, { 'time.end._minute': { $lte: 0 } }]
 				}
 			]
-		}).sort([['time.start._hour', -1], ['time.start._minute', -1]]).limit(1)
+		})
+			.sort([['time.start._hour', -1], ['time.start._minute', -1]])
+			.limit(1);
 
 		const appointmentAfterClient = await Appointments.find({
-			client_id: clientId, 'time.date': date,
+			client_id: clientId,
+			'time.date': date,
 			$or: [
 				{
 					$and: [
-						{ 'time.start._hour': { '$gte': endHours } }
-						, { 'time.start._minute': { '$gte': endMinutes } }]
-				}
-				, {
-					$and: [
-						{ 'time.start._hour': { '$gt': endHours } }
-						, { 'time.start._minute': { '$gte': 0 } }]
+						{ 'time.start._hour': { $gte: endHours } },
+						{ 'time.start._minute': { $gte: endMinutes } }
+					]
+				},
+				{
+					$and: [{ 'time.start._hour': { $gt: endHours } }, { 'time.start._minute': { $gte: 0 } }]
 				}
 			]
-		}).sort([['time.start._hour', 1], ['time.start._minute', 1]]).limit(1)
+		})
+			.sort([['time.start._hour', 1], ['time.start._minute', 1]])
+			.limit(1);
 		//console.log("business after ", appointmentAfterBusiness, "businessBefore", appointmentBeforeBusiness)
 
 		var appointmentAfter;
 		var appointmentBefore;
 
-		if (!isEmpty(appointmentAfterBusiness) && !isEmpty(appointmentAfterClient) && !isEmpty(appointmentBeforeBusiness) && !isEmpty(appointmentBeforeClient)) {
-			const totalStartClient = appointmentAfterClient[0].time.start._hour * 60 + appointmentAfterClient[0].time.start._minute;
-			const totalStartBusiness = appointmentAfterBusiness[0].time.start._hour * 60 + appointmentAfterBusiness[0].time.start._minute;
+		if (
+			!isEmpty(appointmentAfterBusiness) &&
+			!isEmpty(appointmentAfterClient) &&
+			!isEmpty(appointmentBeforeBusiness) &&
+			!isEmpty(appointmentBeforeClient)
+		) {
+			const totalStartClient =
+				appointmentAfterClient[0].time.start._hour * 60 + appointmentAfterClient[0].time.start._minute;
+			const totalStartBusiness =
+				appointmentAfterBusiness[0].time.start._hour * 60 + appointmentAfterBusiness[0].time.start._minute;
 
-			const totalEndClient = appointmentBeforeClient[0].time.end._hour * 60 + appointmentBeforeClient[0].time.end._minute;
-			const totalEndBusiness = appointmentBeforeBusiness[0].time.end._hour * 60 + appointmentBeforeBusiness[0].time.end._minute;
-
-
+			const totalEndClient =
+				appointmentBeforeClient[0].time.end._hour * 60 + appointmentBeforeClient[0].time.end._minute;
+			const totalEndBusiness =
+				appointmentBeforeBusiness[0].time.end._hour * 60 + appointmentBeforeBusiness[0].time.end._minute;
 
 			if (totalStartClient > totalStartBusiness) {
 				//business wins
 				appointmentAfter = appointmentAfterBusiness;
-
 			} else {
 				appointmentAfter = appointmentAfterClient;
 			}
@@ -1046,7 +1018,6 @@ module.exports = {
 			} else {
 				appointmentBefore = appointmentBeforeClient;
 			}
-
 		} else if (!isEmpty(appointmentAfterBusiness)) {
 			appointmentAfter = appointmentAfterBusiness;
 		} else {
@@ -1058,7 +1029,6 @@ module.exports = {
 			appointmentBefore = appointmentBeforeClient;
 		}
 
-
 		//console.log(appointmentAfter, appointmentBefore)
 		var TimeAfter = null;
 		var TimeBefore = null;
@@ -1066,25 +1036,40 @@ module.exports = {
 		if (!appointmentAfter[0]) {
 			if (breakTimeAfter != null) {
 				//console.log("!!BreakAfter True AppointmentAfter False", breakTimeAfter)
-				TimeAfter = (((breakTimeAfter.from.getHours() * 60) + breakTimeAfter.from.getMinutes()) - (startHours * 60 + startMinutes))
+				TimeAfter =
+					breakTimeAfter.from.getHours() * 60 +
+					breakTimeAfter.from.getMinutes() -
+					(startHours * 60 + startMinutes);
 			} else {
 				//console.log("BreakAfter False appointmmentAfter False todaySch!!")
-				TimeAfter = (((todaySch[0].until.getHours() * 60) + todaySch[0].until.getMinutes()) - (startHours * 60 + startMinutes))
+				TimeAfter =
+					todaySch[0].until.getHours() * 60 +
+					todaySch[0].until.getMinutes() -
+					(startHours * 60 + startMinutes);
 			}
 			//todaySch.from
 			//console.log(todaySch[0].from.getHours())
 		} else {
 			if (breakTimeAfter != null) {
 				//console.log("BreakAfter true appointmmentafter true")
-				if (breakTimeAfter.until.getHours() <= appointmentAfter[0].time.start._hour && breakTimeAfter.until.getMinutes() <= appointmentAfter[0].time.start._minute) {
+				if (
+					breakTimeAfter.until.getHours() <= appointmentAfter[0].time.start._hour &&
+					breakTimeAfter.until.getMinutes() <= appointmentAfter[0].time.start._minute
+				) {
 					//there is a break between appointmentAfter and current
 					//console.log("!!BreakAfter < appointmmentafter")
-					TimeAfter = (((breakTimeAfter.from.getHours() * 60) + breakTimeAfter.from.getMinutes()) - (startHours * 60 + startMinutes))
+					TimeAfter =
+						breakTimeAfter.from.getHours() * 60 +
+						breakTimeAfter.from.getMinutes() -
+						(startHours * 60 + startMinutes);
 				}
 			} else {
 				//console.log("BreakAfter !< appointmmentafter!!")
 
-				TimeAfter = (((appointmentAfter[0].time.start._hour * 60) + appointmentAfter[0].time.start._minute) - (startHours * 60 + startMinutes))
+				TimeAfter =
+					appointmentAfter[0].time.start._hour * 60 +
+					appointmentAfter[0].time.start._minute -
+					(startHours * 60 + startMinutes);
 			}
 		}
 
@@ -1092,63 +1077,95 @@ module.exports = {
 			if (breakTimeBefore != null) {
 				//console.log("!!BreakBefore True AppointmentAfter False")
 
-				if (todayFlag && today.getHours() >= breakTimeBefore.until.getHours() && today.getMinutes() >= breakTimeBefore.until.getMinutes()) {
+				if (
+					todayFlag &&
+					today.getHours() >= breakTimeBefore.until.getHours() &&
+					today.getMinutes() >= breakTimeBefore.until.getMinutes()
+				) {
 					//console.log("today!! > breakTimeBefore")
-					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
-
+					TimeBefore = startHours * 60 + startMinutes - (today.getHours() * 60 + today.getMinutes());
 				} else {
 					//console.log("today < breakTimeBefore!!")
-					TimeBefore = (((endHours * 60) + endMinutes) - breakTimeBefore.until.getHours() * 60 + breakTimeBefore.until.getMinutes())
+					TimeBefore =
+						endHours * 60 +
+						endMinutes -
+						breakTimeBefore.until.getHours() * 60 +
+						breakTimeBefore.until.getMinutes();
 				}
 			} else {
-				if (todaySch[0].from.getHours() <= today.getHours() && todaySch[0].from.getMinutes() <= today.getMinutes() && todayFlag) {
+				if (
+					todaySch[0].from.getHours() <= today.getHours() &&
+					todaySch[0].from.getMinutes() <= today.getMinutes() &&
+					todayFlag
+				) {
 					//console.log("today")
-					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
+					TimeBefore = startHours * 60 + startMinutes - (today.getHours() * 60 + today.getMinutes());
 				} else {
 					//console.log("!!todaySch>today")
-					TimeBefore = (((endHours * 60) + endMinutes) - (todaySch[0].from.getHours() * 60 + todaySch[0].from.getMinutes()))
-
+					TimeBefore =
+						endHours * 60 + endMinutes - (todaySch[0].from.getHours() * 60 + todaySch[0].from.getMinutes());
 				}
 			}
-
 		} else {
 			if (breakTimeBefore != null) {
-				if (breakTimeBefore.from.getHours() >= appointmentBefore[0].time.start._hour && breakTimeBefore.from.getMinutes() >= appointmentBefore[0].time.start._minute) {
+				if (
+					breakTimeBefore.from.getHours() >= appointmentBefore[0].time.start._hour &&
+					breakTimeBefore.from.getMinutes() >= appointmentBefore[0].time.start._minute
+				) {
 					//there is a break between appointmentBefore and current
 					//console.log("BreakBefore true")
-					if (breakTimeBefore.until.getHours() <= today.getHours() && breakTimeBefore.until.getMinutes() <= today.getMinutes() && todayFlag) {
+					if (
+						breakTimeBefore.until.getHours() <= today.getHours() &&
+						breakTimeBefore.until.getMinutes() <= today.getMinutes() &&
+						todayFlag
+					) {
 						//console.log("breaktimeBEofre<today!! ")
-						TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
+						TimeBefore = startHours * 60 + startMinutes - (today.getHours() * 60 + today.getMinutes());
 					} else {
 						//console.log("breaktimeBEofre!!>today ")
-						TimeBefore = ((startHours * 60 + startMinutes) - ((breakTimeBefore.until.getHours() * 60) + breakTimeBefore.until.getMinutes()))
+						TimeBefore =
+							startHours * 60 +
+							startMinutes -
+							(breakTimeBefore.until.getHours() * 60 + breakTimeBefore.until.getMinutes());
 					}
 				} else {
 					//console.log("appointment > ALL Breakbefore True")
-					TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
+					TimeBefore =
+						endHours * 60 +
+						endMinutes -
+						(appointmentBefore[0].time.end._hour * 60 + appointmentBefore[0].time.end._minute);
 				}
-
 			} else {
 				//console.log("breakBefore false")
-				if (appointmentBefore[0].time.end._hour <= today.getHours() && appointmentBefore[0].time.end._minute <= today.getMinutes() && todayFlag) {
+				if (
+					appointmentBefore[0].time.end._hour <= today.getHours() &&
+					appointmentBefore[0].time.end._minute <= today.getMinutes() &&
+					todayFlag
+				) {
 					//console.log("today!! > appointmeentbefore   ")
-					TimeBefore = ((startHours * 60 + startMinutes) - ((today.getHours() * 60) + today.getMinutes()))
-
+					TimeBefore = startHours * 60 + startMinutes - (today.getHours() * 60 + today.getMinutes());
 				} else {
 					//console.log("appointmentBefore >ALL")
-					TimeBefore = (((endHours * 60) + endMinutes) - ((appointmentBefore[0].time.end._hour * 60) + appointmentBefore[0].time.end._minute))
-
+					TimeBefore =
+						endHours * 60 +
+						endMinutes -
+						(appointmentBefore[0].time.end._hour * 60 + appointmentBefore[0].time.end._minute);
 				}
 			}
-
 		}
-		const currentAppointmentTime = (((endHours * 60) + endMinutes) - ((startHours * 60) + startMinutes))
+		const currentAppointmentTime = endHours * 60 + endMinutes - (startHours * 60 + startMinutes);
 		TimeTotal = TimeAfter + TimeBefore - currentAppointmentTime;
 
 		//console.log({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, currentAppointmentTime })
 		//console.log("appoint", currentAppointmentTime)
-		res.json({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, oldNeededTime: currentAppointmentTime })
-
+		res.json({
+			FreeTimeTotal: TimeTotal,
+			FreeTimeBefore: TimeBefore,
+			FreeTimeAfter: TimeAfter,
+			appointmentBefore,
+			appointmentAfter,
+			oldNeededTime: currentAppointmentTime
+		});
 	},
 	appointmentCheck: async (req, res, next) => {
 		const { appointment_id, client_id, business_id, action, isLate, time } = req.body;
@@ -1240,54 +1257,51 @@ module.exports = {
 	},
 
 	BusinessStatisticsHeader: async (req, res, next) => {
-		let allData = {};
-		let first_of_month = moment().startOf('month').toDate();
-		let end_of_month = moment().startOf('month').add(1, 'M').toDate();
-		// .endOf('month').toDate();
+		let today = moment(new Date()).format('l');
 
 		let id = mongoose.Types.ObjectId(req.params.business_id);
 
-		const this_month = await Appointments.aggregate([
-			{
-				$match: {
-					business_id: id,
-					'time.date': { $gte: first_of_month, $lt: end_of_month }
-				}
-			},
-			// { $group: { _id: { date: '$time.date', status: '$status' }, count: { $sum: 1 } } },
-			{ $group: { _id: { status: '$status' }, count: { $sum: 1 } } },
-			{ $project: { count: '$count', status: '$status' } },
-			{ $sort: { '_id.date': -1 } }
-		]);
+		// const this_month = await Appointments.aggregate([
+		// 	{
+		// 		$match : {
+		// 			business_id : id,
+		// 			'time.date' : { $gte: first_of_month, $lt: end_of_month }
+		// 		}
+		// 	},
+		// 	// { $group: { _id: { date: '$time.date', status: '$status' }, count: { $sum: 1 } } },
+		// 	{ $group: { _id: { status: '$status' }, count: { $sum: 1 } } },
+		// 	{ $project: { count: '$count', status: '$status' } },
+		// 	{ $sort: { '_id.date': -1 } }
+		// ]);
 
-		// res.send(this_month);
-		/*  */
-		const saved = new Promise((resolve) => {
-			this_month.map((result) => {
-				// const arrKey = new Date(result._id.date).getTime();
-				const arrKey = id;
+		// // res.send(this_month);
+		// /*  */
+		// const saved = new Promise((resolve) => {
+		// 	this_month.map((result) => {
+		// 		// const arrKey = new Date(result._id.date).getTime();
+		// 		const arrKey = id;
 
-				if (!allData[arrKey]) {
-					allData[arrKey] = {
-						ready: 0,
-						inProgress: 0,
-						pendingClient: 0,
-						pendingBusiness: 0,
-						passed: 0,
-						canceled: 0,
-						total: 0,
-						done: 0,
-						date: ''
-					};
-				}
-				allData[arrKey].total += result.count;
-				allData[arrKey].date = result._id.date;
-				allData[arrKey][result._id.status] += result.count;
-			});
-			resolve(allData);
-		}).then((statistics) => {
-			res.status(200).json({ statistics });
-		});
+		// 		if (!allData[arrKey]) {
+		// 			allData[arrKey] = {
+		// 				ready           : 0,
+		// 				inProgress      : 0,
+		// 				pendingClient   : 0,
+		// 				pendingBusiness : 0,
+		// 				passed          : 0,
+		// 				canceled        : 0,
+		// 				total           : 0,
+		// 				done            : 0,
+		// 				date            : ''
+		// 			};
+		// 		}
+		// 		allData[arrKey].total += result.count;
+		// 		allData[arrKey].date = result._id.date;
+		// 		allData[arrKey][result._id.status] += result.count;
+		// 	});
+		// 	resolve(allData);
+		// }).then((statistics) => {
+		// 	res.status(200).json({ statistics });
+		// });
 	},
 	setBusinessReview: async (req, res, next) => {
 		const { communication, responsiveness, overall, time_respect, feedback, appointment_id } = req.body;
@@ -1370,12 +1384,14 @@ module.exports = {
 	},
 
 	getIsRated: async (req, res, next) => {
-		const thisReview = await Review.findOne({ appointment_id: req.params.appointmentId, "customer_review.isRated": false })
+		const thisReview = await Review.findOne({
+			appointment_id: req.params.appointmentId,
+			'customer_review.isRated': false
+		});
 
 		if (thisReview) res.status(200).json({ success: true, thisReview });
-		res.status(202).json({ success: false })
-
-	},
+		res.status(202).json({ success: false });
+	}
 
 	// BusinessStatisticsHeader      : async (req, res, next) => {
 	// 	let allData = {};
@@ -1429,14 +1445,14 @@ module.exports = {
 	// }
 };
 
-const getAppointmentData = async appointments => {
+const getAppointmentData = async (appointments) => {
 	var data = [];
 	for (let appointment of appointments) {
-		const user = await Users.findById(appointment.client_id, "profile.name");
+		const user = await Users.findById(appointment.client_id, 'profile.name');
 		// const business = await Businesses.findById(appointment.business_id);
 
 		const Nservices = await Categories.find({
-			"services._id": { $in: appointment.services }
+			'services._id': { $in: appointment.services }
 		});
 		const services = await getServices(Nservices, appointment.services);
 		await data.push({
