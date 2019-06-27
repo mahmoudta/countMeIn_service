@@ -1600,11 +1600,11 @@ module.exports = {
 		returnsuggest = false,
 		customerid = false
 	) => {
-		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, false);
+		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, true);
 		if (checkifcustomerhavebusness && bookresult && customerid !== false) {
 			var customersbusness = await Business.findOne({ owner_id: customerid });
 			if (!isEmpty(customersbusness)) {
-				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, false);
+				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, true);
 			}
 		}
 		var userreminders;
