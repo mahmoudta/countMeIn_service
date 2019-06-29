@@ -821,30 +821,43 @@ async function returnfreeondate(appointments, oneDate) {
 }
 async function mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusnessbusyhours) {
 	var rate = await calculatebusnessbusyhours(businessid);
-	var countpointment = rate.totalpointment;
-	var totalminutes = await findtotalminutes(businessid);
-	var avgappointmentpeerhour = countpointment / (totalminutes / 60);
+	//var countpointment = rate.totalpointment;
+	//var totalminutes = await findtotalminutes(businessid);
+	//var avgappointmentpeerhour = countpointment / (totalminutes / 60);
 	//console.log(util.inspect(freetime, {depth: null}));
 	freetime.forEach(function(oneday) {
 		var tmpdate = moment(oneday.Date).format('dddd').toLowerCase();
 		oneday.Free.forEach(function(onetimerange) {
 			var totalrate = 0;
-			var timerangerateavg = 0;
+			//var timerangerateavg = 0;
 			var finalvaluetoadd = 0;
 			var i;
-			var start = onetimerange._start._hour;
+			var timerangetime = onetimerange.tominutes();
+			var temptimerangpart;
+			var starthour = onetimerange._start._hour;
+			var startminute = onetimerange._start._minute;
+			var endhour = onetimerange._end._hour;
+			var endminute = onetimerange._end._minute;
+			if (timerangetime == 0) return;
+			for (i = starthour; i < endhour || (i == endhour && 0 < endminute); i++) {
+				var minutes = 60;
+				if ((starthour = i && starthour < endhour)) {
+					minutes = new time_range(new time(starthour, startminute), new time(starthour + 1, 0)).tominutes();
+				} else if (i == endhour && 0 < endminute) {
+					if (endhour == starthour)
+						minutes = new time_range(
+							new time(starthour, startminute),
+							new time(endhour, endminute)
+						).tominutes();
+					else {
+						minutes = new time_range(new time(i, 0), new time(endhour, endminute)).tominutes();
+					}
+				}
 
-			for (
-				i = start;
-				i < onetimerange._end._hour || (i == onetimerange._end._hour && 0 < onetimerange._end._minute);
-				i++
-			) {
-				totalrate += rate[tmpdate][i];
+				totalrate += (1 - rate[tmpdate][i] / rate.top) * valueofbusnessbusyhours * (minutes / timerangetime);
 			}
 			if (totalrate != 0) {
-				timerangerateavg = totalrate / (i - start);
-				finalvaluetoadd = avgappointmentpeerhour / timerangerateavg * valueofbusnessbusyhours;
-				onetimerange._value += finalvaluetoadd;
+				onetimerange._value += totalrate;
 			}
 		});
 	});
@@ -1036,14 +1049,20 @@ async function calculatebusnessbusyhours(businessid) {
 			22 : 0,
 			23 : 0
 		},
-		totalpointment : 0
+		totalpointment : 0,
+		top            : 0
 	};
+	var tmphour;
 	const appointments = await returnallappointmentsbybusiness(businessid);
 	appointments.forEach(function(oneappointment) {
+		var tmpendhour = oneappointment.time.end._hour;
 		var tmpdaybefore = oneappointment.time.date;
 		var tmpdayafter = moment(tmpdaybefore).format('dddd').toLowerCase();
-		var tmphour = oneappointment.time.start._hour;
-		rate[tmpdayafter][tmphour]++;
+		for (tmphour = oneappointment.time.start._hour; tmphour <= tmpendhour; tmphour++) {
+			rate[tmpdayafter][tmphour]++;
+			if (rate[tmpdayafter][tmphour] > rate.top) rate.top = rate[tmpdayafter][tmphour];
+		}
+
 		rate.totalpointment++;
 	});
 	return rate;
@@ -1445,7 +1464,6 @@ async function bookFunction(businessid, chosendate, chosentimerange, bookandsave
 	var daysinmongo = freetime.dates.find(
 		(o) => moment(o.day).format('YYYY/MM/DD') === moment(chosendate).format('YYYY/MM/DD')
 	);
-	var dateid = daysinmongo._id;
 	var id = freetime._id;
 	if (isEmpty(daysinmongo)) return { error: 'invalid Date' };
 	else {
@@ -1601,11 +1619,11 @@ module.exports = {
 		returnsuggest = false,
 		customerid = false
 	) => {
-		var bookresult = await bookFunction(businessid, chosendate, chosentimerange);
-		if (checkifcustomerhavebusness && bookresult) {
+		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, true);
+		if (checkifcustomerhavebusness && bookresult && customerid !== false) {
 			var customersbusness = await Business.findOne({ owner_id: customerid });
 			if (!isEmpty(customersbusness)) {
-				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange);
+				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, true);
 			}
 		}
 		var userreminders;
@@ -1682,12 +1700,7 @@ module.exports = {
 		checkifcustomerhavebusness = true
 	) => {
 		var bookresult = await bookFunction(businessid, chosendate, chosentimerange, false);
-		if (checkifcustomerhavebusness && bookresult) {
-			var customersbusness = await Business.findOne({ owner_id: customerid });
-			if (!isEmpty(customersbusness)) {
-				bookresult = await bookFunction(customersbusness._id, chosendate, chosentimerange, false);
-			}
-		}
+
 		return bookresult;
 	},
 	deleted                         : async (businessid, chosendate, chosentimerange) => {

@@ -4,6 +4,7 @@ const Businesses = require('../models/business');
 const Categories = require('../models/category');
 const Users = require('../models/user');
 const Review = require('../models/review');
+const { smart } = require('./algs/free-alg');
 
 const { JWT_SECRET } = require('../consts');
 // const { freeTimeAlg } = require('./algs/free-alg');
@@ -428,7 +429,6 @@ module.exports = {
 		console.log(newDate);
 		const hhours = Number(ehour) - Number(shour);
 		const mminutes = Number(eminute) - Number(sminute);
-		console.log(newDate);
 
 		const newAppointment = new Appointments(
 			{
@@ -461,22 +461,155 @@ module.exports = {
 		);
 		console.log(newDate.getHours());
 		console.log(newAppointment);
-		const CanBook = booked(businessId, newDate, {
+		const CanBook = await booked(businessId, newDate, {
 			_start : newAppointment.time.start,
 			_end   : newAppointment.time.end
 		});
+		console.log('booked', CanBook);
+
 		if (CanBook) {
 			const appointment = await newAppointment.save();
-			if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+			if (!appointment) return res.status(403).json({ error: 'alrd taken' });
 
-			res.status(200).json('suceess');
+			return res.status(200).json('suceess');
 		}
 		//res.json('success');
 		// booked(businessId, newDate, {
 		//   _start: { _hour: Number(12), _minute: Number(10) },
 		//   _end: { _hour: Number(13), _minute: Number(10) }
 		// });
-		res.status(304).json('alg');
+		return res.status(304).json('booked');
+	},
+	// setAppointmentAndDelete: async (req, res, next) => {
+	// 	const { businessId, costumerId, service, date, shour, sminute, ehour, eminute, appointmentId } = req.body;
+	// 	//console.log(sstart);
+
+	// 	var newDate = new Date(date);
+	// 	console.log(newDate);
+	// 	const hhours = Number(ehour) - Number(shour);
+	// 	const mminutes = Number(eminute) - Number(sminute);
+	// 	console.log(newDate);
+
+	// 	const newAppointment = new Appointments(
+	// 		{
+	// 			_id: new mongoose.Types.ObjectId(),
+	// 			business_id: businessId,
+	// 			client_id: costumerId,
+	// 			time: {
+	// 				date: newDate,
+	// 				start: {
+	// 					_hour: shour,
+	// 					_minute: sminute
+	// 				},
+	// 				end: {
+	// 					_hour: ehour,
+	// 					_minute: eminute
+	// 				}
+	// 			},
+	// 			services: service
+	// 		}
+
+	// 	);
+
+	// 	const appointment = await newAppointment.save((err) => {
+	// 		if (err) {
+	// 			res.send(err);
+	// 		}
+	// 	if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+
+	// 	const oldAppointment = await Appointments.findById(appointmentId);
+
+	// 	if (thisAppointment.time.end._minute === null) {
+	// 		thisAppointment.time.end._minute = 0;
+	// 	}
+	// 	const thisAppointment = await Appointments.findById(appointment._id);
+
+	// 	if (thisAppointment.time.end._minute === null) {
+	// 		thisAppointment.time.end._minute = 0;
+	// 	}
+
+	// 	const QueryRes = await Appointments.deleteOne({ _id: appointmentId }, (err) => {
+	// 		if (err) {
+	// 			res.send(err);
+	// 		}
+
+	// 		const deletedResult = deleted(oldAppointment.business_id,
+	// 			oldAppointment.time.date, {
+	// 				_start: oldAppointment.time.start
+	// 				, _end: oldAppointment.time.end
+	// 			});
+
+	// 		if (deletedResult) {
+	// 			booked(businessId, newDate, {
+	// 				_start: newAppointment.time.start,
+	// 				_end: newAppointment.time.end
+	// 			});
+	// 		}
+
+	// 	});
+
+	// 	const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
+	// 		_start: {
+	// 			_hour: Number(thisAppointment.time.start._hour),
+	// 			_minute: Number(thisAppointment.time.start._minute)
+	// 		},
+	// 		_end: {
+	// 			_hour: Number(thisAppointment.time.end._hour),
+	// 			_minute: Number(thisAppointment.time.end._minute)
+	// 		}
+	// 	});
+	// 	res.status(200).json('suceess');
+	// },
+
+	updateAppointmentTime         : async (req, res, next) => {
+		const { appointmentId, duration, newServices, businessId } = req.body;
+		const thisBusiness = await Businesses.findById(businessId);
+
+		const thisAppointment = await Appointments.findById(appointmentId);
+
+		if (thisAppointment.time.end._minute === null) {
+			thisAppointment.time.end._minute = 0;
+		}
+
+		const newDuration = duration + thisBusiness.break_time;
+		const endHours = thisAppointment.time.start._hour + Math.floor(newDuration / 60);
+		const endMinutes = thisAppointment.time.start._minute + newDuration % 60;
+		console.log('services', newServices);
+		let update = {
+			$set : {
+				'time.end' : {
+					_hour   : endHours,
+					_minute : endMinutes
+				},
+				services   : newServices
+			}
+		};
+		const updatedAppointment = await Appointments.findOneAndUpdate({ _id: thisAppointment._id }, update, {
+			new : true
+		});
+		if (!updatedAppointment) {
+			return res.json({ error: 'error accourd' });
+		}
+		if (updatedAppointment) {
+			const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
+				_start : {
+					_hour   : Number(thisAppointment.time.start._hour),
+					_minute : Number(thisAppointment.time.start._minute)
+				},
+				_end   : {
+					_hour   : Number(thisAppointment.time.end._hour),
+					_minute : Number(thisAppointment.time.end._minute)
+				}
+			});
+			if (del) {
+				booked(updatedAppointment.business_id, updatedAppointment.time.date, {
+					_start : updatedAppointment.time.start,
+					_end   : updatedAppointment.time.end
+				});
+			}
+		}
+
+		res.status(200).json({ success: 'updated appointment successffuly' });
 	},
 	setAppointmentAndDelete       : async (req, res, next) => {
 		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute, appointmentId } = req.body;
@@ -488,43 +621,24 @@ module.exports = {
 		const mminutes = Number(eminute) - Number(sminute);
 		console.log(newDate);
 
-		const newAppointment = new Appointments(
-			{
-				_id         : new mongoose.Types.ObjectId(),
-				business_id : businessId,
-				client_id   : costumerId,
-				time        : {
-					date  : newDate,
-					start : {
-						_hour   : shour,
-						_minute : sminute
-					},
-					end   : {
-						_hour   : ehour,
-						_minute : eminute
-					}
+		const newAppointment = new Appointments({
+			_id         : new mongoose.Types.ObjectId(),
+			business_id : businessId,
+			client_id   : costumerId,
+			time        : {
+				date  : newDate,
+				start : {
+					_hour   : shour,
+					_minute : sminute
 				},
-				services    : [ service ]
-			}
+				end   : {
+					_hour   : ehour,
+					_minute : eminute
+				}
+			},
+			services    : service
+		});
 
-			// 	business_id: businessId,
-			// 	client_id: costumerId,
-			// 	time: {
-			// 		date: newDate,
-			// 		hours: hhours, //UseLess /* Date Type Contains date and time */
-			// 		minutes: mminutes
-			// 	},
-			// 	porpouses: [ service ]
-			// }
-
-			//
-		);
-
-		//res.json('success');
-		// booked(businessId, newDate, {
-		//   _start: { _hour: Number(12), _minute: Number(10) },
-		//   _end: { _hour: Number(13), _minute: Number(10) }
-		// });
 		const appointment = await newAppointment.save();
 		if (!appointment) return res.status(403).json({ error: 'an error occoured' });
 
@@ -558,6 +672,37 @@ module.exports = {
 		res.status(200).json('suceess');
 	},
 
+	getFreeTimeEdit               : async (req, res, next) => {
+		const { appointmentId, newServices } = req.body;
+		const thisAppointment = await Appointments.findById(appointmentId);
+
+		if (thisAppointment.time.end._minute === null) {
+			thisAppointment.time.end._minute = 0;
+		}
+
+		const Free = smart(
+			thisAppointment.business_id,
+			newServices,
+			thisAppointment.customer_id,
+			false,
+			true,
+			true,
+			thisAppointment.time.date,
+			thisAppointment.time.date,
+			{
+				_start : {
+					_hour   : Number(thisAppointment.time.start._hour),
+					_minute : Number(thisAppointment.time.start._minute)
+				},
+				_end   : {
+					_hour   : Number(thisAppointment.time.end._hour),
+					_minute : Number(thisAppointment.time.end._minute)
+				}
+			}
+		);
+
+		res.status(200).json({ result: 'success', free: free });
+	},
 	deleteAppointment             : async (req, res, next) => {
 		const { appointmentId } = req.body;
 		const thisAppointment = await Appointments.findById(appointmentId);

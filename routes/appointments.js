@@ -28,5 +28,6 @@ router.route('/getReviewByBusinessId/:business_id').get(passportJWT, appointment
 router.route('/getReviewAsCustomer').get(passportJWT, appointmentCtl.getReviewAsCustomer);
 
 router.route('/getIsRated/:appointmentId').get(passportJWT, appointmentCtl.getIsRated);
+router.route('/updateAppointmentTime').post(appointmentCtl.updateAppointmentTime);
 
 module.exports = router;
