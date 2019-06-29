@@ -504,6 +504,13 @@ module.exports = {
 				}
 			},
 			{
+				$project : {
+					total_time        : { $ifNull: [ '$total_time', 0 ] },
+					total_earnings    : { $ifNull: [ '$total_earnings', 0 ] },
+					done_appointments : { $ifNull: [ '$done_appointments', 0 ] }
+				}
+			},
+			{
 				$group : {
 					_id               : null,
 					total_time        : { $sum: '$total_time' },
@@ -512,7 +519,7 @@ module.exports = {
 				}
 			}
 		]);
-
+		if (isEmpty(header)) return res.status(300).json({ error: 'No data found' });
 		let pastStart = moment(moment(today).subtract('7', 'days'), 'l');
 		let pastEnd = moment(moment(pastStart).subtract('8', 'days'), 'l');
 		const lastHeader = await insights.aggregate([
@@ -520,6 +527,13 @@ module.exports = {
 				$match : {
 					business_id : id,
 					date        : { $gte: pastEnd.toDate(), $lte: pastStart.toDate() }
+				}
+			},
+			{
+				$project : {
+					total_time        : { $ifNull: [ '$total_time', 0 ] },
+					total_earnings    : { $ifNull: [ '$total_earnings', 0 ] },
+					done_appointments : { $ifNull: [ '$done_appointments', 0 ] }
 				}
 			},
 			{

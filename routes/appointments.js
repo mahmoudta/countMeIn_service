@@ -13,9 +13,8 @@ router.route('/getClientsAppointments/:clientId').get(appointmentCtl.getClientsA
 router.route('/getBusinessAppointments/:businessId').get(appointmentCtl.getBusinessAppointments);
 router.route('/getSubCategories/:businessId').get(appointmentCtl.getSubCategories);
 router.route('/business/setAppointmnet').post(appointmentCtl.setBusinessAppointment);
-router
-	.route('/business/BusinessStatisticsHeader/:business_id')
-	.get(passportJWT, appointmentCtl.BusinessStatisticsHeader);
+router.route('/business/getReviewByappointment/:appointment_id').get(appointmentCtl.getReviewByAppointment);
+
 router.route('/getBusinessAppointmentsByDate/:business_id/:date').get(appointmentCtl.getBusinessAppointmentsByDate);
 router
 	.route('/getTodayUpcomingAppointments/:business_id')
