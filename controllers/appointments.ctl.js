@@ -413,7 +413,7 @@ const { JWT_SECRET } = require('../consts');
 // 	return await data;
 
 const { booked, deleted, shiftappointmentifpossible } = require('./algs/free-alg');
-const { sendNotify, getCustomerNumberByAppointment } = require('../utils/sms.utils');
+const { sendNotifyReview, getCustomerNumberByAppointment } = require('../utils/sms.utils');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
@@ -1210,7 +1210,7 @@ module.exports = {
 			case 'out':
 				await createReview(appointment_id);
 				query = { $set: { status: 'done', 'time.check_out': new Date(time) } };
-				sendNotify(appointment_id);
+				sendNotifyReview(appointment_id);
 				break;
 		}
 

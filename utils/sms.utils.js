@@ -19,7 +19,13 @@ module.exports = {
         const result = await appointment.client_id.profile.phone;
         return await result
     },
-    sendNotify: async (AppointmentId) => {
+    getBusinessNumberByAppointment: async (AppointmentId) => {
+        const appointment = await Appointments.findById(AppointmentId).populate('business_id', 'profile');
+        console.log("get", appointment.business_id.profile.phone)
+        const result = await appointment.business_id.profile.phone;
+        return await result
+    },
+    sendNotifyReview: async (AppointmentId) => {
         const phoneNumber = await module.exports.getCustomerNumberByAppointment(AppointmentId);
         console.log("phone", phoneNumber.toString())
         const notificationOpts = {
@@ -27,7 +33,26 @@ module.exports = {
                 binding_type: 'sms',
                 address: phoneNumber,
             }),
-            body: `it was great seeing you today. Would you take one minute to leave a Google review about your experience? Here is the link: http://localhost:3000/sms/customerreview/${AppointmentId}. Thanks for your help!`,
+            body: `it was great seeing you today. Would you take one minute to leave a CountMeIn review about your experience? Here is the link: http://localhost:3000/sms/customerreview/${AppointmentId}. Thanks for your help!`,
+        };
+        client.notify
+            .services(notifySid)
+            .notifications.create(notificationOpts)
+            .then(notification => console.log(notification.sid))
+            .catch(error => console.log(error));
+
+        return
+
+    },
+    sendNotifyUpdated: async (AppointmentId) => {
+        const phoneNumber = await module.exports.getBusinessNumberByAppointment(AppointmentId);
+        console.log("phone", phoneNumber.toString())
+        const notificationOpts = {
+            toBinding: JSON.stringify({
+                binding_type: 'sms',
+                address: phoneNumber,
+            }),
+            body: `Appointment has been updated , please visit your business dashboard to be updated  , Here is the link: http://localhost:3000/sms/customerreview/${AppointmentId}.`, //dashboard business
         };
         client.notify
             .services(notifySid)
