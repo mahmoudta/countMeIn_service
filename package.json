@@ -30,7 +30,7 @@
 	"scripts": {
 		"dev": "NODE_ENV=development PORT=8080 HOST=localhost nodemon index",
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "NODE_ENV=production PORT=8080 HOST=localhost node index"
+		"start": "NODE_ENV=production node index"
 	},
 	"keywords": [],
 	"author": "",
