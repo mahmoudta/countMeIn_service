@@ -833,6 +833,7 @@ async function mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusn
 			var finalvaluetoadd = 0;
 			var i;
 			var timerangetime = onetimerange.tominutes();
+			var temptimerangpart;
 			var starthour = onetimerange._start._hour;
 			var startminute = onetimerange._start._minute;
 			var endhour = onetimerange._end._hour;
@@ -840,15 +841,17 @@ async function mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusn
 			if (timerangetime == 0) return;
 			for (i = starthour; i < endhour || (i == endhour && 0 < endminute); i++) {
 				var minutes = 60;
-				if ((starthour = i && starthour < endhour))
-					minutes = new timerange(new time(starthour, startminute), new time(starthour + 1, 0)).tominutes();
-				else if (i == endhour && 0 < endminute) {
+				if ((starthour = i && starthour < endhour)) {
+					minutes = new time_range(new time(starthour, startminute), new time(starthour + 1, 0)).tominutes();
+				} else if (i == endhour && 0 < endminute) {
 					if (endhour == starthour)
-						minutes = new timerange(
+						minutes = new time_range(
 							new time(starthour, startminute),
 							new time(endhour, endminute)
 						).tominutes();
-					else minutes = new timerange(new time(i, 0), new time(endhour, endminute)).tominutes();
+					else {
+						minutes = new time_range(new time(i, 0), new time(endhour, endminute)).tominutes();
+					}
 				}
 
 				totalrate += (1 - rate[tmpdate][i] / rate.top) * valueofbusnessbusyhours * (minutes / timerangetime);
