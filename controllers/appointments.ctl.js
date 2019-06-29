@@ -413,7 +413,7 @@ const { JWT_SECRET } = require('../consts');
 // 	return await data;
 
 const { booked, deleted, shiftappointmentifpossible } = require('./algs/free-alg');
-const { sendNotify, getCustomerNumberByAppointment } = require('../utils/sms.utils');
+const { sendNotifyReview, sendNotifyCanceled, sendNotifyAdded, sendNotifyUpdated } = require('../utils/sms.utils');
 const { getServices } = require('../utils/appointment.utils');
 const mongoose = require('mongoose');
 const moment = require('moment');
@@ -421,7 +421,7 @@ const isEmpty = require('lodash/isEmpty');
 const { createReview, insightsRateIncrement } = require('./functions/business.funcs');
 
 module.exports = {
-	setAppointment                : async (req, res, next) => {
+	setAppointment: async (req, res, next) => {
 		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute } = req.body;
 		//console.log(sstart);
 
@@ -432,21 +432,21 @@ module.exports = {
 
 		const newAppointment = new Appointments(
 			{
-				_id         : new mongoose.Types.ObjectId(),
-				business_id : mongoose.Types.ObjectId(businessId),
-				client_id   : mongoose.Types.ObjectId(costumerId),
-				time        : {
-					date  : newDate,
-					start : {
-						_hour   : shour,
-						_minute : sminute
+				_id: new mongoose.Types.ObjectId(),
+				business_id: mongoose.Types.ObjectId(businessId),
+				client_id: mongoose.Types.ObjectId(costumerId),
+				time: {
+					date: newDate,
+					start: {
+						_hour: shour,
+						_minute: sminute
 					},
-					end   : {
-						_hour   : ehour,
-						_minute : eminute
+					end: {
+						_hour: ehour,
+						_minute: eminute
 					}
 				},
-				services    : service
+				services: service
 			}
 
 			// 	business_id: businessId,
@@ -462,8 +462,8 @@ module.exports = {
 		console.log(newDate.getHours());
 		console.log(newAppointment);
 		const CanBook = await booked(businessId, newDate, {
-			_start : newAppointment.time.start,
-			_end   : newAppointment.time.end
+			_start: newAppointment.time.start,
+			_end: newAppointment.time.end
 		});
 		console.log('booked', CanBook);
 
@@ -561,9 +561,10 @@ module.exports = {
 	// 	res.status(200).json('suceess');
 	// },
 
-	updateAppointmentTime         : async (req, res, next) => {
+	updateAppointmentTime: async (req, res, next) => {
 		const { appointmentId, duration, newServices, businessId } = req.body;
 		const thisBusiness = await Businesses.findById(businessId);
+		sendNotifyUpdated(appointmentId)
 
 		const thisAppointment = await Appointments.findById(appointmentId);
 
@@ -576,42 +577,42 @@ module.exports = {
 		const endMinutes = thisAppointment.time.start._minute + newDuration % 60;
 		console.log('services', newServices);
 		let update = {
-			$set : {
-				'time.end' : {
-					_hour   : endHours,
-					_minute : endMinutes
+			$set: {
+				'time.end': {
+					_hour: endHours,
+					_minute: endMinutes
 				},
-				services   : newServices
+				services: newServices
 			}
 		};
 		const updatedAppointment = await Appointments.findOneAndUpdate({ _id: thisAppointment._id }, update, {
-			new : true
+			new: true
 		});
 		if (!updatedAppointment) {
 			return res.json({ error: 'error accourd' });
 		}
 		if (updatedAppointment) {
 			const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
-				_start : {
-					_hour   : Number(thisAppointment.time.start._hour),
-					_minute : Number(thisAppointment.time.start._minute)
+				_start: {
+					_hour: Number(thisAppointment.time.start._hour),
+					_minute: Number(thisAppointment.time.start._minute)
 				},
-				_end   : {
-					_hour   : Number(thisAppointment.time.end._hour),
-					_minute : Number(thisAppointment.time.end._minute)
+				_end: {
+					_hour: Number(thisAppointment.time.end._hour),
+					_minute: Number(thisAppointment.time.end._minute)
 				}
 			});
 			if (del) {
 				booked(updatedAppointment.business_id, updatedAppointment.time.date, {
-					_start : updatedAppointment.time.start,
-					_end   : updatedAppointment.time.end
+					_start: updatedAppointment.time.start,
+					_end: updatedAppointment.time.end
 				});
 			}
 		}
 
 		res.status(200).json({ success: 'updated appointment successffuly' });
 	},
-	setAppointmentAndDelete       : async (req, res, next) => {
+	setAppointmentAndDelete: async (req, res, next) => {
 		const { businessId, costumerId, service, date, shour, sminute, ehour, eminute, appointmentId } = req.body;
 		//console.log(sstart);
 
@@ -621,22 +622,24 @@ module.exports = {
 		const mminutes = Number(eminute) - Number(sminute);
 		console.log(newDate);
 
+		sendNotifyUpdated(appointmentId)
+
 		const newAppointment = new Appointments({
-			_id         : new mongoose.Types.ObjectId(),
-			business_id : businessId,
-			client_id   : costumerId,
-			time        : {
-				date  : newDate,
-				start : {
-					_hour   : shour,
-					_minute : sminute
+			_id: new mongoose.Types.ObjectId(),
+			business_id: businessId,
+			client_id: costumerId,
+			time: {
+				date: newDate,
+				start: {
+					_hour: shour,
+					_minute: sminute
 				},
-				end   : {
-					_hour   : ehour,
-					_minute : eminute
+				end: {
+					_hour: ehour,
+					_minute: eminute
 				}
 			},
-			services    : service
+			services: service
 		});
 
 		const appointment = await newAppointment.save();
@@ -654,25 +657,25 @@ module.exports = {
 			}
 			//DELETED
 			booked(businessId, newDate, {
-				_start : newAppointment.time.start,
-				_end   : newAppointment.time.end
+				_start: newAppointment.time.start,
+				_end: newAppointment.time.end
 			});
 		});
 
 		const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
-			_start : {
-				_hour   : Number(thisAppointment.time.start._hour),
-				_minute : Number(thisAppointment.time.start._minute)
+			_start: {
+				_hour: Number(thisAppointment.time.start._hour),
+				_minute: Number(thisAppointment.time.start._minute)
 			},
-			_end   : {
-				_hour   : Number(thisAppointment.time.end._hour),
-				_minute : Number(thisAppointment.time.end._minute)
+			_end: {
+				_hour: Number(thisAppointment.time.end._hour),
+				_minute: Number(thisAppointment.time.end._minute)
 			}
 		});
 		res.status(200).json('suceess');
 	},
 
-	getFreeTimeEdit               : async (req, res, next) => {
+	getFreeTimeEdit: async (req, res, next) => {
 		const { appointmentId, newServices } = req.body;
 		const thisAppointment = await Appointments.findById(appointmentId);
 
@@ -690,69 +693,65 @@ module.exports = {
 			thisAppointment.time.date,
 			thisAppointment.time.date,
 			{
-				_start : {
-					_hour   : Number(thisAppointment.time.start._hour),
-					_minute : Number(thisAppointment.time.start._minute)
+				_start: {
+					_hour: Number(thisAppointment.time.start._hour),
+					_minute: Number(thisAppointment.time.start._minute)
 				},
-				_end   : {
-					_hour   : Number(thisAppointment.time.end._hour),
-					_minute : Number(thisAppointment.time.end._minute)
+				_end: {
+					_hour: Number(thisAppointment.time.end._hour),
+					_minute: Number(thisAppointment.time.end._minute)
 				}
 			}
 		);
 
 		res.status(200).json({ result: 'success', free: free });
 	},
-	deleteAppointment             : async (req, res, next) => {
+	deleteAppointment: async (req, res, next) => {
 		const { appointmentId } = req.body;
+		await sendNotifyCanceled(appointmentId)
 		const thisAppointment = await Appointments.findById(appointmentId);
 
 		if (thisAppointment.time.end._minute === null) {
 			thisAppointment.time.end._minute = 0;
 		}
 
-		console.log(thisAppointment.business_id);
-		console.log(thisAppointment.time.date);
-		console.log(thisAppointment.time.start);
-		console.log(thisAppointment.time.end);
 
 		const QueryRes = await Appointments.deleteOne({ _id: appointmentId }, (err) => {
 			if (err) {
 				res.send(err);
 			}
 		});
-
 		const del = await deleted(thisAppointment.business_id, thisAppointment.time.date, {
-			_start : {
-				_hour   : Number(thisAppointment.time.start._hour),
-				_minute : Number(thisAppointment.time.start._minute)
+			_start: {
+				_hour: Number(thisAppointment.time.start._hour),
+				_minute: Number(thisAppointment.time.start._minute)
 			},
-			_end   : {
-				_hour   : Number(thisAppointment.time.end._hour),
-				_minute : Number(thisAppointment.time.end._minute)
+			_end: {
+				_hour: Number(thisAppointment.time.end._hour),
+				_minute: Number(thisAppointment.time.end._minute)
 			}
 		});
-		console.log(del);
+
 		res.json({ QueryRes });
 	},
 
-	getClientsAppointments        : async (req, res, next) => {
+	getClientsAppointments: async (req, res, next) => {
 		//getmyappointment for clients
 		const QueryRes = await Appointments.find({
-			client_id : req.params.clientId
+			client_id: req.params.clientId
 		});
 		res.json({ QueryRes });
 	},
 
-	getBusinessAppointments       : async (req, res, next) => {
+	getBusinessAppointments: async (req, res, next) => {
 		const appointments = await Appointments.find({
-			business_id : req.params.businessId
+			business_id: req.params.businessId
 		}).sort({ 'time.date': 1 });
 		res.json({ appointments });
 	},
 
-	getSubCategories              : async (req, res, next) => {
-		const QueryRes = await Businesses.findById(req.params.businessId, 'profile.purposes', function(err, usr) {});
+	getSubCategories: async (req, res, next) => {
+		const QueryRes = await Businesses.findById(req.params.businessId, 'profile.purposes', function (err, usr) { });
 		//console.log(req.params.businessId);
 
 		//const subCategories = await Categories.findOne(category._id);
@@ -760,7 +759,7 @@ module.exports = {
 		res.status(200).json({ QueryRes });
 	},
 
-	setBusinessAppointment        : async (req, res, next) => {
+	setBusinessAppointment: async (req, res, next) => {
 		const { client_id, business_id, services, _start, _end, date } = req.body;
 		const newServices = await services.map((service) => {
 			return service.value;
@@ -768,15 +767,15 @@ module.exports = {
 		var newDate = new Date(date);
 
 		const newAppointment = new Appointments({
-			_id         : new mongoose.Types.ObjectId(),
-			business_id : business_id,
-			client_id   : client_id,
-			time        : {
-				date  : newDate,
-				start : _start,
-				end   : _end
+			_id: new mongoose.Types.ObjectId(),
+			business_id: business_id,
+			client_id: client_id,
+			time: {
+				date: newDate,
+				start: _start,
+				end: _end
 			},
-			services    : newServices
+			services: newServices
 		});
 
 		const appointment = await newAppointment.save();
@@ -791,18 +790,19 @@ module.exports = {
 		*	Utc Date()....
 		*	_start:{_hour:number,_minute:_}
 		*/
+		sendNotifyAdded(appointment._id);
 		const elem = await booked(business_id, date, { _start, _end }, true, false, client_id);
 
 		if (elem) res.status(200).json({ appointment: addedAppointment });
 	},
 
-	getBusinessAppointmentsByDate : async (req, res, next) => {
+	getBusinessAppointmentsByDate: async (req, res, next) => {
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
 		const Ndate = new Date(parts[0], parts[1] - 1, parts[2]);
 		const appointments = await Appointments.find({
-			business_id : business_id,
-			'time.date' : Ndate
+			business_id: business_id,
+			'time.date': Ndate
 		})
 			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 })
 			.populate('client_id', 'profile')
@@ -813,17 +813,17 @@ module.exports = {
 
 		return res.json({ appointments });
 	},
-	getTodayUpcomingAppointments  : async (req, res, next) => {
+	getTodayUpcomingAppointments: async (req, res, next) => {
 		let newdate = moment().format('L');
 		let date = new Date(newdate);
 
 		const appointments = await Appointments.find({
-			business_id : req.params.business_id,
+			business_id: req.params.business_id,
 			// 'time.date': {
 			// 	$gte: dateNow
 			// },
-			'time.date' : date,
-			status      : { $in: [ 'ready', 'inProgress' ] }
+			'time.date': date,
+			status: { $in: ['ready', 'inProgress'] }
 		})
 			.limit(5)
 			.sort({ 'time.start._hour': 1, 'time.start.minute': 1 })
@@ -837,7 +837,7 @@ module.exports = {
 
 		return res.status(200).json({ appointments });
 	},
-	setAppointmentActive          : async (req, res, next) => {
+	setAppointmentActive: async (req, res, next) => {
 		console.log('set apppointment active');
 		const appointment_id = req.params.appointment_id;
 
@@ -847,11 +847,11 @@ module.exports = {
 			{ new: true }
 		);
 		if (appointment) {
-			const data = await getAppointmentData([ appointment ]);
+			const data = await getAppointmentData([appointment]);
 			res.status(200).json({ appointment: data[0] });
 		}
 	},
-	CheckEdit                     : async (req, res, next) => {
+	CheckEdit: async (req, res, next) => {
 		const appointmentId = req.params.appointmentId;
 		// const businessId = "5cee375f0d1aca9031f57708";
 		// const date = "2019-07-22T21:00:00.000Z";
@@ -859,7 +859,7 @@ module.exports = {
 		// const startHours = 15;
 		// const endMinutes = 50;
 		// const endHours = 15;
-		const day = [ 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ];
+		const day = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 		const currentAppoointment = await Appointments.findById(appointmentId);
 
@@ -910,77 +910,77 @@ module.exports = {
 		}
 
 		const appointmentAfterBusiness = await Appointments.find({
-			business_id : businessId,
-			'time.date' : date,
-			$or         : [
+			business_id: businessId,
+			'time.date': date,
+			$or: [
 				{
-					$and : [
+					$and: [
 						{ 'time.start._hour': { $gte: endHours } },
 						{ 'time.start._minute': { $gte: endMinutes } }
 					]
 				},
 				{
-					$and : [ { 'time.start._hour': { $gt: endHours } }, { 'time.start._minute': { $gte: 0 } } ]
+					$and: [{ 'time.start._hour': { $gt: endHours } }, { 'time.start._minute': { $gte: 0 } }]
 				}
 			]
 		})
-			.sort([ [ 'time.start._hour', 1 ], [ 'time.start._minute', 1 ] ])
+			.sort([['time.start._hour', 1], ['time.start._minute', 1]])
 			.limit(1);
 
 		const appointmentBeforeBusiness = await Appointments.find({
-			business_id : businessId,
-			'time.date' : date,
-			$or         : [
+			business_id: businessId,
+			'time.date': date,
+			$or: [
 				{
-					$and : [
+					$and: [
 						{ 'time.end._hour': { $lte: startHours } },
 						{ 'time.end._minute': { $lte: startMinutes } }
 					]
 				},
 				{
-					$and : [ { 'time.end._hour': { $lt: startHours } }, { 'time.end._minute': { $lte: 0 } } ]
+					$and: [{ 'time.end._hour': { $lt: startHours } }, { 'time.end._minute': { $lte: 0 } }]
 				}
 			]
 		})
-			.sort([ [ 'time.start._hour', -1 ], [ 'time.start._minute', -1 ] ])
+			.sort([['time.start._hour', -1], ['time.start._minute', -1]])
 			.limit(1);
 		//console.log(appointment[0].time.start._minute)
 
 		///Client Check
 		const appointmentBeforeClient = await Appointments.find({
-			client_id   : clientId,
-			'time.date' : date,
-			$or         : [
+			client_id: clientId,
+			'time.date': date,
+			$or: [
 				{
-					$and : [
+					$and: [
 						{ 'time.end._hour': { $lte: startHours } },
 						{ 'time.end._minute': { $lte: startMinutes } }
 					]
 				},
 				{
-					$and : [ { 'time.end._hour': { $lt: startHours } }, { 'time.end._minute': { $lte: 0 } } ]
+					$and: [{ 'time.end._hour': { $lt: startHours } }, { 'time.end._minute': { $lte: 0 } }]
 				}
 			]
 		})
-			.sort([ [ 'time.start._hour', -1 ], [ 'time.start._minute', -1 ] ])
+			.sort([['time.start._hour', -1], ['time.start._minute', -1]])
 			.limit(1);
 
 		const appointmentAfterClient = await Appointments.find({
-			client_id   : clientId,
-			'time.date' : date,
-			$or         : [
+			client_id: clientId,
+			'time.date': date,
+			$or: [
 				{
-					$and : [
+					$and: [
 						{ 'time.start._hour': { $gte: endHours } },
 						{ 'time.start._minute': { $gte: endMinutes } }
 					]
 				},
 				{
-					$and : [ { 'time.start._hour': { $gt: endHours } }, { 'time.start._minute': { $gte: 0 } } ]
+					$and: [{ 'time.start._hour': { $gt: endHours } }, { 'time.start._minute': { $gte: 0 } }]
 				}
 			]
 		})
-			.sort([ [ 'time.start._hour', 1 ], [ 'time.start._minute', 1 ] ])
+			.sort([['time.start._hour', 1], ['time.start._minute', 1]])
 			.limit(1);
 		//console.log("business after ", appointmentAfterBusiness, "businessBefore", appointmentBeforeBusiness)
 
@@ -1156,15 +1156,15 @@ module.exports = {
 		//console.log({ 'FreeTimeTotal': TimeTotal, 'FreeTimeBefore': TimeBefore, 'FreeTimeAfter': TimeAfter, appointmentBefore, appointmentAfter, currentAppointmentTime })
 		//console.log("appoint", currentAppointmentTime)
 		res.json({
-			FreeTimeTotal     : TimeTotal,
-			FreeTimeBefore    : TimeBefore,
-			FreeTimeAfter     : TimeAfter,
+			FreeTimeTotal: TimeTotal,
+			FreeTimeBefore: TimeBefore,
+			FreeTimeAfter: TimeAfter,
 			appointmentBefore,
 			appointmentAfter,
-			oldNeededTime     : currentAppointmentTime
+			oldNeededTime: currentAppointmentTime
 		});
 	},
-	appointmentCheck              : async (req, res, next) => {
+	appointmentCheck: async (req, res, next) => {
 		const { appointment_id, client_id, business_id, action, isLate, time } = req.body;
 		let query = {};
 		let expUpdate = {};
@@ -1174,7 +1174,7 @@ module.exports = {
 
 				if (isLate.late) {
 					expUpdate = {
-						$inc : { 'customers.$.experiance': -Number(isLate.minutes / 5) }
+						$inc: { 'customers.$.experiance': -Number(isLate.minutes / 5) }
 					};
 				} else if (isEmpty(isLate.late)) {
 					const alg = await shiftappointmentifpossible(business_id, appointment_id, new Date(time));
@@ -1186,16 +1186,16 @@ module.exports = {
 						*/
 						if (!isEmpty(alg.appointmentnewtimerange)) {
 							query = {
-								$set : {
-									status          : 'inProgress',
-									'time.check_in' : new Date(time),
-									'time.start'    : {
-										_hour   : alg.appointmentnewtimerange._start._hour,
-										_minute : alg.appointmentnewtimerange._start._minute
+								$set: {
+									status: 'inProgress',
+									'time.check_in': new Date(time),
+									'time.start': {
+										_hour: alg.appointmentnewtimerange._start._hour,
+										_minute: alg.appointmentnewtimerange._start._minute
 									},
-									'time.end'      : {
-										_hour   : alg.appointmentnewtimerange._end._hour,
-										_minute : alg.appointmentnewtimerange._end._minute
+									'time.end': {
+										_hour: alg.appointmentnewtimerange._end._hour,
+										_minute: alg.appointmentnewtimerange._end._minute
 									}
 								}
 							};
@@ -1206,7 +1206,7 @@ module.exports = {
 			case 'out':
 				await createReview(appointment_id);
 				query = { $set: { status: 'done', 'time.check_out': new Date(time) } };
-				sendNotify(appointment_id);
+				sendNotifyReview(appointment_id);
 				break;
 		}
 
@@ -1224,36 +1224,36 @@ module.exports = {
 
 		res.status(200).json({ appointment });
 	},
-	setCustomerReview             : async (req, res, next) => {
+	setCustomerReview: async (req, res, next) => {
 		const { comm, resp, Qos, Vom, feedback, appointment_id, rec } = req.body;
 		var avg = (comm + resp + Qos + Vom) / 4;
 
 		let update = {
-			$set : {
-				customer_review : {
-					isRated            : true,
-					feedback           : feedback,
-					communication      : comm,
-					responsiveness     : resp,
-					recommend          : rec,
-					value_for_money    : Vom,
-					quality_of_service : Qos,
-					avg_rated          : avg,
-					created_time       : new Date()
+			$set: {
+				customer_review: {
+					isRated: true,
+					feedback: feedback,
+					communication: comm,
+					responsiveness: resp,
+					recommend: rec,
+					value_for_money: Vom,
+					quality_of_service: Qos,
+					avg_rated: avg,
+					created_time: new Date()
 				}
 			}
 		};
 		const review = await Review.findOneAndUpdate({ appointment_id: appointment_id }, update, {
-			new             : true,
-			customer_review : 1,
-			appointment_id  : 1
+			new: true,
+			customer_review: 1,
+			appointment_id: 1
 		}).populate('appointment_id');
 		if (!review) return res.json({ error: 'error accourd' });
 		insightsRateIncrement(review.appointment_id.business_id, avg, rec);
 		res.status(200).json({ success: 'review saved successffuly' });
 	},
 
-	BusinessStatisticsHeader      : async (req, res, next) => {
+	BusinessStatisticsHeader: async (req, res, next) => {
 		let today = moment(new Date()).format('l');
 
 		let id = mongoose.Types.ObjectId(req.params.business_id);
@@ -1300,29 +1300,29 @@ module.exports = {
 		// 	res.status(200).json({ statistics });
 		// });
 	},
-	setBusinessReview             : async (req, res, next) => {
+	setBusinessReview: async (req, res, next) => {
 		const { communication, responsiveness, overall, time_respect, feedback, appointment_id } = req.body;
 		let avg = (communication + responsiveness + overall + time_respect) / 4;
 		let exp = -1;
 
 		let update = {
-			$set : {
-				business_review : {
-					isRated        : true,
-					feedback       : feedback,
+			$set: {
+				business_review: {
+					isRated: true,
+					feedback: feedback,
 					communication,
 					responsiveness,
 					overall,
 					time_respect,
-					avg_rated      : avg,
-					created_time   : new Date()
+					avg_rated: avg,
+					created_time: new Date()
 				}
 			}
 		};
 		const review = await Review.findOneAndUpdate({ appointment_id: appointment_id }, update, {
-			new             : true,
-			business_review : 1,
-			appointment_id  : 1
+			new: true,
+			business_review: 1,
+			appointment_id: 1
 		}).populate('appointment_id');
 		if (!review) return res.json({ error: 'error accourd' });
 		if (avg > 3) {
@@ -1330,17 +1330,17 @@ module.exports = {
 		}
 		const business = await Businesses.findOneAndUpdate(
 			{
-				_id                     : review.appointment_id.business_id,
-				'customers.customer_id' : review.appointment_id.client_id
+				_id: review.appointment_id.business_id,
+				'customers.customer_id': review.appointment_id.client_id
 			},
 			{
-				$inc : { 'customers.$.experiance': exp }
+				$inc: { 'customers.$.experiance': exp }
 			}
 		);
 
 		res.status(200).json({ success: 'review saved successffuly' });
 	},
-	getReviewByBusinessId         : async (req, res, next) => {
+	getReviewByBusinessId: async (req, res, next) => {
 		const reviews = await Appointments.find({ business_id: req.params.business_id, status: 'done' })
 			.populate('review')
 			.populate('client_id', 'profile')
@@ -1352,7 +1352,7 @@ module.exports = {
 		res.status(200).json({ reviews });
 	},
 
-	getReviewAsCustomer           : async (req, res, next) => {
+	getReviewAsCustomer: async (req, res, next) => {
 		const reviews = await Appointments.find({ client_id: req.user._id, status: 'done' })
 			.populate('review', 'customer_review')
 			// .populate('client_id', 'profile')
@@ -1364,15 +1364,15 @@ module.exports = {
 
 		res.status(200).json({ reviews });
 	},
-	createReviews                 : async (req, res, next) => {
+	createReviews: async (req, res, next) => {
 		console.log('inside the reviews');
 		const appointments = await Appointments.find({ status: 'done' });
 
 		const elem = await appointments.map((appoitnemnt) => {
 			let id = appoitnemnt._id;
 			return new Review({
-				_id            : new mongoose.Types.ObjectId(),
-				appointment_id : mongoose.Types.ObjectId(id)
+				_id: new mongoose.Types.ObjectId(),
+				appointment_id: mongoose.Types.ObjectId(id)
 			});
 		});
 		const result = await Review.insertMany(elem);
@@ -1380,21 +1380,21 @@ module.exports = {
 		if (result) res.json({ done: 'done' });
 	},
 
-	getIsRated                    : async (req, res, next) => {
+	getIsRated: async (req, res, next) => {
 		const thisReview = await Review.findOne({
-			appointment_id            : req.params.appointmentId,
-			'customer_review.isRated' : false
+			appointment_id: req.params.appointmentId,
+			'customer_review.isRated': false
 		});
 
 		if (thisReview) res.status(200).json({ success: true, thisReview });
 		res.status(202).json({ success: false });
 	},
 
-	getReviewByAppointment        : async (req, res, next) => {
+	getReviewByAppointment: async (req, res, next) => {
 		const { appointment_id } = req.params;
 		const review = await Review.findOne({ appointment_id: appointment_id }, '-customer_review').populate({
-			path     : 'appointment_id',
-			populate : [ { path: 'services', select: 'title' }, { path: 'client_id', select: 'profile' } ]
+			path: 'appointment_id',
+			populate: [{ path: 'services', select: 'title' }, { path: 'client_id', select: 'profile' }]
 		});
 
 		if (!review) return res.json({ error: 'Review Not Found' });
@@ -1461,20 +1461,20 @@ const getAppointmentData = async (appointments) => {
 		// const business = await Businesses.findById(appointment.business_id);
 
 		const Nservices = await Categories.find({
-			'services._id' : { $in: appointment.services }
+			'services._id': { $in: appointment.services }
 		});
 		const services = await getServices(Nservices, appointment.services);
 		await data.push({
-			_id         : appointment._id,
-			business_id : appointment.business_id,
-			client      : user,
-			time        : {
-				date  : appointment.time.date,
-				start : appointment.time.start,
-				end   : appointment.time.end
+			_id: appointment._id,
+			business_id: appointment.business_id,
+			client: user,
+			time: {
+				date: appointment.time.date,
+				start: appointment.time.start,
+				end: appointment.time.end
 			},
-			services    : services,
-			status      : appointment.status
+			services: services,
+			status: appointment.status
 		});
 	}
 	return await data;
