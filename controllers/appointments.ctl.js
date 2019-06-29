@@ -429,7 +429,6 @@ module.exports = {
 		console.log(newDate);
 		const hhours = Number(ehour) - Number(shour);
 		const mminutes = Number(eminute) - Number(sminute);
-		console.log(newDate);
 
 		const newAppointment = new Appointments(
 			{
@@ -462,22 +461,24 @@ module.exports = {
 		);
 		console.log(newDate.getHours());
 		console.log(newAppointment);
-		const CanBook = booked(businessId, newDate, {
+		const CanBook = await booked(businessId, newDate, {
 			_start: newAppointment.time.start,
 			_end: newAppointment.time.end
 		});
+		console.log("booked", CanBook);
+
 		if (CanBook) {
 			const appointment = await newAppointment.save();
-			if (!appointment) return res.status(403).json({ error: 'an error occoured' });
+			if (!appointment) return res.status(403).json({ error: 'alrd taken' });
 
-			res.status(200).json('suceess');
+			return res.status(200).json('suceess');
 		}
 		//res.json('success');
 		// booked(businessId, newDate, {
 		//   _start: { _hour: Number(12), _minute: Number(10) },
 		//   _end: { _hour: Number(13), _minute: Number(10) }
 		// });
-		res.status(304).json('alg');
+		return res.status(304).json('booked');
 	},
 	// setAppointmentAndDelete: async (req, res, next) => {
 	// 	const { businessId, costumerId, service, date, shour, sminute, ehour, eminute, appointmentId } = req.body;
