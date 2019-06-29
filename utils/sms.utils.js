@@ -1,6 +1,7 @@
 require('dotenv').config();
 const Appointments = require('../models/appointment');
-var consts = require('./consts'),
+var constsss = require('../consts');
+
 
 
 
@@ -9,7 +10,6 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 const serviceId = process.env.TWILIO_SERVICE_ID;
 const notifySid = process.env.TWILIO_NOTIFY_SID;
 //const { getCustomerNumberByAppointment } = require('./');
-
 
 
 const client = require('twilio')(accountSid, authToken);
@@ -74,7 +74,7 @@ module.exports = {
                 binding_type: 'sms',
                 address: phoneNumber,
             }),
-            body: `ALERT Appointment has been Canceled , please visit your business dashboard to be updated  , Here is the link: ${consts.Client}.`, //dashboard business
+            body: `ALERT Appointment has been Canceled , please visit your business dashboard to be updated  , Here is the link: ${constsss.Client}.`, //dashboard business
         };
         client.notify
             .services(notifySid)
@@ -94,7 +94,7 @@ module.exports = {
                 binding_type: 'sms',
                 address: phoneNumber,
             }),
-            body: `New Appointment has been Added , please visit your business dashboard to be updated  , Here is the link: ${consts.Client}.`, //dashboard business
+            body: `New Appointment has been Added , please visit your business dashboard to be updated  , Here is the link: ${constsss.Client}.`, //dashboard business
         };
         client.notify
             .services(notifySid)
