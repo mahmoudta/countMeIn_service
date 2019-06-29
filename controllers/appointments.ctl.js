@@ -1049,8 +1049,8 @@ module.exports = {
 										_minute : alg.appointmentnewtimerange._start._minute
 									},
 									'time.end'      : {
-										_hour   : alg.appointmentnewtimerange.end._hour,
-										_minute : alg.appointmentnewtimerange.end._minute
+										_hour   : alg.appointmentnewtimerange._end._hour,
+										_minute : alg.appointmentnewtimerange._end._minute
 									}
 								}
 							};
@@ -1243,6 +1243,18 @@ module.exports = {
 
 		if (thisReview) res.status(200).json({ success: true, thisReview });
 		res.status(202).json({ success: false });
+	},
+
+	getReviewByAppointment        : async (req, res, next) => {
+		const { appointment_id } = req.params;
+		const review = await Review.findOne({ appointment_id: appointment_id }, '-customer_review').populate({
+			path     : 'appointment_id',
+			populate : [ { path: 'services', select: 'title' }, { path: 'client_id', select: 'profile' } ]
+		});
+
+		if (!review) return res.json({ error: 'Review Not Found' });
+		if (review.business_review.isRated) return res.json({ error: " you can't review same appointment twice" });
+		res.status(200).json({ review });
 	}
 
 	// BusinessStatisticsHeader      : async (req, res, next) => {

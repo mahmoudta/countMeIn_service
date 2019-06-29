@@ -9,7 +9,7 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/', express.static('./public')); //for API
+// app.use('/', express.static('./public')); //for API
 app.use((req, res, next) => {
 	res.header('Access-Control-Allow-Origin', '*');
 	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type,Accept, Authorization');
@@ -27,7 +27,6 @@ app.use('/appointments', require('./routes/appointments'));
 app.use('/business', require('./routes/businesses'));
 app.use('/algorithms', require('./routes/algorithms'));
 app.use('/sms', require('./routes/sms'));
-
 
 /* start the server */
 const port = process.env.PORT || 8080;
