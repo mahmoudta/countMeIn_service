@@ -13,7 +13,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
 	res.header('Access-Control-Allow-Origin', '*');
 	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type,Accept, Authorization');
-	res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,PUT,OPTIONS');
+	res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT, OPTIONS');
+	res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+
 	res.set('Content-Type', 'application/json');
 	next();
 });
