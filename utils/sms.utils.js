@@ -1,5 +1,7 @@
 require('dotenv').config();
 const Appointments = require('../models/appointment');
+var consts = require('./consts'),
+
 
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -63,6 +65,52 @@ module.exports = {
         return
 
     },
+
+    sendNotifyCanceled: async (AppointmentId) => {
+        const phoneNumber = await module.exports.getBusinessNumberByAppointment(AppointmentId);
+        console.log("phone", phoneNumber.toString())
+        const notificationOpts = {
+            toBinding: JSON.stringify({
+                binding_type: 'sms',
+                address: phoneNumber,
+            }),
+            body: `ALERT Appointment has been Canceled , please visit your business dashboard to be updated  , Here is the link: ${consts.Client}.`, //dashboard business
+        };
+        client.notify
+            .services(notifySid)
+            .notifications.create(notificationOpts)
+            .then(notification => console.log(notification.sid))
+            .catch(error => console.log(error));
+
+        return
+
+    },
+
+    sendNotifyAdded: async (AppointmentId) => {
+        const phoneNumber = await module.exports.getCustomerNumberByAppointment(AppointmentId);
+        console.log("phone", phoneNumber.toString())
+        const notificationOpts = {
+            toBinding: JSON.stringify({
+                binding_type: 'sms',
+                address: phoneNumber,
+            }),
+            body: `New Appointment has been Added , please visit your business dashboard to be updated  , Here is the link: ${consts.Client}.`, //dashboard business
+        };
+        client.notify
+            .services(notifySid)
+            .notifications.create(notificationOpts)
+            .then(notification => console.log(notification.sid))
+            .catch(error => console.log(error));
+
+        return
+
+    },
+
+
+    // sendMorningInsights : async () => { 
+
+    // }
+
 
 };
 

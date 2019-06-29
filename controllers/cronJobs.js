@@ -7,7 +7,7 @@ const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const moment = require('moment');
 mongoose.Promise = global.Promise;
-setInterval(async function() {
+setInterval(async function () {
 	//var yestrday = moment().subtract(1, 'days').startOf('day').toDate();
 	let today = moment(new Date(), 'l');
 	// let today = moment(new Date()).format('l');
@@ -30,7 +30,7 @@ setInterval(async function() {
 	// const users = Businesses.updateMany({ _id: { $in: appointments } });
 }, 1 * 60 * 60 * 1000); // 1 hour
 
-var j = schedule.scheduleJob('1 0 * * *', async function() {
+var j = schedule.scheduleJob('1 0 * * *', async function () {
 	var momentdate = moment().format('l');
 	var date = new Date(momentdate);
 	// console.log(date);
@@ -44,3 +44,9 @@ var j = schedule.scheduleJob('1 0 * * *', async function() {
 	/* Statistics Update  */
 	/* Today will get the rate of yesterday as a start point */
 });
+
+// schedule.scheduleJob('8 0 * * *', () => {
+
+// 	//SendTodayForbusiness();
+
+// })
