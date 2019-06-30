@@ -35,7 +35,7 @@ module.exports = {
                 binding_type: 'sms',
                 address: phoneNumber,
             }),
-            body: `it was great seeing you today. Would you take one minute to leave a CountMeIn review about your experience? Here is the link: http://localhost:3000/sms/customerreview/${AppointmentId}. Thanks for your help!`,
+            body: `it was great seeing you today. Would you take one minute to leave a CountMeIn review about your experience? Here is the link: ${constsss.Client}/sms/customerreview/${AppointmentId}. Thanks for your help!`,
         };
         client.notify
             .services(notifySid)
@@ -54,7 +54,7 @@ module.exports = {
                 binding_type: 'sms',
                 address: phoneNumber,
             }),
-            body: `Appointment has been updated , please visit your business dashboard to be updated  , Here is the link: http://localhost:3000/sms/customerreview/${AppointmentId}.`, //dashboard business
+            body: `Appointment has been updated , please visit your business dashboard to be updated  , Here is the link: ${constsss.Client}/customerreview/${AppointmentId}.`, //dashboard business
         };
         client.notify
             .services(notifySid)
