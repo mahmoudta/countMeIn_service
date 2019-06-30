@@ -163,7 +163,7 @@ module.exports = {
 	getBusinessByOwner            : async (req, res, next) => {
 		const owner_id = req.params.owner_id;
 		const business = await Businesses.findOne({ owner_id: owner_id })
-			.populate('categories')
+			.populate({ path: 'categories', populate: { path: 'services' } })
 			.populate('services.service_id', 'title')
 			.populate('customers.customer_id', 'profile')
 			.lean();
@@ -739,11 +739,17 @@ module.exports = {
 	},
 	getAppointmentsStatistics     : async (req, res, next) => {
 		const business_id = mongoose.Types.ObjectId(req.params.business_id);
-		let date = new Date();
+		let date = moment().format('l');
+		let week = new Date(moment().subtract(8, 'days').format('l'));
+
 		const documents = await insights.aggregate([
 			{
 				$match : {
-					business_id : business_id
+					business_id : business_id,
+					date        : {
+						$gt : week,
+						$lt : new Date(date)
+					}
 				}
 			},
 			{ $unwind: '$traffic' },
@@ -850,6 +856,7 @@ module.exports = {
 	},
 	getServiceStats               : async (req, res, next) => {
 		let id = mongoose.Types.ObjectId(req.params.business_id);
+
 		const results = await Appointments.aggregate([
 			//TODO - ADD to pipleine to avoid double quers
 			{ $match: { status: 'done', business_id: id } },
@@ -947,9 +954,16 @@ module.exports = {
 	getFollowersStats             : async (req, res, next) => {
 		await createTotalFollowersCount();
 		const id = mongoose.Types.ObjectId(req.params.business_id);
+
 		const results = await insights.aggregate([
 			{
-				$match : { business_id: id }
+				$match : {
+					business_id : id,
+					date        : {
+						$gt : week,
+						$lt : new Date(date)
+					}
+				}
 			},
 			{
 				$addFields : {

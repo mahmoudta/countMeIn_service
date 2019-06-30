@@ -799,7 +799,6 @@ module.exports = {
 		/* to change */
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
-		console.log('dtae', new Date());
 		const Ndate = new Date(moment(date).format('l'));
 		// const Ndate = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0);
 		console.log(Ndate);
