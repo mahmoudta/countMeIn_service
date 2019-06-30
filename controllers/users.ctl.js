@@ -102,9 +102,9 @@ module.exports = {
 	booktest: async (req, res, next) => {
 		// console.log('book Test Here');
 		const test1 = await smart(
-			'5cee375f0d1aca9031f57708',
-			['5cedf8f83e3dad3051922424', '5cedf9bb3e3dad3051922426'],
-			'5cedf3c20a209a0eddbb2bb1',
+			'5d11ae5eae0b134a3721bd7c',
+			['5cedf5403e3dad305192241d', '5cedf4c13e3dad305192241a'],
+			'5d07d11285f0e1296140f4d5',
 			0
 		);
 		res.status(200).json({ test1 });
@@ -128,8 +128,9 @@ module.exports = {
 			client_id: req.user._id,
 			'time.date': { $gte: today },
 			status: { $in: ['inProgress', 'ready'] }
-		}).sort([['time.date', 1], ['time.start._hour', 1], ['time.start._minute', 1]]).
-			populate({
+		})
+			.sort([['time.date', 1], ['time.start._hour', 1], ['time.start._minute', 1]])
+			.populate({
 				path: 'services',
 				populate: { path: 'services' }
 			})

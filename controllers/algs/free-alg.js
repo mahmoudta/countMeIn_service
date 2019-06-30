@@ -856,7 +856,7 @@ async function mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusn
 
 				totalrate += (1 - rate[tmpdate][i] / rate.top) * valueofbusnessbusyhours * (minutes / timerangetime);
 			}
-			if (totalrate != 0) {
+			if (totalrate >= 0) {
 				onetimerange._value += totalrate;
 			}
 		});
@@ -1343,15 +1343,15 @@ async function smartFunction(
 	const valueofbusnessbusyhours = business.schedule_settings.distrbuted_time;
 	const days_to_return = business.schedule_settings.days_calculate_length;
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
-	// const range_definition = business.schedule_settings.range_definition;
-	// const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
+	const range_definition = business.schedule_settings.range_definition;
+	const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
 	//
-	const range_definition = {
-		morning   : { start: { _hour: 7, _minute: 0 }, end: { _hour: 12, _minute: 0 } },
-		afternoon : { start: { _hour: 12, _minute: 0 }, end: { _hour: 17, _minute: 0 } },
-		evening   : { start: { _hour: 17, _minute: 0 }, end: { _hour: 23, _minute: 0 } }
-	};
-	const toreturnadaybybusiness = 2;
+	// const range_definition = {
+	// 	morning   : { start: { _hour: 7, _minute: 0 }, end: { _hour: 12, _minute: 0 } },
+	// 	afternoon : { start: { _hour: 12, _minute: 0 }, end: { _hour: 17, _minute: 0 } },
+	// 	evening   : { start: { _hour: 17, _minute: 0 }, end: { _hour: 23, _minute: 0 } }
+	// };
+	// const toreturnadaybybusiness = 2;
 	//
 	var numberToReturnADay;
 	if (toreturnadaybybusiness < toreturnadaybycustomer) numberToReturnADay = toreturnadaybycustomer;
@@ -1417,20 +1417,20 @@ async function smartFunction(
 		switch (preferhours) {
 			case 0:
 				preferhoursrange = new time_range(
-					new time(range_definition.morning.start._hour, range_definition.morning.start._minute),
-					new time(range_definition.morning.end._hour, range_definition.morning.end._minute)
+					new time(range_definition.morning._start._hour, range_definition.morning._start._minute),
+					new time(range_definition.morning._end._hour, range_definition.morning._end._minute)
 				);
 				break;
 			case 1:
 				preferhoursrange = new time_range(
-					new time(range_definition.afternoon.start._hour, range_definition.afternoon.start._minute),
-					new time(range_definition.afternoon.end._hour, range_definition.afternoon.end._minute)
+					new time(range_definition.afternoon._start._hour, range_definition.afternoon._start._minute),
+					new time(range_definition.afternoon._end._hour, range_definition.afternoon._end._minute)
 				);
 				break;
 			case 2:
 				preferhoursrange = new time_range(
-					new time(range_definition.evening.start._hour, range_definition.evening.start._minute),
-					new time(range_definition.evening.end._hour, range_definition.evening.end._minute)
+					new time(range_definition.evening._start._hour, range_definition.evening._start._minute),
+					new time(range_definition.evening._end._hour, range_definition.evening._end._minute)
 				);
 				break;
 			default:
@@ -1438,7 +1438,9 @@ async function smartFunction(
 		}
 		await mergewithpreferhours(preferhoursrange, tempfreetime, valueofpreferhours);
 	}
+
 	await mergewithbusnessbusnessbusyhour(businessid, tempfreetime, valueofbusnessbusyhours);
+
 	if (prevelaged == true) await pickthehighestifsliced(tempfreetime, numberToReturnADay);
 	else
 		await pickthehighestifnotsliced(
