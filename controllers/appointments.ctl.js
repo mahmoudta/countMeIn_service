@@ -817,7 +817,7 @@ module.exports = {
 	},
 	getTodayUpcomingAppointments  : async (req, res, next) => {
 		// let newdate = moment().format('L');
-		let date = new Date(moment(new Date()).format('l'));
+		let date = moment(moment(new Date()).format('l')).toDate();
 
 		const appointments = await Appointments.find({
 			business_id : req.params.business_id,
