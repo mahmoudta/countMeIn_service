@@ -13,10 +13,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
 	res.header('Access-Control-Allow-Origin', '*');
 	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type,Accept, Authorization');
-	if (req.method === 'OPTIONS') {
-		res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT, PATCH, OPTIONS');
-		return res.status(200).json({});
-	}
+	// if (req.method === 'OPTIONS') {
+	// 	res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT, PATCH, OPTIONS');
+	// 	return res.status(200).json({});
+	// }
 	res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT, OPTIONS');
 	res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
 
