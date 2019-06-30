@@ -799,7 +799,7 @@ module.exports = {
 		/* to change */
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
-		const Ndate = new Date(parts[0], parts[1] - 1, parts[2], 21, 0, 0);
+		const Ndate = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0);
 		console.log(Ndate);
 		// const Ndate = new Date.UTC(parts[0], parts[1] - 1, parts[2], 21, 0, 0);
 		const appointments = await Appointments.find({
@@ -817,7 +817,7 @@ module.exports = {
 	},
 	getTodayUpcomingAppointments  : async (req, res, next) => {
 		// let newdate = moment().format('L');
-		let date = moment(moment(new Date()).format('l')).toDate();
+		let date = new Date(moment().format('l'));
 
 		const appointments = await Appointments.find({
 			business_id : req.params.business_id,
