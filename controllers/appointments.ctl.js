@@ -799,7 +799,7 @@ module.exports = {
 		/* to change */
 		const { date, business_id } = req.params;
 		var parts = date.split('-');
-		const Ndate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 21, 0, 0));
+		const Ndate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
 		console.log(Ndate);
 		// const Ndate = new Date.UTC(parts[0], parts[1] - 1, parts[2], 21, 0, 0);
 		const appointments = await Appointments.find({
