@@ -410,7 +410,8 @@ time_range.prototype.slice = function(
 	minutes_between_appointment,
 	minsevicetime,
 	valuefornospaces,
-	fromsmart = true
+	fromsmart = true,
+	withputingnospace = true
 ) {
 	var tmp = [];
 	var sum = length + minutes_between_appointment;
@@ -425,29 +426,42 @@ time_range.prototype.slice = function(
 			new time_range(this._start.add_and_return(sum * i), this._start.add_and_return(sum * (i + 1)), this._value)
 		);
 	}
-
-	if (!isEmpty(tmp)) {
-		tmp[0]._value += valuefornospaces;
-		var temp = tmp.pop();
-		if (remainintimerange < minsevicetime) {
-			if (remainintimerange > minutes_between_appointment) {
-				if (remainintimerange > 3) temp._value -= valuefornospaces / 2;
-			} else {
-				if (remainintimerange >= 3)
-					temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
+	if (withputingnospace) {
+		if (!isEmpty(tmp)) {
+			tmp[0]._value += valuefornospaces;
+			var temp = tmp.pop();
+			if (remainintimerange < minsevicetime) {
+				if (remainintimerange > minutes_between_appointment) {
+					if (remainintimerange > 3) temp._value -= valuefornospaces / 2;
+				} else {
+					if (remainintimerange >= 3)
+						temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
+				}
 			}
+			tmp.push(temp);
 		}
-		tmp.push(temp);
-	}
-	if (fromsmart) {
-		if (remainintimerange > 0)
-			tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+
+		if (fromsmart) {
+			if (remainintimerange > 0)
+				tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+		}
 	}
 
-	//////////////console.log(util.inspect(tmp, { depth: null }));
 	return tmp;
 };
+time_range.prototype.nospacewitoutslicing = function(length, minutes_between_appointment, valuefornospaces) {
+	var tmp = [];
+	tmp.push(new time_range(this._start, this._end));
+	var sum = length + minutes_between_appointment;
+	var minutes = this.tominutes();
 
+	var i = 0;
+	if (minutes >= sum)
+		tmp.push(new time_range(this._start, this._start.add_and_return(sum), this._value + valuefornospaces));
+	if (minutes > sum)
+		tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+	return tmp;
+};
 function Day(date, free) {
 	(this.Date = date), (this.Free = free);
 }
@@ -460,16 +474,43 @@ Day.prototype.slice = function(
 	withputingnospace = true
 ) {
 	var tmp = [];
-	///////////console.log(this.Date);
+	//console.log(this.Date);
 	this.Free.forEach((timerange) => {
 		tmp = tmp.concat(
-			timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart)
+			timerange.slice(
+				length,
+				minutes_between_appointment,
+				minsevicetime,
+				valuefornospaces,
+				fromsmart,
+				withputingnospace
+			)
 		);
 	});
 	this.Free = [];
 	//to do (check date)
 	this.Free = tmp;
 };
+Day.prototype.nospacewitoutslicing = function(length, minutes_between_appointment, valuefornospaces) {
+	var tmp = [];
+	console.log(this.Date);
+	this.Free.forEach((timerange) => {
+		tmp = tmp.concat(
+			timerange.nospacewitoutslicing(
+				length,
+				minutes_between_appointment,
+				minsevicetime,
+				valuefornospaces,
+				fromsmart,
+				false
+			)
+		);
+	});
+	this.Free = [];
+	//to do (check date)
+	this.Free = tmp;
+};
+
 Day.prototype.slicewithnospace = function(length, minutes_between_appointment, minsevicetime, valuefornospaces) {
 	var tmp = [];
 	this.Free.forEach((timerange) => {
@@ -637,6 +678,7 @@ async function returnfreetime(
 	prevelaged = false
 ) {
 	if (id === false) return false;
+
 	var days = [];
 	var tmp;
 	var daysfree = [];
@@ -688,15 +730,12 @@ async function returnfreetime(
 		tmpday = days.shift();
 		tmpfree = tmpday.Free;
 		//to undo
-		if (choice == 0 || choice == 1)
-			tmpday.slice(
-				services_length,
-				minutes_between_appointment,
-				minsevicetime,
-				valuefornospaces,
-				fromsmart,
-				false
-			);
+		var nospacewitoutslicing = true;
+
+		if (choice == 1) {
+			nospacewitoutslicing = false;
+			tmpday.nospacewitoutslicing(services_length, minutes_between_appointment, valuefornospaces);
+		}
 
 		if (moment(tmpday.Date).format('YYYY/MM/DD') == moment().format('YYYY/MM/DD')) {
 			var today = new Date();
@@ -736,7 +775,14 @@ async function returnfreetime(
 			}
 		}
 		if (choice == 0 || choice == 1)
-			tmpday.slice(services_length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart);
+			tmpday.slice(
+				services_length,
+				minutes_between_appointment,
+				minsevicetime,
+				valuefornospaces,
+				fromsmart,
+				nospacewitoutslicing
+			);
 		daysfree.push(tmpday);
 		counter++;
 	} while (counter < number_of_days_to_return);
