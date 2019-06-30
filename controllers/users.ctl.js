@@ -182,13 +182,45 @@ module.exports = {
 		res.json({ businesses });
 	},
 
+	getPannel: async (req, res, next) => {
+		var momentdate = moment().format('l');
+		var today = new Date(momentdate);
+
+		const appointments = await Appointments.find({ client_id: req.params.clientId, 'time.date': { $eq: today } });
+
+
+		var now = moment();
+		var Hours = Number(now.hours())
+		var Minutes = Number(now.minutes())
+		var Done = 0;
+		var Upcomming = 0;
+		var All = 0;
+		if (!isEmpty(appointments)) {
+
+			appointments.map((appointment, i) => {
+				All = i;
+				if (appointment.time.start._hour < Hours || (appointment.time.start._hour == Hours && appointment.time.start._minute < Minutes)) {
+					Done = Done + 1;
+				} else {
+					Upcomming = Upcomming + 1;
+				}
+
+			})
+			//Upcomming = 1;
+			//console.log(Upcomming, Done, All)
+		}
+
+
+		res.json({ upcomming: Upcomming, Done: Done, All: All + 1 })
+	},
+
 	setReminder: async (req, res, next) => {
 		const { businessId, customerId, services, days, repeat } = req.body;
 		//var todayDate = new Date();
 		const newDate = moment(moment(new Date()).format('l')).add(Number(days), 'days');
 		//var dateTo = new Date(todayDate);
 		// console.log(todayDate)
-		console.log(customerId);
+		//console.log(customerId);
 
 		var theservices = services.map((service, i) => {
 			return mongoose.Types.ObjectId(service);
