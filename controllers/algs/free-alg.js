@@ -444,15 +444,23 @@ time_range.prototype.slice = function(
 			tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
 	}
 
+	//////////////console.log(util.inspect(tmp, { depth: null }));
 	return tmp;
 };
 
 function Day(date, free) {
 	(this.Date = date), (this.Free = free);
 }
-Day.prototype.slice = function(length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart = true) {
+Day.prototype.slice = function(
+	length,
+	minutes_between_appointment,
+	minsevicetime,
+	valuefornospaces,
+	fromsmart = true,
+	withputingnospace = true
+) {
 	var tmp = [];
-
+	///////////console.log(this.Date);
 	this.Free.forEach((timerange) => {
 		tmp = tmp.concat(
 			timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces, fromsmart)
@@ -625,7 +633,8 @@ async function returnfreetime(
 	valuefornospaces = 0,
 	timerange = false,
 	searchafterorbefor = 1,
-	timerangefromedit = false
+	timerangefromedit = false,
+	prevelaged = false
 ) {
 	if (id === false) return false;
 	var days = [];
@@ -679,6 +688,16 @@ async function returnfreetime(
 		tmpday = days.shift();
 		tmpfree = tmpday.Free;
 		//to undo
+		if (choice == 0 || choice == 1)
+			tmpday.slice(
+				services_length,
+				minutes_between_appointment,
+				minsevicetime,
+				valuefornospaces,
+				fromsmart,
+				false
+			);
+
 		if (moment(tmpday.Date).format('YYYY/MM/DD') == moment().format('YYYY/MM/DD')) {
 			var today = new Date();
 			var tmptime;
@@ -1410,8 +1429,10 @@ async function smartFunction(
 		valuefornospaces,
 		timerange,
 		searchafterorbefor,
-		timerangefromedit
+		timerangefromedit,
+		prevelaged
 	);
+
 	var preferhoursrange;
 	if (preferhours !== false && preferhours <= 2 && preferhours >= 0) {
 		switch (preferhours) {
@@ -1791,5 +1812,10 @@ module.exports = {
 			//await updatethisapointmenttonewtimerange(appointmentid, result[1]);
 			return { ok: false, fixed: true, affectedappointmentid: result[0], appointmentnewtimerange: result[1] };
 		}
+	},
+	timenow                         : async () => {
+		var momentdate = moment().format('l');
+		var date = new Date(momentdate);
+		return date;
 	}
 };
