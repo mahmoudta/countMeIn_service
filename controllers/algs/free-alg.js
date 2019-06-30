@@ -451,7 +451,8 @@ time_range.prototype.slice = function(
 };
 time_range.prototype.nospacewitoutslicing = function(length, minutes_between_appointment, valuefornospaces) {
 	var tmp = [];
-	tmp.push(new time_range(this._start, this._end));
+	//console.log('iam here');
+	tmp.push(new time_range(this._start, this._end, this._value));
 	var sum = length + minutes_between_appointment;
 	var minutes = this.tominutes();
 
@@ -460,6 +461,7 @@ time_range.prototype.nospacewitoutslicing = function(length, minutes_between_app
 		tmp.push(new time_range(this._start, this._start.add_and_return(sum), this._value + valuefornospaces));
 	if (minutes > sum)
 		tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
+	//console.log(util.inspect(tmp, { depth: null }));
 	return tmp;
 };
 function Day(date, free) {
@@ -474,7 +476,7 @@ Day.prototype.slice = function(
 	withputingnospace = true
 ) {
 	var tmp = [];
-	//console.log(this.Date);
+	console.log('after normal slicing');
 	this.Free.forEach((timerange) => {
 		tmp = tmp.concat(
 			timerange.slice(
@@ -488,26 +490,20 @@ Day.prototype.slice = function(
 		);
 	});
 	this.Free = [];
-	//to do (check date)
+	console.log(util.inspect(tmp, { depth: null }));
 	this.Free = tmp;
 };
 Day.prototype.nospacewitoutslicing = function(length, minutes_between_appointment, valuefornospaces) {
 	var tmp = [];
-	console.log(this.Date);
+	console.log('after wothoutslicing');
+	//console.log(this.Date);
 	this.Free.forEach((timerange) => {
-		tmp = tmp.concat(
-			timerange.nospacewitoutslicing(
-				length,
-				minutes_between_appointment,
-				minsevicetime,
-				valuefornospaces,
-				fromsmart,
-				false
-			)
-		);
+		tmp = tmp.concat(timerange.nospacewitoutslicing(length, minutes_between_appointment, valuefornospaces, false));
 	});
 	this.Free = [];
 	//to do (check date)
+	// console.log('this from normal slice');
+	console.log(util.inspect(tmp, { depth: null }));
 	this.Free = tmp;
 };
 
@@ -521,7 +517,8 @@ Day.prototype.slicewithnospace = function(length, minutes_between_appointment, m
 			if (tmptimerange.length > 1) tmp = tmp.concat([ tmptimerange[tmptimerange.length - 1] ]);
 		}
 	});
-
+	// console.log('this from slicewithnospace');
+	// console.log(util.inspect(tmp, { depth: null }));
 	this.Free = [];
 	this.Free = tmp;
 };
@@ -728,14 +725,15 @@ async function returnfreetime(
 			break;
 		}
 		tmpday = days.shift();
-		tmpfree = tmpday.Free;
-		//to undo
 		var nospacewitoutslicing = true;
 
-		if (choice == 1) {
+		if (choice == 3) {
 			nospacewitoutslicing = false;
 			tmpday.nospacewitoutslicing(services_length, minutes_between_appointment, valuefornospaces);
+			console.log('iam here');
 		}
+		tmpfree = tmpday.Free;
+		//to undo
 
 		if (moment(tmpday.Date).format('YYYY/MM/DD') == moment().format('YYYY/MM/DD')) {
 			var today = new Date();
@@ -1410,6 +1408,8 @@ async function smartFunction(
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
 	const range_definition = business.schedule_settings.range_definition;
 	const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
+	console.log(valuefornospaces);
+	console.log(valueofpreferhours);
 	//
 	// const range_definition = {
 	// 	morning   : { start: { _hour: 7, _minute: 0 }, end: { _hour: 12, _minute: 0 } },
