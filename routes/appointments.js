@@ -12,10 +12,14 @@ router.route('/deleteAppointment').post(appointmentCtl.deleteAppointment);
 router.route('/getClientsAppointments/:clientId').get(appointmentCtl.getClientsAppointments);
 router.route('/getBusinessAppointments/:businessId').get(appointmentCtl.getBusinessAppointments);
 router.route('/getSubCategories/:businessId').get(appointmentCtl.getSubCategories);
-router.route('/business/setAppointmnet').post(appointmentCtl.setBusinessAppointment);
-router.route('/business/getReviewByappointment/:appointment_id').get(appointmentCtl.getReviewByAppointment);
+router.route('/business/setAppointmnet').post(passportJWT, appointmentCtl.setBusinessAppointment);
+router
+	.route('/business/getReviewByappointment/:appointment_id')
+	.get(passportJWT, appointmentCtl.getReviewByAppointment);
 
-router.route('/getBusinessAppointmentsByDate/:business_id/:date').get(appointmentCtl.getBusinessAppointmentsByDate);
+router
+	.route('/getBusinessAppointmentsByDate/:business_id/:date')
+	.get(passportJWT, appointmentCtl.getBusinessAppointmentsByDate);
 router
 	.route('/getTodayUpcomingAppointments/:business_id')
 	.get(passportJWT, appointmentCtl.getTodayUpcomingAppointments);
