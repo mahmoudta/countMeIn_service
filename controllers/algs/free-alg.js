@@ -1159,7 +1159,12 @@ async function mergewithpreferhours(preferhours, freetime, value) {
 	}
 	return {};
 }
-async function pickthehighestifsliced(freetime, numberToReturnADay) {
+async function pickthehighestifsliced(
+	freetime,
+	numberToReturnADay,
+	length = false,
+	minutes_between_appointment = false
+) {
 	for (let i = 0; i < freetime.length; i++) {
 		var tmparray = [];
 		//to delete
@@ -1168,6 +1173,8 @@ async function pickthehighestifsliced(freetime, numberToReturnADay) {
 			return compare2timerange(x, y);
 		});
 		for (let j = 0; j < numberToReturnADay && j < tmp.length; j++) {
+			if (length != false && minutes_between_appointment != false)
+				tmp.timerangesthatfit(length, minutes_between_appointment);
 			tmparray.push(tmp[j]);
 		}
 		freetime[i].Free = tmparray;
@@ -1535,7 +1542,7 @@ async function smartFunction(
 	}
 	if (prevelaged == false) {
 		await mergewithbusnessbusnessbusyhour(businessid, tempfreetime, valueofbusnessbusyhours);
-		await pickthehighestifsliced(tempfreetime, numberToReturnADay);
+		await pickthehighestifsliced(tempfreetime, numberToReturnADay, length, minutes_between_appointment);
 	} else
 		await pickthehighestifnotsliced(
 			tempfreetime,
@@ -1551,6 +1558,7 @@ async function smartFunction(
 			valueofbusnessbusyhours
 		);
 	if (tempfreetime === false || isEmpty(tempfreetime)) return {};
+	//tempfreetime.forEach
 	return tempfreetime;
 }
 async function bookFunction(businessid, chosendate, chosentimerange, bookandsave = true) {
