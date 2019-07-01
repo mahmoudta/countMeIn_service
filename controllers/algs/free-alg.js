@@ -683,6 +683,7 @@ async function returnfreetime(
 	var daysfree = [];
 	var timeranges = [];
 	var daysnum = diffDays(date_from, date_until);
+	console.log(daysnum);
 	var customerappointment;
 	var customersbusnessappointment;
 	var customersbusness;
@@ -712,8 +713,10 @@ async function returnfreetime(
 				)
 			);
 		});
+
 		days.push(new Day(thedate, timeranges));
 	});
+
 	var tmpday;
 	var tmpfree;
 	var counter = 0;
@@ -722,6 +725,9 @@ async function returnfreetime(
 	var posibletobook = new BinarySearchTree();
 	var day = new BinarySearchTree();
 	//console.log(fromsmart);
+	days.sort((a, b) => {
+		return a.Date - b.Date;
+	});
 	do {
 		if (days === undefined || days.length == 0) {
 			break;
@@ -1477,8 +1483,10 @@ async function smartFunction(
 		date_until = dateuntil;
 	} else {
 		var tmp = new Date();
-		date_from = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate());
-		date_until = moment(date_from).add(days_to_return, 'days').toDate();
+		// date_from = new Date(tmp.getFullYear(), tmp.getMonth(), tmp.getDate(), 0, 0, 0, 0);
+		date_from = new Date(moment().format('l'));
+		//console.log(date_from);
+		date_until = new Date(moment().add(days_to_return, 'days'));
 	}
 	tempfreetime = await returnfreetime(
 		await creatifempty(businessid, workinghours, date_from, date_until),
