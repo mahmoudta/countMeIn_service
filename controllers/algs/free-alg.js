@@ -1165,16 +1165,25 @@ async function pickthehighestifsliced(
 	length = false,
 	minutes_between_appointment = false
 ) {
+	//posibletobook.totree(day.timerangesthatfit(services_length, minutes_between_appointment));
 	for (let i = 0; i < freetime.length; i++) {
+		var tmptree = new BinarySearchTree();
 		var tmparray = [];
+		var tmp;
+		var tmpfree;
 		//to delete
 		//freetime[i].removeduplicates();
-		if (length != false && minutes_between_appointment != false)
-			freetime[i].timerangesthatfit(length, minutes_between_appointment);
-
-		const tmp = freetime[i].Free.sort(function(x, y) {
-			return compare2timerange(x, y);
-		});
+		if (length != false && minutes_between_appointment != false) {
+			tmptree.totree(freetime[i].Free);
+			tmpfree = tmptree.timerangesthatfit(length, minutes_between_appointment);
+			tmp = tmpfree.sort(function(x, y) {
+				return compare2timerange(x, y);
+			});
+		} else {
+			tmp = freetime[i].Free.sort(function(x, y) {
+				return compare2timerange(x, y);
+			});
+		}
 		for (let j = 0; j < numberToReturnADay && j < tmp.length; j++) {
 			tmparray.push(tmp[j]);
 		}
@@ -1543,7 +1552,7 @@ async function smartFunction(
 	}
 	if (prevelaged == false) {
 		await mergewithbusnessbusnessbusyhour(businessid, tempfreetime, valueofbusnessbusyhours);
-		await pickthehighestifsliced(tempfreetime, numberToReturnADay, length, minutes_between_appointment);
+		await pickthehighestifsliced(tempfreetime, numberToReturnADay, services_length, minutes_between_appointment);
 	} else
 		await pickthehighestifnotsliced(
 			tempfreetime,
