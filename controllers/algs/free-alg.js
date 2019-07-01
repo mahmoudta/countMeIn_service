@@ -1174,7 +1174,7 @@ async function pickthehighestifsliced(
 		});
 		for (let j = 0; j < numberToReturnADay && j < tmp.length; j++) {
 			if (length != false && minutes_between_appointment != false)
-				tmp.timerangesthatfit(length, minutes_between_appointment);
+				tmp[j].timerangesthatfit(length, minutes_between_appointment);
 			tmparray.push(tmp[j]);
 		}
 		freetime[i].Free = tmparray;
