@@ -426,22 +426,24 @@ time_range.prototype.slice = function(
 			new time_range(this._start.add_and_return(sum * i), this._start.add_and_return(sum * (i + 1)), this._value)
 		);
 	}
-	if (withputingnospace) {
-		if (!isEmpty(tmp)) {
-			tmp[0]._value += valuefornospaces;
-			var temp = tmp.pop();
-			if (remainintimerange < minsevicetime) {
-				if (remainintimerange > minutes_between_appointment) {
-					if (remainintimerange > 3) temp._value -= valuefornospaces / 2;
-				} else {
-					if (remainintimerange >= 3)
-						temp._value += (1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
+	if (fromsmart) {
+		if (withputingnospace) {
+			if (!isEmpty(tmp)) {
+				tmp[0]._value += valuefornospaces;
+				var temp = tmp.pop();
+				if (remainintimerange < minsevicetime) {
+					if (remainintimerange > minutes_between_appointment) {
+						if (remainintimerange > 3) temp._value -= valuefornospaces / 2;
+					} else {
+						if (remainintimerange >= 3)
+							temp._value +=
+								(1 - remainintimerange / (minutes_between_appointment + 1)) * valuefornospaces;
+					}
 				}
+				tmp.push(temp);
 			}
-			tmp.push(temp);
-		}
+			//console.log(fromsmart);
 
-		if (fromsmart) {
 			if (remainintimerange > 0)
 				tmp.push(new time_range(this._end.sub_and_return(sum), this._end, this._value + valuefornospaces));
 		}
@@ -719,18 +721,18 @@ async function returnfreetime(
 	var tmpcorrector;
 	var posibletobook = new BinarySearchTree();
 	var day = new BinarySearchTree();
-
+	//console.log(fromsmart);
 	do {
 		if (days === undefined || days.length == 0) {
 			break;
 		}
 		tmpday = days.shift();
 		var withputingnospace = true;
-
-		if (choice == 1) {
-			withputingnospace = false;
-			tmpday.nospacewitoutslicing(services_length, minutes_between_appointment, valuefornospaces);
-		}
+		if (fromsmart)
+			if (choice == 1) {
+				// withputingnospace = false;
+				tmpday.nospacewitoutslicing(services_length, minutes_between_appointment, valuefornospaces);
+			}
 		tmpfree = tmpday.Free;
 		//to undo
 
@@ -778,7 +780,7 @@ async function returnfreetime(
 				minsevicetime,
 				valuefornospaces,
 				fromsmart,
-				withputingnospace
+				false
 			);
 
 		daysfree.push(tmpday);
