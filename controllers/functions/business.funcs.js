@@ -105,7 +105,7 @@ module.exports.createInsights = async (appointment_id) => {
 	const businesses = await Business.find({});
 	const start = moment().subtract(29, 'days');
 	const end = moment();
-	var options = { upsert: true, new: true, setDefaultsOnInsert: true };
+	var options = { upsert: true, new: true, setDefaultsOnInsert: true, useFindAndModify: false };
 
 	let date = start;
 	let i = 1;
@@ -256,7 +256,7 @@ module.exports.createAppointmentsInsights = async () => {
 					traffic             : result.traffic
 				}
 			};
-		await Insights.findOneAndUpdate(query, update, options).exec();
+		const z = await Insights.findOneAndUpdate(query, update, options).exec();
 	});
 };
 

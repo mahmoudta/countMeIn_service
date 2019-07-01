@@ -622,14 +622,15 @@ module.exports = {
 	getStatistics                 : async (req, res, next) => {
 		const { business_id, range } = req.params;
 		let date, minDate, minPast;
-		date = new Date(moment().format('YYYY/MM/DD'));
+		date = new Date(moment().format('l'));
 		let divider = 0;
 		let array = [];
+		console.log(date);
 		switch (range) {
 			case '7': {
 				divider = 7;
-				minDate = moment(date).subtract(8, 'days').format('YYYY/MMM/DD');
-				minPast = moment(date).subtract(15, 'days').format('YYYY/MMM/DD');
+				minDate = moment(date).subtract(7, 'days').format('l');
+				minPast = moment(date).subtract(14, 'days').format('l');
 				break;
 			}
 			default:
@@ -640,7 +641,7 @@ module.exports = {
 			{
 				$match : {
 					business_id : mongoose.Types.ObjectId(business_id),
-					date        : { $gt: new Date(minDate), $lt: date }
+					date        : { $lt: date, $gte: new Date(minDate) }
 				}
 			},
 			{ $sort: { date: 1 } },
@@ -717,8 +718,8 @@ module.exports = {
 				$match : {
 					business_id : mongoose.Types.ObjectId(business_id),
 					date        : {
-						$gt : new Date(minPast),
-						$lt : new Date(moment(minDate).add(1, 'day').format('YYYY/MM/DD'))
+						$gte : new Date(minPast),
+						$lt  : new Date(minDate)
 					}
 				}
 			},
@@ -739,17 +740,11 @@ module.exports = {
 	},
 	getAppointmentsStatistics     : async (req, res, next) => {
 		const business_id = mongoose.Types.ObjectId(req.params.business_id);
-		let date = moment().format('l');
-		let week = new Date(moment().subtract(8, 'days').format('l'));
 
 		const documents = await insights.aggregate([
 			{
 				$match : {
-					business_id : business_id,
-					date        : {
-						$gt : week,
-						$lt : new Date(date)
-					}
+					business_id : business_id
 				}
 			},
 			{ $unwind: '$traffic' },
@@ -954,14 +949,15 @@ module.exports = {
 	getFollowersStats             : async (req, res, next) => {
 		await createTotalFollowersCount();
 		const id = mongoose.Types.ObjectId(req.params.business_id);
-
+		let date = moment().format('l');
+		let week = moment().subtract('7', 'days').format('l');
 		const results = await insights.aggregate([
 			{
 				$match : {
 					business_id : id,
 					date        : {
-						$gt : week,
-						$lt : new Date(date)
+						$gte : new Date(week),
+						$lt  : new Date(date)
 					}
 				}
 			},
@@ -993,7 +989,7 @@ module.exports = {
 	},
 
 	setfull                       : async (req, res, next) => {
-		const test = await createAppointmentsInsights();
+		const test = await createTotalFollowersCount();
 		res.json({ test });
 		// res.json({ success: 'success' });
 		// servicesDayStatistics();
