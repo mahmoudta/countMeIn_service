@@ -1169,12 +1169,13 @@ async function pickthehighestifsliced(
 		var tmparray = [];
 		//to delete
 		//freetime[i].removeduplicates();
+		if (length != false && minutes_between_appointment != false)
+			freetime[i].timerangesthatfit(length, minutes_between_appointment);
+
 		const tmp = freetime[i].Free.sort(function(x, y) {
 			return compare2timerange(x, y);
 		});
 		for (let j = 0; j < numberToReturnADay && j < tmp.length; j++) {
-			if (length != false && minutes_between_appointment != false)
-				tmp[j].timerangesthatfit(length, minutes_between_appointment);
 			tmparray.push(tmp[j]);
 		}
 		freetime[i].Free = tmparray;
