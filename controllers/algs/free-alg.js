@@ -476,7 +476,7 @@ Day.prototype.slice = function(
 	withputingnospace = true
 ) {
 	var tmp = [];
-	console.log('after normal slicing');
+	//console.log('after normal slicing');
 	this.Free.forEach((timerange) => {
 		tmp = tmp.concat(
 			timerange.slice(
@@ -490,7 +490,7 @@ Day.prototype.slice = function(
 		);
 	});
 	this.Free = [];
-	console.log(util.inspect(tmp, { depth: null }));
+	//console.log(util.inspect(tmp, { depth: null }));
 	this.Free = tmp;
 };
 Day.prototype.nospacewitoutslicing = function(length, minutes_between_appointment, valuefornospaces) {
