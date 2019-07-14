@@ -1165,6 +1165,7 @@ async function pickthehighestifsliced(
 	length = false,
 	minutes_between_appointment = false
 ) {
+	//console.log(util.inspect(freetime, { depth: null }));
 	//posibletobook.totree(day.timerangesthatfit(services_length, minutes_between_appointment));
 	for (let i = 0; i < freetime.length; i++) {
 		var tmptree = new BinarySearchTree();
@@ -1174,9 +1175,10 @@ async function pickthehighestifsliced(
 		//to delete
 		//freetime[i].removeduplicates();
 		if (length != false && minutes_between_appointment != false) {
-			tmptree.totree(freetime[i].Free);
-			tmpfree = tmptree.timerangesthatfit(length, minutes_between_appointment);
-			tmp = tmpfree.sort(function(x, y) {
+			//tmptree.totree(freetime[i].Free);
+			//tmpfree = tmptree.timerangesthatfit(length, minutes_between_appointment);
+			freetime[i].removeduplicates();
+			tmp = freetime[i].Free.sort(function(x, y) {
 				return compare2timerange(x, y);
 			});
 		} else {
@@ -1184,6 +1186,8 @@ async function pickthehighestifsliced(
 				return compare2timerange(x, y);
 			});
 		}
+		console.log(util.inspect(freetime[i].Date, { depth: null }));
+		console.log(util.inspect(tmp, { depth: null }));
 		for (let j = 0; j < numberToReturnADay && j < tmp.length; j++) {
 			tmparray.push(tmp[j]);
 		}
@@ -1523,7 +1527,7 @@ async function smartFunction(
 		timerangefromedit,
 		prevelaged
 	);
-
+	//console.log(util.inspect(tempfreetime, { depth: null }));
 	var preferhoursrange;
 	if (preferhours !== false && preferhours <= 2 && preferhours >= 0) {
 		switch (preferhours) {
@@ -1550,9 +1554,11 @@ async function smartFunction(
 		}
 		if (prevelaged == false) await mergewithpreferhours(preferhoursrange, tempfreetime, valueofpreferhours);
 	}
+
 	if (prevelaged == false) {
 		await mergewithbusnessbusnessbusyhour(businessid, tempfreetime, valueofbusnessbusyhours);
 		await pickthehighestifsliced(tempfreetime, numberToReturnADay, services_length, minutes_between_appointment);
+		//console.log(util.inspect(tempfreetime, { depth: null }));
 	} else
 		await pickthehighestifnotsliced(
 			tempfreetime,
@@ -1569,6 +1575,7 @@ async function smartFunction(
 		);
 	if (tempfreetime === false || isEmpty(tempfreetime)) return {};
 	//tempfreetime.forEach
+
 	return tempfreetime;
 }
 async function bookFunction(businessid, chosendate, chosentimerange, bookandsave = true) {
