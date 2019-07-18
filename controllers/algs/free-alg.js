@@ -392,6 +392,9 @@ var time_range = function(start, end, value = 0) {
 	this._end = end;
 	this._value = value;
 };
+time_range.prototype.addtovalue = function(toadd) {
+	this._value += toadd;
+};
 time_range.prototype.start = function() {
 	return this._start;
 };
@@ -511,18 +514,26 @@ Day.prototype.nospacewitoutslicing = function(length, minutes_between_appointmen
 
 Day.prototype.slicewithnospace = function(length, minutes_between_appointment, minsevicetime, valuefornospaces) {
 	var tmp = [];
+	var tmptimerange = [];
 	this.Free.forEach((timerange) => {
-		var tmptimerange = [];
-		tmptimerange = timerange.slice(length, minutes_between_appointment, minsevicetime, valuefornospaces);
-		if (!isEmpty(tmptimerange)) {
-			tmp = tmp.concat([ tmptimerange[0] ]);
-			if (tmptimerange.length > 1) tmp = tmp.concat([ tmptimerange[tmptimerange.length - 1] ]);
-		}
+		tmptimerange = timerange.slice(
+			length,
+			minutes_between_appointment,
+			minsevicetime,
+			valuefornospaces,
+			(fromsmart = true),
+			(withputingnospace = true)
+		);
+		// //console.log(tmptimerange);
+		// if (!isEmpty(tmptimerange)) {
+		// 	tmptimerange[0].addtovalue();
+		// 	if (tmptimerange.length > 1) tmp = tmp.concat([ tmptimerange[tmptimerange.length - 1] ]);
+		//}
 	});
 	// console.log('this from slicewithnospace');
 	// console.log(util.inspect(tmp, { depth: null }));
 	this.Free = [];
-	this.Free = tmp;
+	this.Free = tmptimerange;
 };
 
 Day.prototype.removeduplicates = function(services_length, minutes_between_appointment) {
@@ -1220,11 +1231,11 @@ async function pickthehighestifnotsliced(
 	if (preferhours !== false && preferhours <= 2 && preferhours >= 0)
 		await mergewithpreferhours(preferhoursrange, freetime, valueofpreferhours);
 
-	await mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusnessbusyhours);
-
+	//await mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusnessbusyhours);
+	//up to change if nisesary
 	for (let i = 0; i < freetime.length; i++) {
 		var tmparray = [];
-
+		//console.log(freetime[i].Free);
 		freetime[i].slicewithnospace(services_length, minutes_between_appointment, minsevicetime, valuefornospaces);
 		freetime[i].removeduplicates(services_length, minutes_between_appointment);
 		const tmp = freetime[i].Free.sort(function(x, y) {
@@ -1235,6 +1246,7 @@ async function pickthehighestifnotsliced(
 		}
 		freetime[i].Free = tmparray;
 	}
+	await mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusnessbusyhours);
 	return {};
 }
 async function findmintimeinservice(businessid) {
