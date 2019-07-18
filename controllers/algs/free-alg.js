@@ -351,7 +351,8 @@ time.prototype.sub_and_return = function(minutes) {
 		newminutes += 60;
 		hourstosub++;
 	}
-	return new time(this._hour - hourstosub, newminutes);
+	var newtime = new time(this._hour - hourstosub, newminutes);
+	return newtime;
 };
 time.prototype.ifbiggerthan = function(time) {
 	// if this is greater than timerange
@@ -416,7 +417,6 @@ time_range.prototype.slice = function(
 	var tmp = [];
 	var sum = length + minutes_between_appointment;
 	var minutes = this.tominutes();
-
 	var remainintimerange = 0;
 	remainintimerange = minutes % sum;
 	var timerangecount = Math.floor(minutes / sum);
@@ -525,7 +525,7 @@ Day.prototype.slicewithnospace = function(length, minutes_between_appointment, m
 	this.Free = tmp;
 };
 
-Day.prototype.removeduplicates = function() {
+Day.prototype.removeduplicates = function(services_length, minutes_between_appointment) {
 	var uniquefreetime = [];
 	//console.log(util.inspect(this.Free, {depth: null}));
 	this.Free.forEach(function(onetimerange) {
@@ -542,10 +542,12 @@ Day.prototype.removeduplicates = function() {
 					uniquefreetime[foundindex]._value = onetimerange._value;
 				}
 			} else {
-				uniquefreetime.push(onetimerange);
+				if (onetimerange.tominutes() == services_length + minutes_between_appointment)
+					uniquefreetime.push(onetimerange);
 			}
 		} else {
-			uniquefreetime.push(onetimerange);
+			if (onetimerange.tominutes() == services_length + minutes_between_appointment)
+				uniquefreetime.push(onetimerange);
 		}
 		//timeranges.push( new time_range(new time(onetimerange._start._hour,onetimerange._start._minute) , new time(onetimerange._end._hour,onetimerange._end._minute) ) );
 	});
@@ -683,7 +685,7 @@ async function returnfreetime(
 	var daysfree = [];
 	var timeranges = [];
 	var daysnum = diffDays(date_from, date_until);
-	console.log(daysnum);
+	//console.log(daysnum);
 	var customerappointment;
 	var customersbusnessappointment;
 	var customersbusness;
@@ -1177,7 +1179,7 @@ async function pickthehighestifsliced(
 		if (length != false && minutes_between_appointment != false) {
 			//tmptree.totree(freetime[i].Free);
 			//tmpfree = tmptree.timerangesthatfit(length, minutes_between_appointment);
-			freetime[i].removeduplicates();
+			freetime[i].removeduplicates(length, minutes_between_appointment);
 			tmp = freetime[i].Free.sort(function(x, y) {
 				return compare2timerange(x, y);
 			});
@@ -1209,11 +1211,11 @@ async function pickthehighestifnotsliced(
 	businessid,
 	valueofbusnessbusyhours
 ) {
-	for (let i = 0; i < freetime.length; i++) {
-		var tmparray = [];
+	// for (let i = 0; i < freetime.length; i++) {
+	// 	var tmparray = [];
 
-		freetime[i].slicewithnospace(services_length, minutes_between_appointment, minsevicetime, valuefornospaces);
-	}
+	// 	freetime[i].slicewithnospace(services_length, minutes_between_appointment, minsevicetime, valuefornospaces);
+	// }
 
 	if (preferhours !== false && preferhours <= 2 && preferhours >= 0)
 		await mergewithpreferhours(preferhoursrange, freetime, valueofpreferhours);
@@ -1224,7 +1226,7 @@ async function pickthehighestifnotsliced(
 		var tmparray = [];
 
 		freetime[i].slicewithnospace(services_length, minutes_between_appointment, minsevicetime, valuefornospaces);
-		freetime[i].removeduplicates();
+		freetime[i].removeduplicates(services_length, minutes_between_appointment);
 		const tmp = freetime[i].Free.sort(function(x, y) {
 			return compare2timerange(x, y);
 		});
@@ -1455,16 +1457,7 @@ async function smartFunction(
 	const number_of_days_to_return = business.schedule_settings.max_working_days_response;
 	const range_definition = business.schedule_settings.range_definition;
 	const toreturnadaybybusiness = business.schedule_settings.max_days_to_return;
-	//console.log(valuefornospaces);
-	//console.log(valueofpreferhours);
-	//
-	// const range_definition = {
-	// 	morning   : { start: { _hour: 7, _minute: 0 }, end: { _hour: 12, _minute: 0 } },
-	// 	afternoon : { start: { _hour: 12, _minute: 0 }, end: { _hour: 17, _minute: 0 } },
-	// 	evening   : { start: { _hour: 17, _minute: 0 }, end: { _hour: 23, _minute: 0 } }
-	// };
-	// const toreturnadaybybusiness = 2;
-	//
+
 	var numberToReturnADay;
 	if (toreturnadaybybusiness < toreturnadaybycustomer) numberToReturnADay = toreturnadaybycustomer;
 	else numberToReturnADay = toreturnadaybybusiness;
