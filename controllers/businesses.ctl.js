@@ -44,7 +44,7 @@ createTime = async (time) => {
 	try {
 		let splitter = time.split(':');
 		let date = new Date();
-		date.setHours(Number(splitter[0]), Number(splitter[1]), 0);
+		date.setHours(Number(splitter[0]), Number(splitter[1]), 0, 0);
 		return await date;
 	} catch (error) {
 		throw new Error(error);
@@ -949,8 +949,8 @@ module.exports = {
 	getFollowersStats             : async (req, res, next) => {
 		await createTotalFollowersCount();
 		const id = mongoose.Types.ObjectId(req.params.business_id);
-		let date = moment().format('l');
-		let week = moment().subtract('7', 'days').format('l');
+		let date = moment(new Date()).format('l');
+		let week = moment(new Date()).subtract('7', 'days').format('l');
 		const results = await insights.aggregate([
 			{
 				$match : {

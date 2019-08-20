@@ -125,6 +125,9 @@ module.exports.createInsights = async (appointment_id) => {
 	}
 };
 module.exports.servicesDayStatistics = async () => {
+	var momentdate = moment().format('l');
+	var date = new Date(momentdate);
+	console.log(date);
 	const results = await Appointments.aggregate([
 		//TODO - ADD to pipleine to avoid double quers
 		{ $match: { status: 'done' } },

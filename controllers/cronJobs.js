@@ -33,10 +33,10 @@ setInterval(async function() {
 	);
 }, 1 * 60 * 60 * 1000); // 1 hour
 
-var j = schedule.scheduleJob('45 1 * * *', async function() {
+var j = schedule.scheduleJob('1 0 * * *', async function() {
 	var momentdate = moment().format('l');
 	var date = new Date(momentdate);
-	// console.log(date);
+	console.log(date);
 	const vvv = await FreeTime.updateMany(
 		{
 			// $match : { 'dates.day': { $lt: date } }
