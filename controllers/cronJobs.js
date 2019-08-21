@@ -33,16 +33,15 @@ setInterval(async function() {
 	);
 }, 1 * 60 * 60 * 1000); // 1 hour
 
-var j = schedule.scheduleJob('1 0 * * *', async function() {
+var rule = new schedule.RecurrenceRule();
+
+/* sechdule job runs recursevly every day at 00:01 (which means after day end) */
+rule.hour = 14;
+rule.minute = 7;
+var scheduleJob = schedule.scheduleJob(rule, async function() {
 	var momentdate = moment().format('l');
 	var date = new Date(momentdate);
-	console.log(date);
-	const vvv = await FreeTime.updateMany(
-		{
-			// $match : { 'dates.day': { $lt: date } }
-		},
-		{ $pull: { dates: { day: { $lt: date } } } }
-	);
+	const vvv = await FreeTime.updateMany({}, { $pull: { dates: { day: { $lt: date } } } });
 
 	/* Statistics Update  */
 	/* Today will get the rate of yesterday as a start point */
@@ -51,9 +50,3 @@ var j = schedule.scheduleJob('1 0 * * *', async function() {
 	await createAppointmentsInsights();
 	await createTotalFollowersCount();
 });
-
-// schedule.scheduleJob('8 0 * * *', () => {
-
-// 	//SendTodayForbusiness();
-
-// })

@@ -31,16 +31,6 @@ module.exports.getbusinessAvgRatingByDateRange = async (business_id, from = fals
 
 	const reviews = await Reviews.find({ 'business_review.isRated': true }).populate('appointment_id');
 
-	// const filtered = await reviews.filter
-	// const appointments = await Appointments.find(query).populate({
-	// 	path   : 'review',
-	// 	$match : { 'customer_review.isRated': true }
-	// });
-
-	// const items = await newAppointments.map((app, i) => {
-	// 	console.log(i);
-	// });
-
 	return await reviews;
 };
 
@@ -111,7 +101,7 @@ module.exports.createInsights = async (appointment_id) => {
 	let i = 1;
 	while (date >= start) {
 		date = end.subtract(i, 'days');
-		console.log(date.format('YYYY/MM/DD'));
+		// console.log(date.format('YYYY/MM/DD'));
 		await businesses.forEach(async (business) => {
 			var query = {
 					business_id : mongoose.Types.ObjectId('5cedfa110a209a0eddbb2bbb'),
@@ -127,7 +117,7 @@ module.exports.createInsights = async (appointment_id) => {
 module.exports.servicesDayStatistics = async () => {
 	var momentdate = moment().format('l');
 	var date = new Date(momentdate);
-	console.log(date);
+	// console.log(date);
 	const results = await Appointments.aggregate([
 		//TODO - ADD to pipleine to avoid double quers
 		{ $match: { status: 'done' } },

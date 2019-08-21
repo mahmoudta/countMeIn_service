@@ -703,14 +703,6 @@ module.exports = {
 					Fprofile_views     : { $sum: '$range_total.profile_views' }
 				}
 			}
-
-			// }
-			// {
-			// 	$group : {
-			// 		_id            : null,
-			// 		total_earnings : { $push: { $date: '$total_earnings' } }
-			// 	}
-			// }
 		]);
 		if (!documents) return res.status(304).json({ error: 'no data' });
 		const pastRange = await insights.aggregate([
