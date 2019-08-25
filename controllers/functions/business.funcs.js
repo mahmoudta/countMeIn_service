@@ -104,7 +104,7 @@ module.exports.createInsights = async (appointment_id) => {
 		// console.log(date.format('YYYY/MM/DD'));
 		await businesses.forEach(async (business) => {
 			var query = {
-					business_id : mongoose.Types.ObjectId('5cedfa110a209a0eddbb2bbb'),
+					business_id : mongoose.Types.ObjectId(business._id),
 					date        : new Date(date.format('YYYY/MM/DD'))
 				},
 				update = {};

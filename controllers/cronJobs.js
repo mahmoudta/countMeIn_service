@@ -36,8 +36,8 @@ setInterval(async function() {
 var rule = new schedule.RecurrenceRule();
 
 /* sechdule job runs recursevly every day at 00:01 (which means after day end) */
-rule.hour = 14;
-rule.minute = 7;
+rule.hour = 0;
+rule.minute = 1;
 var scheduleJob = schedule.scheduleJob(rule, async function() {
 	var momentdate = moment().format('l');
 	var date = new Date(momentdate);
