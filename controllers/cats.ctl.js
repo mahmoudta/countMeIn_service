@@ -1,54 +1,95 @@
 const JWT = require('jsonwebtoken');
 const Categories = require('../models/category');
+const Services = require('../models/service');
+
 const Businesses = require('../models/business');
+const mongoose = require('mongoose');
 
 const { JWT_SECRET } = require('../consts');
 
 module.exports = {
-	getAllCategories: async (req, res, next) => {
-		const categories = await Categories.find({});
+	getAllCategories : async (req, res, next) => {
+		const categories = await Categories.find({}).populate('services', '-parent_category');
 		if (!categories) {
 			return res.status(404).json({ message: 'No category has been founded' });
 		}
 		res.status(200).json({ categories });
 	},
 
-	createCategory: async (req, res, next) => {
+	createCategory   : async (req, res, next) => {
 		const { name } = req.body;
 		const cat = await Categories.findOne({ name });
 		if (cat) {
-			console.log('error');
-
 			return res.status(403).json({ error: 'This category already exsits' });
 		}
-		const category = new Categories({ name });
+		const category = new Categories({
+			_id  : new mongoose.Types.ObjectId(),
+			name
+		});
 		await category.save();
 		res.status(200).json({ success: 'sucsessfully added' });
 	},
 
-	addSubCategory: async (req, res, next) => {
-		const { parent_category, name, time } = req.body;
-		Categories.findOneAndUpdate(
+	addService       : async (req, res, next) => {
+		const { parent_category, name, time, cost } = req.body;
+		const service = new Services({
+			_id             : new mongoose.Types.ObjectId(),
+			parent_category : mongoose.Types.ObjectId(parent_category),
+			title           : name,
+			time            : Number(time),
+			cost            : Number(cost)
+		});
+
+		const saved = await service.save();
+
+		if (!saved) return res.status(404).json({ error: 'Error Ocured' });
+
+		const newCategory = await Categories.findOneAndUpdate(
 			{ _id: parent_category },
 			{
-				$push: {
-					subCats: { sub: name, time: Number(time) }
-				}
+				$push : { services: saved._id }
 			},
-			(err, doc) => {
-				if (err) {
-					res.status(404).json({ error: 'No Category match' });
-					return;
-				} else if (doc.nModified == 0) {
-					res.status(403).json({ error: 'Permission Denied' });
-					return;
-				}
-				res.status(200).json({ success: 'new service has been added' });
-			}
-		);
+			{ $new: true, useFindAndModify: false }
+		).populate('services', '-parent_category');
+		/* TODO -CHECK HOW To return it back */
+		res.status(200).json({ category: newCategory });
 	},
 
-	deleteCategory: async (req, res, next) => {
+	updateCategory   : async (req, res, next) => {
+		const { id, name } = req.body;
+		console.log(id, name);
+		const updated = await Categories.updateOne(
+			{ _id: mongoose.Types.ObjectId(id) },
+			{
+				$set : {
+					name : name
+				}
+			}
+		);
+		if (!updated) res.status(304).json({ error: `error while updating category : ${id}` });
+		res.status(200).json({ success: 'sucsessfully Updated' });
+	},
+	updateService    : async (req, res, next) => {
+		const { id, name, time, cost } = req.body;
+		const service = await Services.updateOne(
+			{
+				_id : mongoose.Types.ObjectId(id)
+			},
+			{
+				$set : {
+					title : name,
+					time  : Number(time),
+					cost  : Number(cost)
+				}
+			}
+		);
+
+		if (!service) return res.status(404).json({ error: `Error Ocured while ypdating service ${id}` });
+		/* TODO -CHECK HOW To return it back */
+		res.status(200).json({ success: 'successfully updated' });
+	},
+
+	deleteCategory   : async (req, res, next) => {
 		// check if category related to business ,
 		// if yes => we cant DELETE IT
 		const { id } = req.params;
@@ -62,24 +103,31 @@ module.exports = {
 		//Else ( Not Related) => DELETE
 		const category = await Categories.findOneAndDelete({ _id: id });
 
-		if (!category) return res.status(404).json({ error: 'An Error Occurred' });
-
-		res.status(200).json({ success: ` ${category.name} has been deleted` });
+		if (!category) return res.json({ error: 'An Error Occurred while deleting' });
+		// console.log(category)
+		res.status(200).json({ category });
 	},
 
-	deleteService: async (req, res, next) => {
+	deleteService    : async (req, res, next) => {
 		// check if service related to business ,
 		// if yes => we cant DELETE IT
 		const { id } = req.params;
-		const business = await Businesses.findOne({ 'profile.purposes': { $elemMatch: { purpose_id: id } } });
+		const business = await Businesses.findOne({ 'services.service_id': id }, 'owner_id');
 
 		if (business)
-			return res.status(404).json({ error: 'you can not delete this Service, some businesses already using it' });
+			return res.status(400).json({ error: 'you can not delete this Service, some businesses already using it' });
 
-		//Else ( Not Related) => DELETE
-		const service = await Categories.findOneAndUpdate({}, { $pull: { subCats: { _id: id } } });
-		if (!service) return res.status(404).json({ error: 'An Error Occurred' });
+		// Else ( Not Related) => DELETE
 
-		res.status(200).json({ success: ` service has been deleted` });
+		const service = await Services.findOneAndDelete({ _id: id });
+		if (!service) return res.status(404).json({ error: 'An Error Occurred while deleteing' });
+
+		const category = await Categories.findOneAndUpdate(
+			{ _id: service.parent_category },
+			{ $pull: { services: id } },
+			{ new: true, useFindAndModify: false }
+		).populate('services', '-parent_category');
+
+		res.status(200).json({ category });
 	}
 };

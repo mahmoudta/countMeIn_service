@@ -1,9 +1,10 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose'),
 	user = new mongoose.Schema({
+		_id: { type: mongoose.Schema.Types.ObjectId },
 		method: {
 			type: String,
-			enum: [ 'local', 'google' ],
+			enum: ['local', 'google'],
 			required: true
 		},
 		isAdmin: {
@@ -29,17 +30,49 @@ const mongoose = require('mongoose'),
 				},
 				last: {
 					type: String,
-					default: ' '
+					default: ''
 				}
 			},
+
 			imgUrl: String,
-			businessId: String
+			businessId: String,
+			phone: String
 		},
-		appointments: [ String ],
-		following: [ String ]
+		notification: [
+			{
+				Type: String,
+				opened: {
+					type: Boolean,
+					default: false
+				},
+				title: String,
+				my_business: {
+					type: Boolean,
+					default: false
+				},
+				appointment_id: String
+			}
+		],
+		reminders: [
+			{
+				business_id: {
+					type: mongoose.Schema.Types.ObjectId,
+					ref: 'Business',
+					unique: true
+				},
+				services: [{ type: mongoose.Schema.Types.ObjectId }],
+				days: Number,
+				date_to: Date,
+				repeat: Boolean,
+			}
+		],
+		//globalExpreince:Number
+
+		appointments: [String],
+		following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Business' }]
 	});
 
-user.pre('save', async function(next) {
+user.pre('save', async function (next) {
 	if (this.method != 'local') {
 		next();
 	}
@@ -53,7 +86,7 @@ user.pre('save', async function(next) {
 	}
 });
 
-user.methods.isValidPassword = async function(newPassword) {
+user.methods.isValidPassword = async function (newPassword) {
 	try {
 		return await bcrypt.compare(newPassword, this.local.password);
 	} catch (error) {
@@ -61,22 +94,22 @@ user.methods.isValidPassword = async function(newPassword) {
 	}
 };
 
-user.path('profile.name.first').set((first) => {
-	// const newFirst = first.toString().lowercase()
-	const newFirst = first.toLowerCase().charAt(0).toUpperCase() + first.slice(1);
-	console.log(`toLowerCase : ${newFirst}`);
-	// let sVal = String(val).toLowerCase();
-	return newFirst;
-});
+// user.path('profile.name.first').set((first) => {
+// 	// const newFirst = first.toString().lowercase()
+// 	const newFirst = first.toLowerCase().charAt(0).toUpperCase() + first.slice(1);
+// 	console.log(`toLowerCase : ${newFirst}`);
+// 	// let sVal = String(val).toLowerCase();
+// 	return newFirst;
+// });
 
-user.path('profile.name.last').set((last) => {
-	if (last) {
-		const newLast = last.lowercase().charAt(0).toUpperCase() + last.slice(1);
-		console.log(`toLowerCase : ${newLast}`);
-		// let sVal = String(val).toLowerCase();
-		return newLast;
-	}
-});
+// user.path('profile.name.last').set((last) => {
+// 	if (last) {
+// 		const newLast = last.lowercase().charAt(0).toUpperCase() + last.slice(1);
+// 		console.log(`toLowerCase : ${newLast}`);
+// 		// let sVal = String(val).toLowerCase();
+// 		return newLast;
+// 	}
+// });
 
 var User = mongoose.model('User', user);
 

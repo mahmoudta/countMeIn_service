@@ -1,32 +1,16 @@
+const Services = require('./service');
 const mongoose = require('mongoose'),
 	category = new mongoose.Schema({
-		name: {
-			type: String,
-			lowercase: true,
-			required: true,
-			unique: true,
-			trim: true
+		_id      : { type: mongoose.Schema.Types.ObjectId },
+
+		name     : {
+			type      : String,
+			lowercase : true,
+			required  : true,
+			unique    : true,
+			trim      : true
 		},
-		subCats: [
-			{
-				sub: {
-					type: String,
-					lowercase: true,
-					trim: true,
-					required: true
-				},
-				time: {
-					/* 
-                    *   time specified with minutes  
-                    *   minimum time for purpose is 10 min maximum 2 hours
-                    */
-					type: Number,
-					min: 10,
-					max: 120,
-					required: true
-				}
-			}
-		]
+		services : [ { type: mongoose.Schema.Types.ObjectId, ref: 'Service' } ]
 	});
 
 // export default (isValidCategory = async function(category_id) {
@@ -38,6 +22,12 @@ const mongoose = require('mongoose'),
 // 		throw new Error(error);
 // 	}
 // });
+
+category.post('findOneAndDelete', async function(category) {
+	/* delete all the services related to deleted category */
+
+	await Services.deleteMany({ parent_category: category._id });
+});
 
 var Category = mongoose.model('Category', category);
 
