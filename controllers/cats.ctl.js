@@ -55,6 +55,40 @@ module.exports = {
 		res.status(200).json({ category: newCategory });
 	},
 
+	updateCategory   : async (req, res, next) => {
+		const { id, name } = req.body;
+		console.log(id, name);
+		const updated = await Categories.updateOne(
+			{ _id: mongoose.Types.ObjectId(id) },
+			{
+				$set : {
+					name : name
+				}
+			}
+		);
+		if (!updated) res.status(304).json({ error: `error while updating category : ${id}` });
+		res.status(200).json({ success: 'sucsessfully Updated' });
+	},
+	updateService    : async (req, res, next) => {
+		const { id, name, time, cost } = req.body;
+		const service = await Services.updateOne(
+			{
+				_id : mongoose.Types.ObjectId(id)
+			},
+			{
+				$set : {
+					title : name,
+					time  : Number(time),
+					cost  : Number(cost)
+				}
+			}
+		);
+
+		if (!service) return res.status(404).json({ error: `Error Ocured while ypdating service ${id}` });
+		/* TODO -CHECK HOW To return it back */
+		res.status(200).json({ success: 'successfully updated' });
+	},
+
 	deleteCategory   : async (req, res, next) => {
 		// check if category related to business ,
 		// if yes => we cant DELETE IT
