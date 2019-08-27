@@ -187,7 +187,7 @@ module.exports.servicesDayStatistics = async () => {
 	var options = { upsert: true, new: true, setDefaultsOnInsert: true, useFindAndModify: false };
 
 	// const date = new Date(moment().format('YYYY/MM/DD'));
-	await results.forEach(async (result) => {
+	results.forEach(async (result) => {
 		var query = { business_id: result.business_id, date: result.date },
 			update = {
 				$set : {
@@ -196,7 +196,7 @@ module.exports.servicesDayStatistics = async () => {
 					done_appointments : result.done_appointments
 				}
 			};
-		await Insights.findOneAndUpdate(query, update, options).exec();
+		await Insights.findOneAndUpdate(query, update, options);
 	});
 };
 
@@ -249,7 +249,7 @@ module.exports.createAppointmentsInsights = async () => {
 					traffic             : result.traffic
 				}
 			};
-		const z = await Insights.findOneAndUpdate(query, update, options).exec();
+		const z = await Insights.findOneAndUpdate(query, update, options);
 	});
 };
 
@@ -275,7 +275,7 @@ module.exports.createTotalFollowersCount = async () => {
 					total_followers : result.count
 				}
 			};
-		const wait = await Insights.updateMany(query, update, options).exec();
+		const wait = await Insights.updateMany(query, update, options);
 	});
 
 	return results;

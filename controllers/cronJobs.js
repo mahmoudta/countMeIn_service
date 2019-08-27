@@ -45,6 +45,7 @@ var scheduleJob = schedule.scheduleJob(rule, async function() {
 
 	/* Statistics Update  */
 	/* Today will get the rate of yesterday as a start point */
+
 	await servicesDayStatistics();
 	await createInsights();
 	await createAppointmentsInsights();
