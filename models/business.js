@@ -243,21 +243,6 @@ business.virtual('insights', {
 	// options      : { sort: { name: -1 }, limit: 5 } // Query options, see http://bit.ly/mongoose-query-options
 });
 
-business.post('find', async function(doc, next) {
-	//console.log(this);
-	// if (this.method != 'local') {
-	// 	next();
-	// }
-	// try {
-	// 	const salt = await bcrypt.genSalt(10);
-	// 	const passwordHash = await bcrypt.hash(this.local.password, salt);
-	// 	this.local.password = passwordHash;
-	// 	next();
-	// } catch (error) {
-	// 	next(error);
-	// }
-});
-
 var Business = mongoose.model('Business', business);
 
 module.exports = Business;
