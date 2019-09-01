@@ -13,16 +13,6 @@ const mongoose = require('mongoose'),
 		services : [ { type: mongoose.Schema.Types.ObjectId, ref: 'Service' } ]
 	});
 
-// export default (isValidCategory = async function(category_id) {
-// 	try {
-// 		const category = await category.findById(category_id);
-// 		if (category) return true;
-// 		return false;
-// 	} catch (error) {
-// 		throw new Error(error);
-// 	}
-// });
-
 category.post('findOneAndDelete', async function(category) {
 	/* delete all the services related to deleted category */
 

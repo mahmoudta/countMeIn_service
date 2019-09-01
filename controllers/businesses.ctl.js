@@ -22,7 +22,8 @@ const {
 	servicesDayStatistics,
 	createInsights,
 	createAppointmentsInsights,
-	createTotalFollowersCount
+	createTotalFollowersCount,
+	getBusinesstraffic
 } = require('./functions/business.funcs');
 
 const mongoose = require('mongoose');
@@ -129,7 +130,6 @@ module.exports = {
 		res.status(200).json({ businesses });
 	},
 
-	/* Adhamm */
 	getBusinessForView            : async (req, res, next) => {
 		console.log('business for view');
 		const id = mongoose.Types.ObjectId(req.params.id);
@@ -733,82 +733,7 @@ module.exports = {
 	getAppointmentsStatistics     : async (req, res, next) => {
 		const business_id = mongoose.Types.ObjectId(req.params.business_id);
 
-		const documents = await insights.aggregate([
-			{
-				$match : {
-					business_id : business_id
-				}
-			},
-			{ $unwind: '$traffic' },
-			{
-				$addFields : {
-					name : '$traffic.time',
-					y    : '$traffic.count',
-					x    : {
-						$dayOfWeek : {
-							date     : '$date',
-							timezone : '+0300'
-						}
-					}
-				}
-			},
-			{
-				$group : {
-					_id : {
-						name : '$name',
-						x    : '$x'
-					},
-					y   : { $sum: '$y' }
-				}
-			},
-			{ $sort: { '_id.name': 1, '_id.x': 1 } },
-			{
-				$group : {
-					_id  : {
-						name : '$_id.name'
-					},
-					data : {
-						$push : { x: '$_id.x', y: '$y' }
-					}
-				}
-			},
-			{
-				$project : {
-					_id  : 0,
-					name : '$_id.name',
-					data : 1
-				}
-			},
-			{ $sort: { name: 1 } }
-		]);
-
-		let hour = 0;
-		let results = [];
-		while (hour < 24) {
-			let name = '';
-			if (hour < 10) {
-				name = `0${hour}`;
-			} else {
-				name = hour;
-			}
-			let data = [
-				{ x: 'Sun', y: 0 },
-				{ x: 'Mon', y: 0 },
-				{ x: 'Tue', y: 0 },
-				{ x: 'Wed', y: 0 },
-				{ x: 'Thu', y: 0 },
-				{ x: 'Fri', y: 0 },
-				{ x: 'Sat', y: 0 }
-			];
-			results.push({ name, data });
-			hour++;
-		}
-
-		const bb = await documents.forEach(async (hour) => {
-			await hour.data.forEach((day) => {
-				results[hour.name].data[day.x - 1].y = day.y;
-			});
-		});
+		const appointmntsStats = await getBusinesstraffic(business_id);
 
 		const comparison = await insights.aggregate([
 			{
@@ -839,7 +764,7 @@ module.exports = {
 		]);
 
 		/* making sure that it fits all the hours and all days */
-		res.json({ appointmntsStats: await results, comparison: comparison[0] });
+		res.json({ appointmntsStats, comparison: comparison[0] });
 	},
 	getServiceStats               : async (req, res, next) => {
 		let id = mongoose.Types.ObjectId(req.params.business_id);

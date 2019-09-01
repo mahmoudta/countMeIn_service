@@ -280,3 +280,86 @@ module.exports.createTotalFollowersCount = async () => {
 
 	return results;
 };
+
+module.exports.getBusinesstraffic = async (businessId) => {
+	const business_id = mongoose.Types.ObjectId(businessId);
+	let hour = 0;
+	let results = [];
+
+	const documents = await Insights.aggregate([
+		{
+			$match : {
+				business_id : business_id
+			}
+		},
+		{ $unwind: '$traffic' },
+		{
+			$addFields : {
+				name : '$traffic.time',
+				y    : '$traffic.count',
+				x    : {
+					$dayOfWeek : {
+						date     : '$date',
+						timezone : '+0300'
+					}
+				}
+			}
+		},
+		{
+			$group : {
+				_id : {
+					name : '$name',
+					x    : '$x'
+				},
+				y   : { $sum: '$y' }
+			}
+		},
+		{ $sort: { '_id.name': 1, '_id.x': 1 } },
+		{
+			$group : {
+				_id  : {
+					name : '$_id.name'
+				},
+				data : {
+					$push : { x: '$_id.x', y: '$y' }
+				}
+			}
+		},
+		{
+			$project : {
+				_id  : 0,
+				name : '$_id.name',
+				data : 1
+			}
+		},
+		{ $sort: { name: 1 } }
+	]);
+
+	while (hour < 24) {
+		let name = '';
+		if (hour < 10) {
+			name = `0${hour}`;
+		} else {
+			name = hour;
+		}
+		let data = [
+			{ x: 'Sun', y: 0 },
+			{ x: 'Mon', y: 0 },
+			{ x: 'Tue', y: 0 },
+			{ x: 'Wed', y: 0 },
+			{ x: 'Thu', y: 0 },
+			{ x: 'Fri', y: 0 },
+			{ x: 'Sat', y: 0 }
+		];
+		results.push({ name, data });
+		hour++;
+	}
+
+	await documents.forEach(async (hour) => {
+		await hour.data.forEach((day) => {
+			results[hour.name].data[day.x - 1].y = day.y;
+		});
+	});
+
+	return await results;
+};
