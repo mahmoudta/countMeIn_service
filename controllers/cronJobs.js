@@ -39,6 +39,7 @@ var rule = new schedule.RecurrenceRule();
 rule.hour = 0;
 rule.minute = 1;
 var scheduleJob = schedule.scheduleJob(rule, async function() {
+	console.log('CountMein Cron Job');
 	var momentdate = moment().format('l');
 	var date = new Date(momentdate);
 	const vvv = await FreeTime.updateMany({}, { $pull: { dates: { day: { $lt: date } } } });
