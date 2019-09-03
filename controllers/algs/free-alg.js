@@ -870,7 +870,7 @@ async function returnfreeondate(appointments, oneDate) {
 async function mergewithbusnessbusnessbusyhour(businessid, freetime, valueofbusnessbusyhours) {
 	var rate = await calculatebusnessbusyhours(businessid);
 	//get busnessbusyhour busy hour
-	const appointmntsStats = await getBusinesstraffic(business_id);
+	const appointmntsStats = await getBusinesstraffic(businessid);
 	freetime.forEach(function(oneday) {
 		var tmpdate = moment(oneday.Date).format('dddd').toLowerCase();
 		oneday.Free.forEach(function(onetimerange) {
